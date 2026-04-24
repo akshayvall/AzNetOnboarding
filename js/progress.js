@@ -1,13 +1,92 @@
 /* ============================================
-   PROGRESS TRACKING — localStorage based
+   PROGRESS TRACKING — cookie-anchored identity,
+   localStorage-backed data (per-user namespaced)
    ============================================ */
 
 const ProgressManager = {
-    STORAGE_KEY: 'azure-networking-academy-progress',
+    LEGACY_STORAGE_KEY: 'azure-networking-academy-progress',
+    STORAGE_PREFIX: 'ana-progress:',
+    USER_COOKIE: 'ana_uid',
+    NAME_COOKIE: 'ana_uname',
+    COOKIE_MAX_AGE_DAYS: 365,
+
+    // ---- Cookie helpers ----
+    readCookie(name) {
+        const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[-.+*?^$(){}|[\]\\]/g, '\\$&') + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : null;
+    },
+
+    writeCookie(name, value, days) {
+        const maxAge = Math.max(1, days || this.COOKIE_MAX_AGE_DAYS) * 86400;
+        // Secure only when served over HTTPS; SameSite=Lax for normal navigation
+        const secure = location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+    },
+
+    deleteCookie(name) {
+        document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+    },
+
+    generateUserId() {
+        // RFC4122-ish v4 via crypto.getRandomValues, falling back to Math.random
+        try {
+            if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+            const b = new Uint8Array(16);
+            crypto.getRandomValues(b);
+            b[6] = (b[6] & 0x0f) | 0x40;
+            b[8] = (b[8] & 0x3f) | 0x80;
+            const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+            return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+        } catch {
+            return 'u-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        }
+    },
+
+    getUserId() {
+        let uid = this.readCookie(this.USER_COOKIE);
+        if (!uid || !/^[A-Za-z0-9_-]{6,64}$/.test(uid)) {
+            uid = this.generateUserId();
+            this.writeCookie(this.USER_COOKIE, uid, this.COOKIE_MAX_AGE_DAYS);
+            // First-time user: migrate legacy single-tenant progress if present
+            this.migrateLegacyProgress(uid);
+        } else {
+            // Refresh cookie lifetime on each visit so active users never lose identity
+            this.writeCookie(this.USER_COOKIE, uid, this.COOKIE_MAX_AGE_DAYS);
+        }
+        return uid;
+    },
+
+    getUserName() {
+        const n = this.readCookie(this.NAME_COOKIE);
+        return n ? n.substring(0, 60) : null;
+    },
+
+    setUserName(name) {
+        const clean = (name || '').toString().replace(/[<>\r\n\t]/g, '').trim().substring(0, 60);
+        if (clean) this.writeCookie(this.NAME_COOKIE, clean, this.COOKIE_MAX_AGE_DAYS);
+        else this.deleteCookie(this.NAME_COOKIE);
+    },
+
+    storageKey() {
+        return this.STORAGE_PREFIX + this.getUserId();
+    },
+
+    migrateLegacyProgress(uid) {
+        try {
+            const legacy = localStorage.getItem(this.LEGACY_STORAGE_KEY);
+            if (legacy) {
+                const newKey = this.STORAGE_PREFIX + uid;
+                if (!localStorage.getItem(newKey)) {
+                    localStorage.setItem(newKey, legacy);
+                }
+                localStorage.removeItem(this.LEGACY_STORAGE_KEY);
+            }
+        } catch (e) { /* ignore */ }
+    },
 
     getProgress() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEY);
+            const data = localStorage.getItem(this.storageKey());
             return data ? JSON.parse(data) : this.defaultProgress();
         } catch {
             return this.defaultProgress();
@@ -31,7 +110,7 @@ const ProgressManager = {
 
     saveProgress(progress) {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
+            localStorage.setItem(this.storageKey(), JSON.stringify(progress));
         } catch (e) {
             console.error('Failed to save progress:', e);
         }
@@ -119,7 +198,15 @@ const ProgressManager = {
     },
 
     resetAll() {
-        localStorage.removeItem(this.STORAGE_KEY);
+        // Clear this user's progress but keep their identity cookie
+        try { localStorage.removeItem(this.storageKey()); } catch {}
+    },
+
+    resetAllAndForgetUser() {
+        // Full wipe: remove data + identity cookies
+        try { localStorage.removeItem(this.storageKey()); } catch {}
+        this.deleteCookie(this.USER_COOKIE);
+        this.deleteCookie(this.NAME_COOKIE);
     },
 
     exportProgress() {
