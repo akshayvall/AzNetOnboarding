@@ -12,6 +12,7 @@ const QuizEngine = {
         this.currentQuestion = 0;
         this.answers = new Array(questions.length).fill(null);
         this.questions = questions;
+        this.submitted = new Set();
         this.render();
     },
 
@@ -25,6 +26,14 @@ const QuizEngine = {
         const q = this.questions[this.currentQuestion];
         const totalQ = this.questions.length;
         const answered = this.answers.filter(a => a !== null).length;
+        const isMulti = q.type === 'multi-select' || Array.isArray(q.correct);
+        const typeBadge = q.type === 'scenario'
+            ? '<span class="quiz-type-badge scenario" title="Scenario-based question">🎯 Scenario</span>'
+            : isMulti
+                ? '<span class="quiz-type-badge multi" title="Select all that apply">☑ Select all that apply</span>'
+                : '';
+        const current = this.answers[this.currentQuestion];
+        const selectedSet = isMulti ? new Set(Array.isArray(current) ? current : []) : null;
 
         container.innerHTML = `
             <div class="quiz-container fade-in">
@@ -34,14 +43,14 @@ const QuizEngine = {
                 </div>
                 
                 <div class="quiz-question">
-                    <h3>${this.currentQuestion + 1}. ${this.escapeHtml(q.question)}</h3>
+                    <h3>${this.currentQuestion + 1}. ${typeBadge} ${this.escapeHtml(q.question)}</h3>
                     <div class="quiz-options">
                         ${q.options.map((opt, i) => `
                             <div class="quiz-option ${this.getOptionClass(i)}" 
                                  onclick="QuizEngine.selectOption(${i})"
                                  data-index="${i}">
-                                <input type="radio" name="q${this.currentQuestion}" 
-                                       ${this.answers[this.currentQuestion] === i ? 'checked' : ''}
+                                <input type="${isMulti ? 'checkbox' : 'radio'}" name="q${this.currentQuestion}" 
+                                       ${isMulti ? (selectedSet.has(i) ? 'checked' : '') : (current === i ? 'checked' : '')}
                                        ${this.isAnswered() ? 'disabled' : ''}>
                                 <span>${this.escapeHtml(opt)}</span>
                             </div>
@@ -59,7 +68,7 @@ const QuizEngine = {
                     </button>
                     ${!this.isAnswered() ? 
                         `<button class="btn-primary" onclick="QuizEngine.submitAnswer()" id="submitBtn"
-                                 ${this.answers[this.currentQuestion] === null ? 'disabled style="opacity:0.5"' : ''}>
+                                 ${this.isAnswerReady() ? '' : 'disabled style="opacity:0.5"'}>
                             Check Answer
                         </button>` : ''}
                     ${this.currentQuestion < totalQ - 1 ?
@@ -74,13 +83,14 @@ const QuizEngine = {
                 </div>
 
                 <div style="display:flex;gap:6px;margin-top:20px;flex-wrap:wrap;">
-                    ${this.questions.map((_, i) => `
-                        <div onclick="QuizEngine.goToQuestion(${i})" 
-                             style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;
-                             ${i === this.currentQuestion ? 'background:var(--azure-blue);color:#fff;' : 
-                               this.answers[i] !== null ? (this.answers[i] === this.questions[i].correct ? 'background:var(--success);color:#fff;' : 'background:var(--error);color:#fff;') :
-                               'background:#eee;color:#666;'}">${i + 1}</div>
-                    `).join('')}
+                    ${this.questions.map((_, i) => {
+                        const ans = this.answers[i];
+                        const isCorrect = ans !== null && this.isQuestionCorrect(i);
+                        const style = i === this.currentQuestion ? 'background:var(--azure-blue);color:#fff;' :
+                            ans !== null ? (isCorrect ? 'background:var(--success);color:#fff;' : 'background:var(--error);color:#fff;') :
+                            'background:#eee;color:#666;';
+                        return `<div onclick="QuizEngine.goToQuestion(${i})" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;${style}">${i + 1}</div>`;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -88,12 +98,41 @@ const QuizEngine = {
 
     selectOption(index) {
         if (this.isAnswered()) return;
-        this.answers[this.currentQuestion] = index;
+        const q = this.questions[this.currentQuestion];
+        const isMulti = q.type === 'multi-select' || Array.isArray(q.correct);
+        if (isMulti) {
+            const cur = Array.isArray(this.answers[this.currentQuestion]) ? this.answers[this.currentQuestion].slice() : [];
+            const pos = cur.indexOf(index);
+            if (pos >= 0) cur.splice(pos, 1); else cur.push(index);
+            cur.sort((a, b) => a - b);
+            this.answers[this.currentQuestion] = cur.length ? cur : null;
+        } else {
+            this.answers[this.currentQuestion] = index;
+        }
         this.render();
     },
 
+    isAnswerReady() {
+        const ans = this.answers[this.currentQuestion];
+        if (ans === null || ans === undefined) return false;
+        if (Array.isArray(ans)) return ans.length > 0;
+        return true;
+    },
+
+    isQuestionCorrect(i) {
+        const q = this.questions[i];
+        const ans = this.answers[i];
+        if (ans === null || ans === undefined) return false;
+        if (Array.isArray(q.correct)) {
+            const a = Array.isArray(ans) ? ans.slice().sort() : [];
+            const c = q.correct.slice().sort();
+            return a.length === c.length && a.every((v, idx) => v === c[idx]);
+        }
+        return ans === q.correct;
+    },
+
     submitAnswer() {
-        if (this.answers[this.currentQuestion] === null) return;
+        if (!this.isAnswerReady()) return;
         // Mark as submitted by storing in a submitted array
         if (!this.submitted) this.submitted = new Set();
         this.submitted.add(this.currentQuestion);
@@ -105,19 +144,26 @@ const QuizEngine = {
     },
 
     getOptionClass(index) {
-        if (!this.isAnswered()) {
-            return this.answers[this.currentQuestion] === index ? 'selected' : '';
-        }
         const q = this.questions[this.currentQuestion];
+        const ans = this.answers[this.currentQuestion];
+        const isMulti = q.type === 'multi-select' || Array.isArray(q.correct);
+        const selected = isMulti ? (Array.isArray(ans) && ans.includes(index)) : ans === index;
+        if (!this.isAnswered()) return selected ? 'selected' : '';
+        const correctSet = isMulti ? new Set(Array.isArray(q.correct) ? q.correct : []) : null;
+        if (isMulti) {
+            if (correctSet.has(index) && selected) return 'correct';
+            if (!correctSet.has(index) && selected) return 'incorrect';
+            if (correctSet.has(index) && !selected) return 'correct-answer';
+            return '';
+        }
         if (index === q.correct) return 'correct';
-        if (index === this.answers[this.currentQuestion] && index !== q.correct) return 'incorrect';
-        if (index === q.correct) return 'correct-answer';
+        if (index === ans && index !== q.correct) return 'incorrect';
         return '';
     },
 
     getExplanationHtml() {
         const q = this.questions[this.currentQuestion];
-        const isCorrect = this.answers[this.currentQuestion] === q.correct;
+        const isCorrect = this.isQuestionCorrect(this.currentQuestion);
         return `
             <strong style="color:${isCorrect ? 'var(--success)' : 'var(--error)'}">
                 ${isCorrect ? '✓ Correct!' : '✗ Incorrect'}
@@ -149,7 +195,7 @@ const QuizEngine = {
         const container = document.getElementById('tab-quiz');
         const total = this.questions.length;
         const correct = this.questions.reduce((count, q, i) => {
-            return count + (this.answers[i] === q.correct ? 1 : 0);
+            return count + (this.isQuestionCorrect(i) ? 1 : 0);
         }, 0);
         const pct = Math.round((correct / total) * 100);
         const passed = pct >= 70;
@@ -177,15 +223,17 @@ const QuizEngine = {
 
                 <div style="margin-top:32px;text-align:left">
                     <h3 style="margin-bottom:16px">Question Review:</h3>
-                    ${this.questions.map((q, i) => `
-                        <div style="padding:12px;margin-bottom:8px;border-radius:8px;
-                                    background:${this.answers[i] === q.correct ? '#e6f9e6' : '#fde7e9'}">
-                            <strong>${i + 1}. ${this.answers[i] === q.correct ? '✓' : '✗'}</strong> 
+                    ${this.questions.map((q, i) => {
+                        const ok = this.isQuestionCorrect(i);
+                        const correctLabel = Array.isArray(q.correct)
+                            ? q.correct.map(ci => q.options[ci]).join(' + ')
+                            : q.options[q.correct];
+                        return `<div style="padding:12px;margin-bottom:8px;border-radius:8px;background:${ok ? '#e6f9e6' : '#fde7e9'}">
+                            <strong>${i + 1}. ${ok ? '✓' : '✗'}</strong> 
                             ${this.escapeHtml(q.question).substring(0, 100)}...
-                            ${this.answers[i] !== q.correct ? 
-                                `<br><small style="color:var(--success)">Correct: ${this.escapeHtml(q.options[q.correct])}</small>` : ''}
-                        </div>
-                    `).join('')}
+                            ${!ok ? `<br><small style="color:var(--success)">Correct: ${this.escapeHtml(correctLabel)}</small>` : ''}
+                        </div>`;
+                    }).join('')}
                 </div>
             </div>
         `;

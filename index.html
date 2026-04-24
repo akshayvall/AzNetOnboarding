@@ -10,6 +10,8 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
 </head>
 <body>
+    <a href="#content" class="skip-link">Skip to main content</a>
+    <button id="mobileNavToggle" class="mobile-nav-toggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button>
     <div id="app">
         <!-- Sidebar Navigation -->
         <nav id="sidebar">
@@ -42,9 +44,10 @@
             </div>
 
             <div class="sidebar-footer">
-                <button id="resetProgress" class="btn-reset" title="Reset all progress">↺ Reset Progress</button>
-                <button id="exportProgress" class="btn-export" title="Export progress">⬇ Export</button>
-                <button id="importProgress" class="btn-import" title="Import progress">⬆ Import</button>
+                <button id="openSearch" class="btn-search" title="Search (Ctrl+K)" aria-label="Search modules and topics">🔍 Search (Ctrl+K)</button>
+                <button id="resetProgress" class="btn-reset" title="Reset all progress" aria-label="Reset all progress">↺ Reset Progress</button>
+                <button id="exportProgress" class="btn-export" title="Export progress" aria-label="Export progress">⬇ Export</button>
+                <button id="importProgress" class="btn-import" title="Import progress" aria-label="Import progress">⬆ Import</button>
                 <input type="file" id="importFile" accept=".json" style="display:none">
             </div>
         </nav>
@@ -80,7 +83,7 @@
                         <p>NSGs, DNS, load balancing, Azure Front Door basics, VPN, and network peering.</p>
                         <div class="level-card-progress">
                             <div class="progress-bar-container"><div class="progress-bar" id="l200Progress"></div></div>
-                            <span id="l200ProgressText">0/6 modules</span>
+                            <span id="l200ProgressText">0/9 modules</span>
                         </div>
                         <button class="btn-primary" onclick="app.startLevel(200)">Start Intermediate →</button>
                     </div>
@@ -93,7 +96,7 @@
                         <p>Front Door deep-dive, WAF, Rules Engine, hub-spoke architecture, AZ-104 practice.</p>
                         <div class="level-card-progress">
                             <div class="progress-bar-container"><div class="progress-bar" id="l300Progress"></div></div>
-                            <span id="l300ProgressText">0/5 modules</span>
+                            <span id="l300ProgressText">0/8 modules</span>
                         </div>
                         <button class="btn-primary" onclick="app.startLevel(300)">Start Advanced →</button>
                     </div>
@@ -165,13 +168,24 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Search Palette (Ctrl+K) -->
+    <div id="searchPalette" class="search-palette" role="dialog" aria-modal="true" aria-label="Search modules" hidden>
+        <div class="search-palette-backdrop" onclick="app.closeSearch()"></div>
+        <div class="search-palette-inner">
+            <input id="searchInput" type="search" autocomplete="off" placeholder="Search modules, topics, tags…" aria-label="Search">
+            <ul id="searchResults" class="search-results" role="listbox"></ul>
+            <div class="search-hint">↑↓ to navigate · Enter to open · Esc to close</div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="js/progress.js"></script>
     <script src="js/modules-100.js"></script>
     <script src="js/modules-200.js"></script>
     <script src="js/modules-300.js"></script>
+    <script src="js/modules-extras.js"></script>
     <script src="js/quiz-engine.js"></script>
     <script src="js/interactive.js"></script>
     <script src="js/lab-engine.js"></script>

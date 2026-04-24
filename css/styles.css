@@ -1844,3 +1844,70 @@ html, body {
     color: #6a9955;
     font-style: italic;
 }
+
+/* ═══════════════════════════════════════════════
+   PHASE 7 ADDITIONS — Accessibility, search, copy
+   ═══════════════════════════════════════════════ */
+
+/* Skip link */
+.skip-link{position:absolute;top:-40px;left:0;background:var(--azure-blue);color:#fff;padding:8px 14px;z-index:1000;border-radius:0 0 6px 0;text-decoration:none;font-size:13px;}
+.skip-link:focus{top:0;outline:2px solid #fff;outline-offset:2px;}
+
+/* Copy button on code blocks */
+.code-block,.lab-code-block{position:relative;}
+.copy-btn{position:absolute;top:6px;right:6px;background:rgba(255,255,255,0.92);color:#0078D4;border:1px solid #d0d7de;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:Segoe UI,sans-serif;transition:all 0.15s;}
+.copy-btn:hover{background:#0078D4;color:#fff;border-color:#0078D4;}
+.copy-btn:focus{outline:2px solid #0078D4;outline-offset:2px;}
+
+/* References list */
+.references-section{background:#f8fbfe;border-left:4px solid #0078D4;}
+.refs-list{list-style:none;padding:0;margin:8px 0 0;}
+.refs-list li{padding:8px 0;border-bottom:1px dashed #e0e8f0;}
+.refs-list li:last-child{border-bottom:none;}
+.refs-list a{color:#0078D4;font-weight:500;text-decoration:none;}
+.refs-list a:hover{text-decoration:underline;}
+.ref-domain{color:#888;font-size:11.5px;margin-left:6px;}
+
+/* Quiz type badges */
+.quiz-type-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-right:6px;vertical-align:middle;}
+.quiz-type-badge.scenario{background:#fff4e5;color:#c45500;border:1px solid #ffb86b;}
+.quiz-type-badge.multi{background:#e8f4fd;color:#0058a6;border:1px solid #6cb5ed;}
+.quiz-option input[type="checkbox"]{margin-right:10px;flex-shrink:0;width:16px;height:16px;accent-color:#0078D4;}
+
+/* Search palette (Ctrl+K) */
+.search-palette{position:fixed;inset:0;z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding-top:10vh;}
+.search-palette[hidden]{display:none;}
+.search-palette-backdrop{position:absolute;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(2px);}
+.search-palette-inner{position:relative;width:min(620px,92vw);background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;}
+#searchInput{width:100%;padding:18px 22px;font-size:15px;border:none;border-bottom:1px solid #e0e0e0;outline:none;font-family:Segoe UI,sans-serif;}
+.search-results{list-style:none;padding:6px 0;margin:0;max-height:50vh;overflow-y:auto;}
+.search-item{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 16px;cursor:pointer;}
+.search-item.active,.search-item:hover{background:#e8f4fd;}
+.search-icon{font-size:20px;text-align:center;}
+.search-title{font-weight:500;color:#111;}
+.search-sub{font-size:11.5px;color:#777;}
+.search-empty{padding:20px;text-align:center;color:#888;}
+.search-hint{padding:8px 16px;background:#f6f8fa;border-top:1px solid #e0e0e0;font-size:11px;color:#666;}
+.btn-search{background:#f0f4fa;border:1px solid #d0d7de;color:#0058a6;padding:6px 10px;border-radius:4px;font-size:12px;cursor:pointer;width:100%;margin-bottom:6px;font-family:Segoe UI,sans-serif;}
+.btn-search:hover{background:#e0ebf6;}
+
+/* Diagram polish */
+.diagram-svg .icon-box{transition:filter 0.15s,transform 0.15s;}
+.diagram-svg .step-highlight.active rect[class~="icon-box"],
+.diagram-svg .step-highlight.active .icon-box{filter:drop-shadow(0 0 8px rgba(0,120,212,0.6));}
+
+/* Mobile hamburger */
+.mobile-nav-toggle{display:none;position:fixed;top:10px;left:10px;z-index:1001;background:#fff;color:#0078D4;border:1px solid #d0d7de;font-size:22px;width:42px;height:42px;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+@media (max-width:768px){
+    .mobile-nav-toggle{display:block;}
+    #sidebar{position:fixed;top:0;left:-320px;height:100vh;transition:left 0.25s ease;z-index:999;box-shadow:3px 0 12px rgba(0,0,0,0.15);}
+    #sidebar.mobile-open{left:0;}
+    #content{margin-left:0 !important;padding:60px 14px 14px;}
+    .level-cards{grid-template-columns:1fr;}
+    .module-tabs{overflow-x:auto;flex-wrap:nowrap;}
+    .module-navigation{flex-wrap:wrap;gap:8px;}
+    .dashboard-hero h1{font-size:24px;}
+    .content-table{font-size:12px;}
+    .comparison-grid{grid-template-columns:1fr;}
+}
+

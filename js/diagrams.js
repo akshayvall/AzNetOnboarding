@@ -245,7 +245,7 @@ const DiagramEngine = {
         if (!canvas) return;
         canvas.dataset.step = '0';
         canvas.dataset.playing = 'false';
-        const builder = this.builders[diagram.type];
+        const builder = this.builders[diagram.type] || this.builders._generic;
         if (builder) canvas.innerHTML = builder.call(this, diagram);
     },
 
@@ -1005,6 +1005,51 @@ const DiagramEngine = {
                     <rect x="40" y="270" width="700" height="28" rx="4" fill="#0078D406" stroke="#0078D4" stroke-width="1"/>
                     <text x="390" y="289" text-anchor="middle" fill="#333" font-size="11" font-family="Segoe UI,sans-serif">ExpressRoute: Private circuit | 50 Mbps–100 Gbps | 99.95% SLA | NOT encrypted by default</text>
                 </g>
+            </svg>`;
+        },
+
+        // ─── GENERIC STEP FLOWCHART (fallback) ───
+        // Used when a diagram.type has no custom builder. Renders the
+        // steps array as a clean vertical flow of numbered cards which
+        // light up as the user steps through.
+        _generic(diagram) {
+            const steps = diagram.steps || [];
+            const n = steps.length || 1;
+            const cardH = 62;
+            const gap = 18;
+            const totalH = 70 + n * (cardH + gap) + 30;
+            const cards = steps.map((txt, i) => {
+                const y = 70 + i * (cardH + gap);
+                const step = i + 1;
+                const escaped = String(txt).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                // Wrap long text
+                const words = escaped.split(' ');
+                const lines = [];
+                let cur = '';
+                for (const w of words) {
+                    if ((cur + ' ' + w).length > 78) { lines.push(cur); cur = w; }
+                    else cur = cur ? cur + ' ' + w : w;
+                }
+                if (cur) lines.push(cur);
+                const textSvg = lines.slice(0, 2).map((ln, li) =>
+                    `<text x="90" y="${y + 28 + li * 16}" fill="#24292f" font-size="12.5" font-family="Segoe UI,sans-serif">${ln}</text>`
+                ).join('');
+                return `<g data-step="${step}" class="step-highlight">
+                    <rect x="30" y="${y}" width="720" height="${cardH}" rx="10" fill="#fff" stroke="#d0d7de" stroke-width="1.2" filter="url(#genshadow)"/>
+                    <circle cx="60" cy="${y + cardH/2}" r="18" fill="#0078D4"/>
+                    <text x="60" y="${y + cardH/2 + 5}" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Segoe UI,sans-serif">${step}</text>
+                    ${textSvg}
+                </g>`;
+            }).join('');
+            const title = String(diagram.icon || '•') + ' ' + (diagram.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+            return `<svg viewBox="0 0 780 ${totalH}" class="diagram-svg">
+                <defs>
+                    <filter id="genshadow" x="-2%" y="-2%" width="104%" height="110%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000" flood-opacity="0.08"/>
+                    </filter>
+                </defs>
+                <text x="390" y="32" text-anchor="middle" fill="#24292f" font-size="15" font-weight="600" font-family="Segoe UI,sans-serif">${title}</text>
+                ${cards}
             </svg>`;
         },
     },

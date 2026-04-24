@@ -27,7 +27,7 @@ No prior Azure or networking experience required.
 
 ## 🗺️ Curriculum
 
-The content is organized into three levels (15 modules total).
+The content is organized into three levels (21 modules total).
 
 ### ⬡ Level 100 — Foundations (4 modules)
 Start here if terms like *subnet*, *DNS*, or *TCP handshake* are new to you.
@@ -39,7 +39,7 @@ Start here if terms like *subnet*, *DNS*, or *TCP handshake* are new to you.
 | 3 | Azure Virtual Networks (VNets) | Creating and configuring VNets and subnets |
 | 4 | IP Addressing in Azure | Public/private IPs, static vs dynamic, NAT |
 
-### ⬡ Level 200 — Intermediate (6 modules)
+### ⬡ Level 200 — Intermediate (9 modules)
 Core Azure networking services — where AZ-104 really lives.
 
 | # | Module | Covers |
@@ -50,9 +50,12 @@ Core Azure networking services — where AZ-104 really lives.
 | 4 | **Azure Front Door Fundamentals** | Architecture, origins, routing, caching basics |
 | 5 | VPN Gateway & ExpressRoute | Site-to-Site, Point-to-Site, ExpressRoute fundamentals |
 | 6 | VNet Peering & Service Endpoints | Connecting VNets and securing Azure service access |
+| 7 | **Azure Bastion** | Secure RDP/SSH without public IPs, SKU tiers, shareable links |
+| 8 | **NAT Gateway** | Deterministic outbound SNAT, port exhaustion fixes |
+| 9 | **Route Tables & UDRs** | Custom routes, NVA forwarding, BGP route propagation |
 
-### ⬡ Level 300 — Advanced (5 modules)
-Deep-dive on Front Door and AZ-104 exam-style scenarios.
+### ⬡ Level 300 — Advanced (8 modules)
+Deep-dive on Front Door, security, and AZ-104 exam-style scenarios.
 
 | # | Module | Covers |
 |---|---|---|
@@ -61,6 +64,9 @@ Deep-dive on Front Door and AZ-104 exam-style scenarios.
 | 3 | **Front Door WAF & Security** | WAF policies, managed rules, bot protection, DDoS |
 | 4 | Advanced Network Architecture | Hub-spoke, Azure Firewall, Network Virtual Appliances |
 | 5 | AZ-104 Networking Scenarios | Exam-style questions and real-world scenarios |
+| 6 | **Azure Firewall** | Application/network/NAT rules, Firewall Policy, threat intel |
+| 7 | **Network Watcher** | Connection Monitor, NSG flow logs, IP flow verify, packet capture |
+| 8 | **Capstone: Hub-Spoke** | End-to-end design: Firewall + Bastion + VPN + peering + UDRs |
 
 ---
 
@@ -141,8 +147,9 @@ js/
   diagrams.js           # Animated SVG/Canvas diagrams
   interactive.js        # Subnet calc, flashcards, drag-drop
   modules-100.js        # L100 content (4 modules)
-  modules-200.js        # L200 content (6 modules)
-  modules-300.js        # L300 content (5 modules)
+  modules-200.js        # L200 content (6 core modules)
+  modules-300.js        # L300 content (5 core modules)
+  modules-extras.js     # +3 L200 + +3 L300 deep-dive modules
 .github/workflows/
   pages.yml             # GitHub Pages auto-deploy
 ```

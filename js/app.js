@@ -2,8 +2,17 @@
    MAIN APP CONTROLLER
    ============================================ */
 
-// Combine all modules into single array
-const MODULES = [...MODULES_100, ...MODULES_200, ...MODULES_300];
+// Combine all modules into single array.
+// Insert MODULES_EXTRAS items into the correct level groups so the order is:
+//   L100 (built-in), L200 (built-in + extras), L300 (built-in + extras)
+const _EXTRAS = (typeof MODULES_EXTRAS !== 'undefined') ? MODULES_EXTRAS : [];
+const MODULES = [
+    ...MODULES_100,
+    ...MODULES_200,
+    ..._EXTRAS.filter(m => m.level === 200),
+    ...MODULES_300,
+    ..._EXTRAS.filter(m => m.level === 300),
+];
 
 const app = {
     currentModule: null,
@@ -79,6 +88,98 @@ const app = {
             }
             e.target.value = '';
         });
+
+        // Search palette (Ctrl+K / Cmd+K)
+        const openSearchBtn = document.getElementById('openSearch');
+        if (openSearchBtn) openSearchBtn.addEventListener('click', () => this.openSearch());
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                this.openSearch();
+            } else if (e.key === 'Escape') {
+                this.closeSearch();
+            }
+        });
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => this.renderSearchResults(searchInput.value));
+            searchInput.addEventListener('keydown', (e) => this.handleSearchKey(e));
+        }
+
+        // Mobile nav toggle
+        const toggle = document.getElementById('mobileNavToggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                const sb = document.getElementById('sidebar');
+                const open = sb.classList.toggle('mobile-open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
+    },
+
+    openSearch() {
+        const p = document.getElementById('searchPalette');
+        if (!p) return;
+        p.hidden = false;
+        const inp = document.getElementById('searchInput');
+        inp.value = '';
+        this.renderSearchResults('');
+        setTimeout(() => inp.focus(), 10);
+    },
+
+    closeSearch() {
+        const p = document.getElementById('searchPalette');
+        if (p) p.hidden = true;
+    },
+
+    renderSearchResults(q) {
+        const ul = document.getElementById('searchResults');
+        if (!ul) return;
+        const query = (q || '').trim().toLowerCase();
+        let items = MODULES;
+        if (query) {
+            items = MODULES.filter(m =>
+                m.title.toLowerCase().includes(query) ||
+                (m.subtitle || '').toLowerCase().includes(query) ||
+                (m.id || '').toLowerCase().includes(query)
+            );
+        }
+        items = items.slice(0, 15);
+        if (!items.length) { ul.innerHTML = '<li class="search-empty">No matches</li>'; return; }
+        ul.innerHTML = items.map((m, i) =>
+            `<li class="search-item ${i === 0 ? 'active' : ''}" data-id="${m.id}" onclick="app.pickSearch('${m.id}')">
+                <span class="search-icon">${m.icon}</span>
+                <span class="search-title">${this.escapeHtml(m.title)}</span>
+                <span class="search-sub">L${m.level} · ${this.escapeHtml(m.subtitle || '')}</span>
+            </li>`
+        ).join('');
+    },
+
+    handleSearchKey(e) {
+        const ul = document.getElementById('searchResults');
+        if (!ul) return;
+        const items = Array.from(ul.querySelectorAll('.search-item'));
+        const activeIdx = items.findIndex(el => el.classList.contains('active'));
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (activeIdx >= 0) items[activeIdx].classList.remove('active');
+            const nxt = items[Math.min(activeIdx + 1, items.length - 1)] || items[0];
+            if (nxt) nxt.classList.add('active');
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeIdx >= 0) items[activeIdx].classList.remove('active');
+            const prv = items[Math.max(activeIdx - 1, 0)] || items[0];
+            if (prv) prv.classList.add('active');
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const pick = items[Math.max(0, activeIdx)];
+            if (pick) this.pickSearch(pick.dataset.id);
+        }
+    },
+
+    pickSearch(id) {
+        this.closeSearch();
+        this.loadModule(id);
     },
 
     // ─── VIEWS ──────────────────────────────────
@@ -117,8 +218,24 @@ const app = {
         document.getElementById('moduleSectionProgress').textContent = 
             `Module ${modIndex + 1} of ${MODULES.length}${mod.estimatedTime ? '  ·  ⏱ ~' + mod.estimatedTime : ''}`;
 
-        // Load content
-        document.getElementById('tab-learn').innerHTML = mod.learn || '<p>Content coming soon.</p>';
+        // Load content (learn + optional references block + cheat-sheet button)
+        let learnHtml = mod.learn || '<p>Content coming soon.</p>';
+        if (Array.isArray(mod.references) && mod.references.length) {
+            learnHtml += `
+                <div class="learn-section references-section">
+                    <h2>📚 References &amp; Further Reading</h2>
+                    <p style="color:var(--text-secondary);font-size:13px">Official Microsoft Learn and Azure documentation relevant to this module.</p>
+                    <ul class="refs-list">
+                        ${mod.references.map(r => `<li><a href="${this.escapeAttr(r.url)}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(r.title)}</a> <span class="ref-domain">${this.refDomain(r.url)}</span></li>`).join('')}
+                    </ul>
+                </div>`;
+        }
+        learnHtml += `
+            <div class="learn-section" style="text-align:right;background:transparent;border:0;padding:0">
+                <button class="btn-secondary" onclick="app.printCheatSheet()" title="Print or save a one-page cheat-sheet">🖨️ Cheat-sheet (PDF)</button>
+            </div>`;
+        document.getElementById('tab-learn').innerHTML = learnHtml;
+        this.initCopyButtons();
 
         // Initialize diagrams
         if (mod.diagrams) {
@@ -344,6 +461,72 @@ const app = {
         });
 
         grid.innerHTML = html;
+    },
+
+    // ─── UTILITIES ──────────────────────────────
+    escapeHtml(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; },
+    escapeAttr(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
+    refDomain(url) {
+        try { const u = new URL(url); return `(${u.hostname.replace(/^www\./, '')})`; } catch (e) { return ''; }
+    },
+
+    // Add a "Copy" button to every .lab-code-block and .code-block on the page.
+    initCopyButtons() {
+        document.querySelectorAll('.code-block, .lab-code-block').forEach(block => {
+            if (block.dataset.copyInit) return;
+            block.dataset.copyInit = '1';
+            block.style.position = block.style.position || 'relative';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copy';
+            btn.setAttribute('aria-label', 'Copy code to clipboard');
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const text = block.innerText.replace(/^Copy\s*/, '');
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        btn.textContent = 'Copied!';
+                        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+                    });
+                }
+            });
+            block.appendChild(btn);
+        });
+    },
+
+    // Simple browser-native print-to-PDF cheat-sheet of the current module's Learn tab.
+    printCheatSheet() {
+        if (!this.currentModule) return;
+        const mod = this.currentModule;
+        const content = document.getElementById('tab-learn').innerHTML;
+        const win = window.open('', '_blank', 'width=900,height=1000');
+        if (!win) { this.showToast('Pop-up blocked — allow pop-ups to print', 'warning'); return; }
+        win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${this.escapeHtml(mod.title)} — Cheat Sheet</title>
+            <style>
+                body{font-family:Segoe UI,Arial,sans-serif;max-width:800px;margin:24px auto;padding:0 24px;color:#222;line-height:1.5}
+                h1,h2,h3,h4{color:#0078D4;margin-top:18px}
+                h1{border-bottom:2px solid #0078D4;padding-bottom:6px}
+                table{border-collapse:collapse;width:100%;margin:10px 0;font-size:12.5px}
+                th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}
+                th{background:#f3f8fd}
+                .code-block,.lab-code-block{background:#f5f5f5;border:1px solid #ddd;padding:10px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:11.5px;border-radius:4px;page-break-inside:avoid}
+                .code-inline{background:#f0f0f0;padding:1px 4px;border-radius:3px;font-family:Consolas,monospace;font-size:12px}
+                .concept-box,.warning-box,.tip-box{border-left:4px solid #0078D4;padding:8px 12px;margin:12px 0;background:#f8fbfe;page-break-inside:avoid}
+                .warning-box{border-color:#d13438;background:#fdf5f5}
+                .tip-box{border-color:#107c10;background:#f5fcf5}
+                .copy-btn{display:none}
+                .references-section{page-break-before:always}
+                footer{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;color:#888;font-size:11px}
+                @media print { a{color:#0078D4} .copy-btn{display:none} }
+            </style></head><body>
+            <h1>${this.escapeHtml(mod.title)}</h1>
+            <p style="color:#666;font-size:12px">Azure Networking Academy — Level ${mod.level} · ~${this.escapeHtml(mod.estimatedTime || '')}</p>
+            ${content}
+            <footer>Generated ${new Date().toLocaleString()} &mdash; Azure Networking Academy</footer>
+            <script>setTimeout(()=>window.print(), 400);<\/script>
+            </body></html>`);
+        win.document.close();
     },
 
     // ─── TOAST ──────────────────────────────────
