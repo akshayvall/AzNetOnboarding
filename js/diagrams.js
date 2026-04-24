@@ -1008,6 +1008,384 @@ const DiagramEngine = {
             </svg>`;
         },
 
+        // ─── AZURE BASTION CONNECTION FLOW ───────
+        'bastion'(diagram) {
+            const A = DiagramEngine.arrowDefs(['#0078D4', '#7A3B93', '#d13438', '#107C10']);
+            const I = DiagramEngine.icons;
+            return `<svg viewBox="0 0 820 440" class="diagram-svg">
+                <defs>${A}</defs>
+                <text x="410" y="22" text-anchor="middle" fill="#333" font-size="14" font-weight="600" font-family="Segoe UI,sans-serif">Admin → Azure Portal → Bastion → VM (private IP only)</text>
+                ${I.user(70, 190, 'Admin Browser')}
+                <!-- Azure region box -->
+                ${I.subnet(200, 50, 560, 330, 'Azure VNet: prod-vnet  10.0.0.0/16', '#0078D4')}
+                <!-- AzureBastionSubnet -->
+                ${I.subnet(240, 100, 230, 240, 'AzureBastionSubnet  10.0.1.0/26', '#7A3B93')}
+                <g data-step="2" class="step-highlight">
+                    ${I.gateway(355, 200, 'Azure Bastion')}
+                </g>
+                <!-- Workload subnet -->
+                ${I.subnet(500, 100, 230, 240, 'snet-workload  10.0.2.0/24', '#107C10')}
+                <g data-step="3" class="step-highlight">
+                    ${I.vm(615, 200, 'Target VM')}
+                    <text x="615" y="260" text-anchor="middle" fill="#107C10" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">🔒 No Public IP</text>
+                    <text x="615" y="274" text-anchor="middle" fill="#107C10" font-size="10" font-family="Segoe UI,sans-serif">Private: 10.0.2.10</text>
+                </g>
+                <!-- Internet (blocked attackers) -->
+                <g data-step="5" class="step-highlight">
+                    ${I.internet(615, 385, 'Internet')}
+                    <line x1="615" y1="345" x2="615" y2="242" stroke="#d13438" stroke-width="2" stroke-dasharray="6" class="anim-line"/>
+                    <circle cx="615" cy="295" r="14" fill="#fff" stroke="#d13438" stroke-width="2"/>
+                    <path d="M608,288 L622,302 M622,288 L608,302" stroke="#d13438" stroke-width="2.5"/>
+                    <text x="685" y="295" fill="#d13438" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">Attacker blocked</text>
+                    <text x="685" y="308" fill="#d13438" font-size="10" font-family="Segoe UI,sans-serif">(no PIP on VM)</text>
+                </g>
+                <!-- Step arrows -->
+                <g data-step="1" class="step-highlight flow-arrow">
+                    <line x1="105" y1="190" x2="320" y2="195" stroke="#0078D4" stroke-width="2" marker-end="url(#ah-0078D4)" class="anim-line"/>
+                    <rect x="140" y="155" width="140" height="26" rx="4" fill="#0078D415" stroke="#0078D4" stroke-width="1"/>
+                    <text x="210" y="172" text-anchor="middle" fill="#0078D4" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">HTTPS (443)</text>
+                </g>
+                <g data-step="3" class="step-highlight flow-arrow">
+                    <line x1="395" y1="200" x2="580" y2="200" stroke="#7A3B93" stroke-width="2" marker-end="url(#ah-7A3B93)" class="anim-line"/>
+                    <rect x="420" y="160" width="140" height="26" rx="4" fill="#7A3B9315" stroke="#7A3B93" stroke-width="1"/>
+                    <text x="490" y="177" text-anchor="middle" fill="#7A3B93" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">RDP/SSH inside VNet</text>
+                </g>
+                <g data-step="4" class="step-highlight flow-arrow">
+                    <path d="M580,225 Q400,290 105,215" stroke="#107C10" stroke-width="2" fill="none" stroke-dasharray="6" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <text x="390" y="305" text-anchor="middle" fill="#107C10" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">✓ TLS HTML5 stream back to browser</text>
+                </g>
+            </svg>`;
+        },
+
+        // ─── NAT GATEWAY ─────────────────────────
+        'natgw'(diagram) {
+            const A = DiagramEngine.arrowDefs(['#107C10', '#0078D4', '#d13438']);
+            const I = DiagramEngine.icons;
+            return `<svg viewBox="0 0 820 460" class="diagram-svg">
+                <defs>${A}</defs>
+                <text x="410" y="22" text-anchor="middle" fill="#333" font-size="14" font-weight="600" font-family="Segoe UI,sans-serif">Dedicated outbound SNAT — no port exhaustion</text>
+                <!-- Subnet with 3 VMs -->
+                <g data-step="1" class="step-highlight">
+                    ${I.subnet(30, 60, 290, 340, 'snet-web  10.0.1.0/24', '#0078D4')}
+                    ${I.vm(120, 130, 'vm-web-01')}
+                    ${I.vm(120, 230, 'vm-web-02')}
+                    ${I.vm(120, 330, 'vm-web-03')}
+                </g>
+                <!-- NAT Gateway -->
+                <g data-step="2" class="step-highlight">
+                    <rect x="370" y="180" width="150" height="120" rx="8" fill="#fff" stroke="#107C10" stroke-width="2"/>
+                    <rect x="395" y="205" width="100" height="50" rx="4" fill="#107C10"/>
+                    <text x="445" y="228" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif">NAT</text>
+                    <text x="445" y="244" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif">GATEWAY</text>
+                    <text x="445" y="280" text-anchor="middle" fill="#107C10" font-size="10" font-family="Segoe UI,sans-serif">~64K ports / PIP</text>
+                    <text x="445" y="293" text-anchor="middle" fill="#107C10" font-size="10" font-family="Segoe UI,sans-serif">up to 16 PIPs</text>
+                </g>
+                <!-- Public IP pool -->
+                <g data-step="3" class="step-highlight">
+                    <rect x="560" y="200" width="80" height="80" rx="6" fill="#fff" stroke="#FF8C00" stroke-width="1.5"/>
+                    <text x="600" y="220" text-anchor="middle" fill="#FF8C00" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">PIP Pool</text>
+                    <rect x="570" y="228" width="60" height="14" rx="2" fill="#FF8C0020" stroke="#FF8C00"/>
+                    <text x="600" y="238" text-anchor="middle" fill="#FF8C00" font-size="9" font-family="Segoe UI,sans-serif">20.1.1.10</text>
+                    <rect x="570" y="246" width="60" height="14" rx="2" fill="#FF8C0020" stroke="#FF8C00"/>
+                    <text x="600" y="256" text-anchor="middle" fill="#FF8C00" font-size="9" font-family="Segoe UI,sans-serif">20.1.1.11</text>
+                    <rect x="570" y="264" width="60" height="14" rx="2" fill="#FF8C0020" stroke="#FF8C00"/>
+                    <text x="600" y="274" text-anchor="middle" fill="#FF8C00" font-size="9" font-family="Segoe UI,sans-serif">20.1.1.12</text>
+                </g>
+                <!-- Internet -->
+                ${I.internet(735, 240, 'Internet')}
+                <!-- Outbound flow -->
+                <g data-step="3" class="step-highlight flow-arrow">
+                    <line x1="200" y1="130" x2="385" y2="205" stroke="#107C10" stroke-width="2" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <line x1="200" y1="230" x2="385" y2="240" stroke="#107C10" stroke-width="2" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <line x1="200" y1="330" x2="385" y2="275" stroke="#107C10" stroke-width="2" marker-end="url(#ah-107C10)" class="anim-line"/>
+                </g>
+                <g data-step="3" class="step-highlight flow-arrow">
+                    <line x1="525" y1="240" x2="555" y2="240" stroke="#107C10" stroke-width="2" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <line x1="645" y1="240" x2="695" y2="240" stroke="#107C10" stroke-width="2" marker-end="url(#ah-107C10)" class="anim-line"/>
+                </g>
+                <!-- Response path -->
+                <g data-step="4" class="step-highlight flow-arrow">
+                    <path d="M735,275 Q500,410 120,270" stroke="#0078D4" stroke-width="1.8" fill="none" stroke-dasharray="5" marker-end="url(#ah-0078D4)" class="anim-line"/>
+                    <text x="420" y="430" text-anchor="middle" fill="#0078D4" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">Response returns via connection-tracking state</text>
+                </g>
+                <!-- Inbound blocked -->
+                <g data-step="5" class="step-highlight">
+                    <path d="M735,220 L525,180" stroke="#d13438" stroke-width="2" stroke-dasharray="4" fill="none" class="anim-line"/>
+                    <circle cx="630" cy="200" r="14" fill="#fff" stroke="#d13438" stroke-width="2"/>
+                    <path d="M623,193 L637,207 M637,193 L623,207" stroke="#d13438" stroke-width="2.5"/>
+                    <text x="630" y="175" text-anchor="middle" fill="#d13438" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">No inbound — outbound-only</text>
+                </g>
+            </svg>`;
+        },
+
+        // ─── USER-DEFINED ROUTE (force-tunnel) ────
+        'udr'(diagram) {
+            const A = DiagramEngine.arrowDefs(['#888', '#E8443A', '#107C10']);
+            const I = DiagramEngine.icons;
+            return `<svg viewBox="0 0 820 460" class="diagram-svg">
+                <defs>${A}</defs>
+                <text x="410" y="22" text-anchor="middle" fill="#333" font-size="14" font-weight="600" font-family="Segoe UI,sans-serif">0.0.0.0/0 → Virtual Appliance → Firewall (force-tunnel)</text>
+                <!-- Spoke VNet -->
+                <g data-step="1" class="step-highlight">
+                    ${I.subnet(30, 60, 230, 140, 'Spoke VNet  10.1.0.0/16', '#0078D4')}
+                    ${I.vm(145, 130, 'vm-app-01')}
+                </g>
+                <!-- Hub VNet with Firewall -->
+                ${I.subnet(340, 60, 230, 140, 'Hub VNet  10.100.0.0/16', '#7A3B93')}
+                <g data-step="3" class="step-highlight">
+                    ${I.firewall(455, 130, 'Azure Firewall')}
+                    <text x="455" y="182" text-anchor="middle" fill="#7A3B93" font-size="10" font-family="Segoe UI,sans-serif">10.100.1.4</text>
+                </g>
+                <!-- Internet -->
+                ${I.internet(720, 130, 'Internet')}
+                <!-- Without UDR - default system route -->
+                <g data-step="2" class="step-highlight">
+                    <rect x="30" y="240" width="760" height="90" rx="8" fill="#f3f3f3" stroke="#888" stroke-width="1.5" stroke-dasharray="4"/>
+                    <text x="50" y="262" fill="#666" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">❌ Without UDR — default system route</text>
+                    ${I.vm(120, 295, '')}
+                    ${I.internet(720, 295, '')}
+                    <line x1="160" y1="295" x2="680" y2="295" stroke="#888" stroke-width="2" marker-end="url(#ah-888)" class="anim-line"/>
+                    <text x="420" y="286" text-anchor="middle" fill="#666" font-size="11" font-family="Segoe UI,sans-serif">Direct to Internet — NO inspection, NO logging</text>
+                </g>
+                <!-- With UDR: spoke -> firewall -> internet -->
+                <g data-step="3" class="step-highlight flow-arrow">
+                    <line x1="265" y1="130" x2="415" y2="130" stroke="#E8443A" stroke-width="2.5" marker-end="url(#ah-E8443A)" class="anim-line"/>
+                    <rect x="280" y="90" width="120" height="24" rx="4" fill="#E8443A15" stroke="#E8443A" stroke-width="1"/>
+                    <text x="340" y="106" text-anchor="middle" fill="#E8443A" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">UDR: next-hop=NVA</text>
+                </g>
+                <g data-step="4" class="step-highlight">
+                    <rect x="370" y="205" width="170" height="28" rx="4" fill="#E8443A12" stroke="#E8443A" stroke-width="1.5"/>
+                    <text x="455" y="223" text-anchor="middle" fill="#E8443A" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">🔎 Inspect · Log · Allow/Deny</text>
+                </g>
+                <g data-step="5" class="step-highlight flow-arrow">
+                    <line x1="495" y1="130" x2="680" y2="130" stroke="#107C10" stroke-width="2.5" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <rect x="530" y="90" width="120" height="24" rx="4" fill="#107C1015" stroke="#107C10" stroke-width="1"/>
+                    <text x="590" y="106" text-anchor="middle" fill="#107C10" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">✓ SNAT → Internet</text>
+                </g>
+                <!-- UDR table -->
+                <g data-step="3" class="step-highlight">
+                    <rect x="30" y="360" width="760" height="80" rx="8" fill="#fffbe6" stroke="#FF8C00" stroke-width="1.5"/>
+                    <text x="50" y="382" fill="#B35900" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif">Route Table: rt-spoke (associated with Spoke subnet)</text>
+                    <text x="50" y="404" fill="#333" font-size="11" font-family="Consolas,monospace">Name: internet-via-fw  |  Prefix: 0.0.0.0/0  |  Next hop: Virtual appliance  |  IP: 10.100.1.4</text>
+                    <text x="50" y="424" fill="#666" font-size="10" font-family="Consolas,monospace">(Longest-prefix wins → this UDR overrides the system default 0.0.0.0/0 → Internet)</text>
+                </g>
+            </svg>`;
+        },
+
+        // ─── AZURE FIREWALL HUB-SPOKE ────────────
+        'firewall'(diagram) {
+            const A = DiagramEngine.arrowDefs(['#E8443A', '#107C10', '#d13438', '#FF8C00']);
+            const I = DiagramEngine.icons;
+            return `<svg viewBox="0 0 820 520" class="diagram-svg">
+                <defs>${A}</defs>
+                <text x="410" y="22" text-anchor="middle" fill="#333" font-size="14" font-weight="600" font-family="Segoe UI,sans-serif">Azure Firewall — central inspection for N-S and E-W traffic</text>
+                <!-- Spoke A (Web) -->
+                <g data-step="1" class="step-highlight">
+                    ${I.subnet(20, 60, 230, 140, 'Spoke A: snet-web  10.1.1.0/24', '#0078D4')}
+                    ${I.vm(135, 130, 'vm-web-01')}
+                </g>
+                <!-- Spoke B (App) -->
+                ${I.subnet(570, 60, 230, 140, 'Spoke B: snet-app  10.2.1.0/24', '#7A3B93')}
+                <g data-step="6" class="step-highlight">
+                    ${I.vm(685, 130, 'vm-app-01')}
+                </g>
+                <!-- Hub with Firewall -->
+                ${I.subnet(270, 220, 280, 180, 'Hub VNet  10.100.0.0/16 (AzureFirewallSubnet)', '#E8443A')}
+                <g data-step="3" class="step-highlight">
+                    ${I.firewall(410, 310, 'Azure Firewall')}
+                    <text x="410" y="362" text-anchor="middle" fill="#E8443A" font-size="10" font-family="Segoe UI,sans-serif">10.100.1.4</text>
+                </g>
+                <!-- Internet -->
+                ${I.internet(720, 310, 'Internet')}
+                <!-- VNet peering lines -->
+                ${DiagramEngine.arrow(135, 175, 380, 290, { color: '#888', dashed: true, pad: 40 })}
+                ${DiagramEngine.arrow(685, 175, 470, 290, { color: '#888', dashed: true, pad: 40 })}
+                <text x="230" y="245" fill="#888" font-size="9" font-family="Segoe UI,sans-serif" transform="rotate(25,230,245)">VNet peering</text>
+                <text x="590" y="245" fill="#888" font-size="9" font-family="Segoe UI,sans-serif" transform="rotate(-25,590,245)">VNet peering</text>
+                <!-- Step 2: UDR forces traffic through FW -->
+                <g data-step="2" class="step-highlight flow-arrow">
+                    <path d="M135,165 Q250,260 370,300" stroke="#E8443A" stroke-width="2.5" fill="none" marker-end="url(#ah-E8443A)" class="anim-line"/>
+                    <rect x="35" y="210" width="170" height="24" rx="4" fill="#E8443A15" stroke="#E8443A" stroke-width="1"/>
+                    <text x="120" y="226" text-anchor="middle" fill="#E8443A" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">UDR → 10.100.1.4</text>
+                </g>
+                <!-- Step 3: Firewall rule eval -->
+                <g data-step="3" class="step-highlight">
+                    <rect x="20" y="430" width="380" height="76" rx="8" fill="#fff5f5" stroke="#E8443A" stroke-width="1.5"/>
+                    <text x="35" y="452" fill="#E8443A" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif">Firewall Policy · rule evaluation</text>
+                    <text x="35" y="470" fill="#333" font-size="10" font-family="Consolas,monospace">1. DNAT rules  →  2. Network rules  →  3. Application rules</text>
+                    <text x="35" y="487" fill="#107C10" font-size="10" font-family="Consolas,monospace">app-rule: allow *.microsoft.com, *.contoso.com</text>
+                    <text x="35" y="501" fill="#d13438" font-size="10" font-family="Consolas,monospace">implicit deny-all at the end</text>
+                </g>
+                <!-- Step 4: SNAT to internet -->
+                <g data-step="4" class="step-highlight flow-arrow">
+                    <line x1="450" y1="310" x2="690" y2="310" stroke="#107C10" stroke-width="2.5" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <rect x="500" y="272" width="140" height="24" rx="4" fill="#107C1015" stroke="#107C10" stroke-width="1"/>
+                    <text x="570" y="288" text-anchor="middle" fill="#107C10" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">✓ SNAT → PIP</text>
+                </g>
+                <!-- Step 5: response -->
+                <g data-step="5" class="step-highlight flow-arrow">
+                    <path d="M700,325 Q430,420 150,170" stroke="#0078D4" stroke-width="1.5" fill="none" stroke-dasharray="5" marker-end="url(#ah-0078D4)" class="anim-line"/>
+                </g>
+                <!-- Step 6: East-west spoke-to-spoke -->
+                <g data-step="6" class="step-highlight flow-arrow">
+                    <path d="M175,130 Q410,45 645,130" stroke="#FF8C00" stroke-width="2.5" fill="none" marker-end="url(#ah-FF8C00)" class="anim-line"/>
+                    <rect x="330" y="35" width="160" height="22" rx="4" fill="#FF8C0015" stroke="#FF8C00" stroke-width="1"/>
+                    <text x="410" y="50" text-anchor="middle" fill="#B35900" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">E-W via Firewall too</text>
+                </g>
+                <!-- Rule categories legend -->
+                <g data-step="3" class="step-highlight">
+                    <rect x="420" y="430" width="380" height="76" rx="8" fill="#f8fbfe" stroke="#0078D4" stroke-width="1.5"/>
+                    <text x="435" y="452" fill="#0078D4" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif">Firewall tiers (Policy SKU)</text>
+                    <text x="435" y="470" fill="#333" font-size="10" font-family="Segoe UI,sans-serif">· Standard — Threat intel, L3/4/7 rules, FQDN filtering</text>
+                    <text x="435" y="487" fill="#333" font-size="10" font-family="Segoe UI,sans-serif">· Premium — IDPS, TLS inspection, URL filtering, web categories</text>
+                    <text x="435" y="501" fill="#666" font-size="10" font-family="Segoe UI,sans-serif">· Basic — SMB-only / dev-test</text>
+                </g>
+            </svg>`;
+        },
+
+        // ─── NETWORK WATCHER IP FLOW VERIFY ──────
+        'nwatcher'(diagram) {
+            const A = DiagramEngine.arrowDefs(['#0078D4', '#d13438', '#107C10']);
+            const I = DiagramEngine.icons;
+            return `<svg viewBox="0 0 820 480" class="diagram-svg">
+                <defs>${A}</defs>
+                <text x="410" y="22" text-anchor="middle" fill="#333" font-size="14" font-weight="600" font-family="Segoe UI,sans-serif">IP Flow Verify — "which NSG rule will match this packet?"</text>
+                <!-- Reporter -->
+                <g data-step="1" class="step-highlight">
+                    ${I.user(75, 100, 'User reports')}
+                    <rect x="20" y="155" width="120" height="40" rx="6" fill="#fffbe6" stroke="#FF8C00" stroke-width="1.5"/>
+                    <text x="80" y="172" text-anchor="middle" fill="#B35900" font-size="10" font-family="Segoe UI,sans-serif">"VM-A can't reach</text>
+                    <text x="80" y="186" text-anchor="middle" fill="#B35900" font-size="10" font-family="Segoe UI,sans-serif">8.8.8.8:443"</text>
+                </g>
+                <!-- Network Watcher tool panel -->
+                <g data-step="2" class="step-highlight">
+                    <rect x="220" y="60" width="360" height="240" rx="10" fill="#fff" stroke="#0078D4" stroke-width="2"/>
+                    <rect x="220" y="60" width="360" height="32" rx="10" fill="#0078D4"/>
+                    <text x="400" y="82" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Segoe UI,sans-serif">🛰 Network Watcher · IP flow verify</text>
+                </g>
+                <g data-step="3" class="step-highlight">
+                    <text x="240" y="115" fill="#666" font-size="10" font-family="Segoe UI,sans-serif">VM</text>
+                    <rect x="280" y="103" width="280" height="20" rx="3" fill="#f6f8fa" stroke="#d0d7de"/>
+                    <text x="290" y="117" fill="#333" font-size="10" font-family="Consolas,monospace">vm-a (nic: vm-a-nic)</text>
+                    <text x="240" y="145" fill="#666" font-size="10" font-family="Segoe UI,sans-serif">Direction</text>
+                    <rect x="280" y="133" width="280" height="20" rx="3" fill="#f6f8fa" stroke="#d0d7de"/>
+                    <text x="290" y="147" fill="#333" font-size="10" font-family="Consolas,monospace">Outbound</text>
+                    <text x="240" y="175" fill="#666" font-size="10" font-family="Segoe UI,sans-serif">Protocol</text>
+                    <rect x="280" y="163" width="280" height="20" rx="3" fill="#f6f8fa" stroke="#d0d7de"/>
+                    <text x="290" y="177" fill="#333" font-size="10" font-family="Consolas,monospace">TCP</text>
+                    <text x="240" y="205" fill="#666" font-size="10" font-family="Segoe UI,sans-serif">Local IP:Port</text>
+                    <rect x="280" y="193" width="280" height="20" rx="3" fill="#f6f8fa" stroke="#d0d7de"/>
+                    <text x="290" y="207" fill="#333" font-size="10" font-family="Consolas,monospace">10.1.0.4 : 1024</text>
+                    <text x="240" y="235" fill="#666" font-size="10" font-family="Segoe UI,sans-serif">Remote IP:Port</text>
+                    <rect x="280" y="223" width="280" height="20" rx="3" fill="#f6f8fa" stroke="#d0d7de"/>
+                    <text x="290" y="237" fill="#333" font-size="10" font-family="Consolas,monospace">8.8.8.8 : 443</text>
+                    <rect x="280" y="258" width="280" height="32" rx="4" fill="#0078D4"/>
+                    <text x="420" y="278" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Segoe UI,sans-serif">▶ Verify</text>
+                </g>
+                <!-- Target VM -->
+                ${I.vm(720, 150, 'vm-a')}
+                <g data-step="3" class="step-highlight flow-arrow">
+                    <line x1="585" y1="175" x2="690" y2="150" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#ah-0078D4)" class="anim-line"/>
+                </g>
+                <g data-step="1" class="step-highlight flow-arrow">
+                    <line x1="145" y1="175" x2="215" y2="175" stroke="#0078D4" stroke-width="1.5" marker-end="url(#ah-0078D4)" class="anim-line"/>
+                </g>
+                <!-- Result card -->
+                <g data-step="4" class="step-highlight">
+                    <rect x="60" y="320" width="700" height="140" rx="10" fill="#fff5f5" stroke="#d13438" stroke-width="2"/>
+                    <rect x="60" y="320" width="700" height="32" rx="10" fill="#d13438"/>
+                    <text x="410" y="342" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Segoe UI,sans-serif">✖ Result: DENY</text>
+                    <text x="80" y="378" fill="#333" font-size="11" font-family="Consolas,monospace">Matching rule:  Custom_Block_Internet</text>
+                    <text x="80" y="398" fill="#333" font-size="11" font-family="Consolas,monospace">Rule priority:  200  (Outbound, TCP, *→Internet:443, Deny)</text>
+                    <text x="80" y="418" fill="#333" font-size="11" font-family="Consolas,monospace">Applied on:     nsg-web  (subnet snet-web)</text>
+                    <text x="80" y="445" fill="#d13438" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">→ Admin now knows the exact NSG rule to remove or override. No guessing.</text>
+                </g>
+            </svg>`;
+        },
+
+        // ─── CAPSTONE: ENTERPRISE HUB-SPOKE ──────
+        'hub-spoke-capstone'(diagram) {
+            const A = DiagramEngine.arrowDefs(['#0078D4', '#E8443A', '#107C10', '#00BCF2', '#7A3B93']);
+            const I = DiagramEngine.icons;
+            return `<svg viewBox="0 0 820 620" class="diagram-svg">
+                <defs>${A}</defs>
+                <text x="410" y="22" text-anchor="middle" fill="#333" font-size="14" font-weight="600" font-family="Segoe UI,sans-serif">Capstone — Front Door + Firewall + Private Endpoints + VPN</text>
+                <!-- User -->
+                <g data-step="1" class="step-highlight">
+                    ${I.user(50, 80, 'User')}
+                </g>
+                <!-- Front Door -->
+                <g data-step="2" class="step-highlight">
+                    ${I.frontdoor(220, 80, 'Front Door Premium')}
+                    <rect x="170" y="125" width="120" height="20" rx="4" fill="#fff" stroke="#0078D4" stroke-width="1"/>
+                    <text x="230" y="139" text-anchor="middle" fill="#0078D4" font-size="9" font-family="Segoe UI,sans-serif">WAF · Cache · TLS</text>
+                </g>
+                <!-- On-prem -->
+                <g data-step="5" class="step-highlight">
+                    ${I.onprem(50, 450, 'On-Premises')}
+                </g>
+                <!-- Hub VNet -->
+                ${I.subnet(380, 230, 400, 260, 'Hub VNet  10.100.0.0/16', '#7A3B93')}
+                <g data-step="5" class="step-highlight">
+                    ${I.firewall(450, 310, 'Azure Firewall')}
+                    ${I.gateway(580, 310, 'VPN Gateway')}
+                    ${I.gateway(710, 310, 'Bastion')}
+                    ${I.dns(450, 430, 'Private DNS')}
+                    ${I.storage(580, 430, 'Log Analytics')}
+                </g>
+                <!-- Spoke A (Web) -->
+                ${I.subnet(40, 230, 300, 110, 'Spoke A: Web/App  10.1.0.0/16', '#0078D4')}
+                <g data-step="3" class="step-highlight">
+                    ${I.loadbalancer(110, 295, 'Internal LB')}
+                    ${I.vm(220, 295, 'vm-web-01')}
+                </g>
+                <!-- Spoke B (Data) -->
+                ${I.subnet(40, 380, 300, 110, 'Spoke B: Data  10.2.0.0/16', '#107C10')}
+                <g data-step="4" class="step-highlight">
+                    <rect x="110" y="420" width="80" height="50" rx="4" fill="#fff" stroke="#107C10" stroke-width="1.5"/>
+                    <text x="150" y="438" text-anchor="middle" fill="#107C10" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif">Private</text>
+                    <text x="150" y="452" text-anchor="middle" fill="#107C10" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif">Endpoint</text>
+                    <text x="150" y="465" text-anchor="middle" fill="#107C10" font-size="8" font-family="Segoe UI,sans-serif">10.2.0.10</text>
+                    ${I.sql(260, 445, 'SQL PaaS')}
+                </g>
+                <!-- Internet -->
+                ${I.internet(730, 550, 'Internet')}
+                <!-- Step 1: user -> FD -->
+                <g data-step="1" class="step-highlight flow-arrow">
+                    <line x1="118" y1="100" x2="178" y2="100" stroke="#0078D4" stroke-width="2" marker-end="url(#ah-0078D4)" class="anim-line"/>
+                </g>
+                <!-- Step 2: FD -> web LB -->
+                <g data-step="3" class="step-highlight flow-arrow">
+                    <path d="M220,130 Q180,200 130,280" stroke="#0078D4" stroke-width="2" fill="none" marker-end="url(#ah-0078D4)" class="anim-line"/>
+                    <text x="100" y="210" fill="#0078D4" font-size="9" font-family="Segoe UI,sans-serif">Private Link</text>
+                </g>
+                <!-- Step 4: web -> PE -> SQL -->
+                <g data-step="4" class="step-highlight flow-arrow">
+                    <line x1="220" y1="332" x2="150" y2="418" stroke="#107C10" stroke-width="2" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <line x1="195" y1="445" x2="232" y2="445" stroke="#107C10" stroke-width="2" marker-end="url(#ah-107C10)" class="anim-line"/>
+                    <text x="180" y="395" fill="#107C10" font-size="9" font-family="Segoe UI,sans-serif">Never touches internet</text>
+                </g>
+                <!-- Step 5: on-prem via VPN -->
+                <g data-step="5" class="step-highlight flow-arrow">
+                    <path d="M120,460 Q350,400 555,320" stroke="#7A3B93" stroke-width="1.8" fill="none" stroke-dasharray="6" marker-end="url(#ah-7A3B93)" class="anim-line"/>
+                    <text x="290" y="440" fill="#7A3B93" font-size="10" font-family="Segoe UI,sans-serif">VPN / ExpressRoute</text>
+                </g>
+                <!-- Step 6: outbound via firewall -->
+                <g data-step="6" class="step-highlight flow-arrow">
+                    <path d="M260,340 Q360,360 420,320" stroke="#E8443A" stroke-width="2" fill="none" marker-end="url(#ah-E8443A)" class="anim-line"/>
+                    <line x1="490" y1="335" x2="690" y2="540" stroke="#E8443A" stroke-width="2" marker-end="url(#ah-E8443A)" class="anim-line"/>
+                    <text x="330" y="365" fill="#E8443A" font-size="9" font-weight="600" font-family="Segoe UI,sans-serif">UDR 0.0.0.0/0 → FW</text>
+                    <text x="580" y="470" fill="#E8443A" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">FW SNAT → Internet</text>
+                </g>
+                <!-- VNet peering -->
+                <g data-step="3" class="step-highlight">
+                    <line x1="340" y1="285" x2="380" y2="285" stroke="#888" stroke-width="1.5" stroke-dasharray="4"/>
+                    <line x1="340" y1="435" x2="380" y2="435" stroke="#888" stroke-width="1.5" stroke-dasharray="4"/>
+                    <text x="355" y="276" fill="#888" font-size="8" font-family="Segoe UI,sans-serif">peering</text>
+                </g>
+            </svg>`;
+        },
+
         // ─── GENERIC STEP FLOWCHART (fallback) ───
         // Used when a diagram.type has no custom builder. Renders the
         // steps array as a clean vertical flow of numbered cards which

@@ -1197,7 +1197,7 @@ az network watcher flow-log create \\
     diagrams: [
         {
             id: 'capstone-arch',
-            type: 'hub-spoke',
+            type: 'hub-spoke-capstone',
             title: 'Enterprise Hub-Spoke Reference Architecture',
             icon: '🏆',
             description: 'The full picture — Front Door at the edge, Firewall in the hub, private endpoints in the data spoke.',
