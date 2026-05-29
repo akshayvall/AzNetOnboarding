@@ -28,7 +28,7 @@ const MODULES_EXTRAS = [
         <p>Bastion sits in a dedicated subnet inside your VNet (<span class="code-inline">AzureBastionSubnet</span>) and proxies HTTPS from the browser to RDP/SSH on the private IP of your VM. The VM never needs a public IP.</p>
     </div>
 
-    <h3>Bastion SKUs (AZ-104 must-know)</h3>
+    <h3>Bastion SKUs</h3>
     <table class="content-table">
         <tr><th>Feature</th><th>Developer</th><th>Basic</th><th>Standard</th><th>Premium</th></tr>
         <tr><td>Price</td><td>Free (preview)</td><td>$</td><td>$$</td><td>$$$</td></tr>
@@ -172,7 +172,7 @@ const MODULES_EXTRAS = [
     references: [
         { title: 'What is Azure Bastion?', url: 'https://learn.microsoft.com/azure/bastion/bastion-overview' },
         { title: 'Bastion SKUs and features', url: 'https://learn.microsoft.com/azure/bastion/configuration-settings' },
-        { title: 'AZ-104 learning path: secure identities and access', url: 'https://learn.microsoft.com/training/paths/az-104-manage-identities-governance/' }
+        { title: 'Azure Bastion security baseline', url: 'https://learn.microsoft.com/security/benchmark/azure/baselines/azure-bastion-security-baseline' }
     ],
     lab: {
         title: 'Hands-On: Deploy Azure Bastion and Connect to a VM',
@@ -305,7 +305,7 @@ az network bastion rdp \\
     </div>
 
     <div class="warning-box">
-        <h4>⚠️ Default Outbound Deprecation (AZ-104 topical)</h4>
+        <h4>⚠️ Default Outbound Deprecation</h4>
         <p>Microsoft announced that <strong>default outbound access will be retired for new VNets on September 30, 2025</strong>. Any new subnet must have an <em>explicit</em> outbound method (NAT Gateway, Load Balancer rule, or public IP). Existing VNets keep default access but should migrate.</p>
     </div>
 
@@ -702,7 +702,7 @@ az network public-ip delete --name pip-natgw --resource-group rg-academy-lab`,
         </div>
     </div>
 
-    <h3>Processing Order (critical for AZ-104)</h3>
+    <h3>Processing Order (critical)</h3>
     <div class="concept-box">
         <h4>🔑 Rule Evaluation</h4>
         <p>1. <strong>DNAT rules</strong> processed first.<br>
@@ -944,7 +944,7 @@ az network vnet subnet update \\
     <h2>What is Network Watcher?</h2>
     <p>Network Watcher is Azure\'s diagnostic and monitoring toolkit for IaaS networking. It\'s <strong>enabled automatically</strong> when you create a VNet in a region (resource group: <code>NetworkWatcherRG</code>).</p>
 
-    <h3>The Essential Tools (AZ-104 staples)</h3>
+    <h3>The Essential Tools</h3>
     <table class="content-table">
         <tr><th>Tool</th><th>What it answers</th></tr>
         <tr><td><strong>IP Flow Verify</strong></td><td>Will this packet (src IP:port → dst IP:port) be allowed or denied by NSG rules? Returns the specific rule that matched.</td></tr>

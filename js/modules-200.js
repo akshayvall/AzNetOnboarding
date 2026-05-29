@@ -60,7 +60,7 @@ const MODULES_200 = [
     </table>
 
     <div class="warning-box">
-        <h4>⚠️ AZ-104 Critical</h4>
+        <h4>⚠️ Critical</h4>
         <p>Priority processing: Rules are evaluated in priority order (lowest number first). The <strong>first matching rule wins</strong>. If no custom rule matches, the default DenyAll at 65500 kicks in. You cannot delete or modify default rules, but you can override them with higher-priority custom rules.</p>
     </div>
 </div>
@@ -1241,7 +1241,7 @@ az network lb rule list \\
 
 <div class="learn-section">
     <h2>Classic vs Standard/Premium — Migration Guide</h2>
-    <p>Azure Front Door has gone through a major architecture evolution. Understanding the difference is critical for the AZ-104 exam and real-world deployments.</p>
+    <p>Azure Front Door has gone through a major architecture evolution. Understanding the difference is critical for real-world deployments.</p>
     
     <div class="warning-box">
         <h4>⚠️ Front Door Classic is Deprecated</h4>
@@ -1842,7 +1842,7 @@ az afd endpoint show \\
     </table>
 
     <div class="warning-box">
-        <h4>⚠️ AZ-104 Key Point</h4>
+        <h4>⚠️ Key Point</h4>
         <p>ExpressRoute does NOT encrypt traffic by default. If you need encryption, you must configure IPsec VPN over ExpressRoute (which adds complexity). For most compliance needs, the private nature of the circuit is sufficient.</p>
     </div>
 </div>
@@ -2204,7 +2204,7 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
 
     <div class="warning-box">
         <h4>⚠️ Non-Transitive!</h4>
-        <p>This is a very common AZ-104 exam question. VNet peering is NOT transitive. You need explicit peering between each pair of VNets that need to communicate, or use a hub VNet with gateway transit.</p>
+        <p>This is a very common real-world question. VNet peering is NOT transitive. You need explicit peering between each pair of VNets that need to communicate, or use a hub VNet with gateway transit.</p>
     </div>
 </div>
 
@@ -2504,8 +2504,8 @@ az network vnet peering list \\
                 title: 'Review: VNet Peering Transitivity',
                 subtitle: 'Key takeaway',
                 type: 'confirm',
-                explanation: 'VNet peering is NOT transitive. If A peers with B and B peers with C, A cannot reach C — each pair requires direct peering. To solve this in large environments, use a hub-spoke topology where a hub VNet with Azure Firewall or an NVA routes traffic between spokes. This is one of the most commonly tested concepts on AZ-104.',
-                portal: '<ol><li><strong>Key fact:</strong> The answer is "No — each VNet pair requires direct peering"</li><li>A↔B and B↔C does NOT mean A↔C</li><li>Use hub-spoke topology with Azure Firewall/NVA for spoke-to-spoke routing</li><li>This is a top AZ-104 exam topic — peering is always non-transitive</li></ol>'
+                explanation: 'VNet peering is NOT transitive. If A peers with B and B peers with C, A cannot reach C — each pair requires direct peering. To solve this in large environments, use a hub-spoke topology where a hub VNet with Azure Firewall or an NVA routes traffic between spokes. This is one of the most common real-world networking gotchas.',
+                portal: '<ol><li><strong>Key fact:</strong> The answer is "No — each VNet pair requires direct peering"</li><li>A↔B and B↔C does NOT mean A↔C</li><li>Use hub-spoke topology with Azure Firewall/NVA for spoke-to-spoke routing</li><li>This is a critical real-world fact — peering is always non-transitive</li></ol>'
             }
         ]
     }

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD — Azure Networking Academy</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #131c2e;
+    --panel-2: #1a2740;
+    --ink: #e8eef7;
+    --muted: #a7b4c8;
+    --line: #26344f;
+    --accent: #2f9bff;
+    --accent-2: #4fd1c5;
+    --warn: #ffb454;
+    --ok: #5ad07f;
+    --chip: #20406b;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px 96px; }
+  header.hero {
+    background: linear-gradient(135deg, #0d1830 0%, #16243f 60%, #102a3c 100%);
+    border-bottom: 1px solid var(--line);
+    padding: 56px 24px 40px;
+  }
+  .hero-inner { max-width: 980px; margin: 0 auto; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 12px;
+    color: var(--accent-2);
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+  h1 { font-size: 38px; margin: 0 0 12px; line-height: 1.15; }
+  .subtitle { font-size: 18px; color: var(--muted); margin: 0 0 20px; max-width: 760px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .chip {
+    background: var(--chip);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+  nav.toc {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 32px 0;
+  }
+  nav.toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 12px; }
+  nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+  nav.toc li { margin: 4px 0; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  section { margin: 40px 0; }
+  h2.sec {
+    font-size: 26px;
+    margin: 0 0 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    padding-top: 28px;
+  }
+  .why {
+    background: var(--panel-2);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 18px;
+    margin: 14px 0 22px;
+    color: var(--muted);
+    font-size: 14.5px;
+  }
+  .why strong { color: var(--accent-2); }
+  h3 { font-size: 19px; margin: 24px 0 8px; color: var(--ink); }
+  p { margin: 10px 0; }
+  ul, ol.body { margin: 10px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14.5px;
+  }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--accent-2); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+  tr:hover td { background: rgba(47,155,255,0.05); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 16px 0; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .card h4 { margin: 0 0 6px; font-size: 16px; }
+  .card .n { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .tier { display: inline-block; font-weight: 700; padding: 2px 10px; border-radius: 6px; font-size: 12px; }
+  .t100 { background: #173a2b; color: var(--ok); }
+  .t200 { background: #2a3354; color: #9fb4ff; }
+  .t300 { background: #3a2030; color: #ff9fb0; }
+  .pill { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--chip); border: 1px solid var(--line); }
+  code {
+    background: #0e1626;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 13px;
+    color: var(--accent-2);
+  }
+  .callout {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    border: 1px solid var(--line);
+  }
+  .callout.scope { background: #11271b; border-color: #1f5436; }
+  .callout.warn { background: #2a2113; border-color: #5a4420; }
+  .callout h4 { margin: 0 0 6px; }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 20px; margin-top: 48px; }
+  .status-done { color: var(--ok); font-weight: 700; }
+  .status-todo { color: var(--warn); font-weight: 700; }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    nav.toc ol { columns: 1; }
+    h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">Product Requirements Document</p>
+    <h1>Azure Networking Academy</h1>
+    <p class="subtitle">A self-paced, dependency-free web app that takes a learner from networking first principles to advanced Azure network architecture — with deep, hands-on focus on Azure Front Door.</p>
+    <div class="meta">
+      <span class="chip">Version 1.0</span>
+      <span class="chip">Owner: Akshay V</span>
+      <span class="chip">Status: Production-complete (A+)</span>
+      <span class="chip">Curriculum: L100 → L300</span>
+      <span class="chip">21 modules</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#what">What a PRD is</a></li>
+      <li><a href="#summary">Executive summary</a></li>
+      <li><a href="#problem">Problem &amp; opportunity</a></li>
+      <li><a href="#audience">Target audience</a></li>
+      <li><a href="#goals">Goals &amp; non-goals</a></li>
+      <li><a href="#curriculum">Curriculum structure</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#architecture">Technical architecture</a></li>
+      <li><a href="#repositioning">Repositioning (exam de-coupling)</a></li>
+      <li><a href="#success">Success criteria</a></li>
+      <li><a href="#risks">Risks &amp; assumptions</a></li>
+    </ol>
+  </nav>
+
+  <section id="what">
+    <h2 class="sec">1. What a PRD is (and why this one exists)</h2>
+    <div class="why">
+      <strong>Teaching note:</strong> A <em>Product Requirements Document</em> is the single source of truth that answers four questions before anyone builds: <strong>who</strong> is this for, <strong>what problem</strong> does it solve, <strong>what</strong> it must do, and <strong>how we know it worked</strong>. It is not a design doc (the "how it looks") or a tech spec (the "how it's coded") — it sits above both so engineering, design, and stakeholders share one intent. Each section below maps to one of those questions.
+    </div>
+    <p>This PRD documents an <strong>already-built, production-complete</strong> product. That makes it a "reverse PRD" — written to (a) capture the product's intent in one place, (b) anchor the next change (removing exam-alignment framing), and (c) serve as the reference for future iterations. Reading it top-to-bottom should give a complete mental model of the product without opening the code.</p>
+  </section>
+
+  <section id="summary">
+    <h2 class="sec">2. Executive summary</h2>
+    <p><strong>Azure Networking Academy</strong> is a browser-based, offline-capable learning platform. It teaches Azure networking as a structured journey across three difficulty tiers (L100 Foundations → L200 Intermediate → L300 Advanced), spanning <strong>21 modules</strong>. The product favors <em>doing</em> over reading: animated diagrams, interactive tools (subnet calculator, flashcards, drag-and-drop), per-module quizzes, and copy-paste Azure Cloud Shell labs.</p>
+    <p>It is deliberately <strong>dependency-free</strong>: vanilla HTML, CSS, and JavaScript — no frameworks, no build step, no external network calls. It runs by opening one file and ships to the public web via GitHub Pages. A distinctive trait is its <strong>heavy emphasis on Azure Front Door (AFD)</strong> — roughly three to four modules — reflecting real-world edge-delivery, CDN, WAF, and routing scenarios.</p>
+  </section>
+
+  <section id="problem">
+    <h2 class="sec">3. Problem &amp; opportunity</h2>
+    <div class="why"><strong>Why this section:</strong> If you can't state the problem crisply, you can't tell whether the product solved it. This is the "why build it at all" anchor.</div>
+    <h3>The problem</h3>
+    <ul>
+      <li><strong>Fragmented learning.</strong> Azure networking knowledge is scattered across docs, videos, and exam guides. Learners lack a single guided path from "what is a subnet" to "design a hub-spoke topology."</li>
+      <li><strong>Passive material.</strong> Most resources are read-only. Networking concepts (CIDR math, traffic flow, NSG evaluation order) are best learned by manipulating them, not just reading about them.</li>
+      <li><strong>Tooling friction.</strong> Many tutorials require an account, an install, or a live subscription before the first concept lands.</li>
+      <li><strong>Exam-shaped, not skill-shaped.</strong> Material framed around a certification optimizes for passing a test rather than building durable, transferable networking intuition.</li>
+    </ul>
+    <h3>The opportunity</h3>
+    <p>A single, zero-friction, interactive app that sequences the full Azure networking story, teaches through interaction, runs anywhere (even offline), and is framed around <strong>real-world skills and architecture</strong> — with a sharp practical lens on Azure Front Door.</p>
+  </section>
+
+  <section id="audience">
+    <h2 class="sec">4. Target audience</h2>
+    <table>
+      <thead><tr><th>Persona</th><th>Starting point</th><th>What they need</th></tr></thead>
+      <tbody>
+        <tr><td>Networking newcomer</td><td>Little/no cloud networking background</td><td>First-principles grounding (OSI, TCP/IP, DNS, IP addressing) before Azure specifics.</td></tr>
+        <tr><td>Cloud engineer / admin</td><td>Comfortable with Azure basics</td><td>Structured depth on VNets, NSGs, routing, load balancing, hybrid connectivity.</td></tr>
+        <tr><td>TPM / PM on a networking product</td><td>Strong context, needs technical fluency</td><td>Enough hands-on depth to reason about architecture and AFD trade-offs with engineers.</td></tr>
+        <tr><td>Self-learner / hobbyist</td><td>Varied</td><td>A free, offline, no-signup path they can work through at their own pace.</td></tr>
+      </tbody>
+    </table>
+    <div class="why"><strong>Why personas:</strong> They keep scope honest. Every feature should serve at least one persona; if it serves none, it's gold-plating.</div>
+  </section>
+
+  <section id="goals">
+    <h2 class="sec">5. Goals &amp; non-goals</h2>
+    <h3>Goals</h3>
+    <ul>
+      <li>Take a learner from networking fundamentals to advanced Azure architecture in one coherent, ordered path.</li>
+      <li>Teach through interaction — diagrams, calculators, quizzes, and hands-on labs — not passive text.</li>
+      <li>Run with zero setup: open in a browser, work offline, no account, no install.</li>
+      <li>Give Azure Front Door first-class, in-depth coverage (config, caching/performance, WAF/security).</li>
+      <li>Persist learner progress locally and let them export/import it.</li>
+      <li>Frame all content around durable, real-world networking skills.</li>
+    </ul>
+    <h3>Non-goals</h3>
+    <ul>
+      <li>Not a certification exam-prep product. (This is the explicit repositioning in §9.)</li>
+      <li>Not a live lab environment — labs are copy-paste recipes for the learner's own subscription, not a sandbox we host.</li>
+      <li>No backend, accounts, or telemetry. Progress lives in the browser only.</li>
+      <li>Not a replacement for official Microsoft Learn docs; it complements them.</li>
+    </ul>
+    <div class="why"><strong>Why non-goals matter:</strong> Naming what you <em>won't</em> do prevents scope creep and sets reviewer expectations. A non-goal is a decision, not an omission.</div>
+  </section>
+
+  <section id="curriculum">
+    <h2 class="sec">6. Curriculum structure</h2>
+    <p>Three tiers, 21 modules, sequenced so each builds on the last. The progression mirrors how a network engineer actually learns: fundamentals → core Azure services → advanced design.</p>
+
+    <h3><span class="tier t100">L100</span> Foundations — 4 modules</h3>
+    <ul>
+      <li>Networking Fundamentals (OSI / TCP-IP / DNS / HTTP)</li>
+      <li>The Azure Environment</li>
+      <li>Azure Virtual Networks (VNets)</li>
+      <li>IP Addressing &amp; Subnetting</li>
+    </ul>
+
+    <h3><span class="tier t200">L200</span> Intermediate — 9 modules</h3>
+    <ul>
+      <li>Network Security Groups (NSGs)</li>
+      <li>Azure DNS &amp; Private DNS</li>
+      <li>Load Balancing Options</li>
+      <li>Azure Front Door Fundamentals</li>
+      <li>VPN Gateway &amp; ExpressRoute</li>
+      <li>VNet Peering &amp; Service Endpoints</li>
+      <li>Azure Bastion</li>
+      <li>NAT Gateway</li>
+      <li>Route Tables &amp; User-Defined Routes (UDRs)</li>
+    </ul>
+
+    <h3><span class="tier t300">L300</span> Advanced — 8 modules</h3>
+    <ul>
+      <li>Azure Front Door — Advanced Configuration</li>
+      <li>Azure Front Door — Caching &amp; Performance</li>
+      <li>Azure Front Door — WAF &amp; Security</li>
+      <li>Advanced Network Architecture (hub-spoke / Azure Firewall / NVA)</li>
+      <li>Real-World Networking Scenarios <span class="pill">renamed</span></li>
+      <li>Azure Firewall</li>
+      <li>Network Watcher</li>
+      <li>Capstone: Hub-Spoke Design</li>
+    </ul>
+
+    <div class="grid">
+      <div class="card"><div class="n">3</div><h4>Tiers</h4><p>L100 → L200 → L300, progressively harder.</p></div>
+      <div class="card"><div class="n">21</div><h4>Modules</h4><p>4 foundation, 9 intermediate, 8 advanced.</p></div>
+      <div class="card"><div class="n">~4</div><h4>AFD modules</h4><p>Fundamentals + 3 advanced AFD deep-dives.</p></div>
+    </div>
+    <div class="why"><strong>Why the AFD weighting:</strong> The product intentionally over-indexes on Azure Front Door because that is where the owner's domain expertise and the most valuable real-world scenarios (edge routing, caching, WAF) concentrate. Curriculum weighting is a product decision, not an accident.</div>
+  </section>
+
+  <section id="features">
+    <h2 class="sec">7. Features</h2>
+    <table>
+      <thead><tr><th>Feature</th><th>What it does</th><th>Why it matters</th></tr></thead>
+      <tbody>
+        <tr><td>Animated diagrams</td><td>SVG/Canvas visuals of traffic flow, topology, routing.</td><td>Networking is spatial; motion makes flow and order click.</td></tr>
+        <tr><td>Subnet calculator</td><td>Interactive CIDR / IP range tool.</td><td>Turns abstract subnet math into something you manipulate.</td></tr>
+        <tr><td>Flashcards</td><td>Spaced recall of terms and concepts.</td><td>Builds durable recall of dense terminology.</td></tr>
+        <tr><td>Drag-and-drop exercises</td><td>Assemble topologies / match concepts.</td><td>Active recall beats passive reading.</td></tr>
+        <tr><td>Per-module quizzes</td><td>Knowledge checks with explanations.</td><td>Immediate feedback closes the learning loop.</td></tr>
+        <tr><td>Cloud Shell labs</td><td>Copy-paste Azure CLI / portal recipes.</td><td>Hands-on practice in the learner's own subscription.</td></tr>
+        <tr><td>Progress tracking</td><td>Saves completion in browser <code>localStorage</code>.</td><td>Resume anytime; no account needed.</td></tr>
+        <tr><td>Export / import</td><td>Progress as a JSON file.</td><td>Portability and backup without a backend.</td></tr>
+        <tr><td>Offline-first</td><td>Runs with no network after load.</td><td>Works on a plane, in a locked-down environment, anywhere.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="architecture">
+    <h2 class="sec">8. Technical architecture</h2>
+    <div class="why"><strong>Teaching note (for a beginner coder):</strong> "Dependency-free" means the app uses only what the browser already provides — no React, no npm packages, no build/compile step. The upside: it's trivial to run, audit, and will still work years from now. The trade-off: you write more by hand. For a learning tool meant to last and be trusted, that trade is the right call.</div>
+    <table>
+      <thead><tr><th>Aspect</th><th>Choice</th></tr></thead>
+      <tbody>
+        <tr><td>Stack</td><td>Vanilla HTML + CSS + JavaScript. No frameworks, no build step.</td></tr>
+        <tr><td>App shape</td><td>Single-page app with a client-side router (<code>app.js</code>) rendering module views.</td></tr>
+        <tr><td>State</td><td>Browser <code>localStorage</code> via <code>progress.js</code>; export/import as JSON.</td></tr>
+        <tr><td>Engines</td><td><code>quiz-engine.js</code>, <code>lab-engine.js</code>, <code>diagrams.js</code>, <code>interactive.js</code>.</td></tr>
+        <tr><td>Content</td><td>Modules split by tier: <code>modules-100.js</code>, <code>modules-200.js</code>, <code>modules-300.js</code>, <code>modules-extras.js</code>.</td></tr>
+        <tr><td>Security</td><td>Strict Content-Security-Policy; fully offline; no external CDNs or trackers.</td></tr>
+        <tr><td>Run locally</td><td>Open <code>index.html</code> (or <code>launch.bat</code>).</td></tr>
+        <tr><td>Deploy</td><td>Auto-deploys to GitHub Pages on push to <code>main</code> via <code>.github/workflows/pages.yml</code>.</td></tr>
+        <tr><td>Live site</td><td><code>akshayvall.github.io/AzNetOnboarding</code></td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <h4>⚠️ Security rationale</h4>
+      <p>A strict CSP plus zero external calls means no third-party script can run and no learner data leaves the browser. The threat it prevents: supply-chain or injection attacks via external dependencies, and inadvertent data exfiltration. For a tool that may run inside corporate environments, that posture is a feature.</p>
+    </div>
+  </section>
+
+  <section id="repositioning">
+    <h2 class="sec">9. Repositioning — de-coupling from exam framing</h2>
+    <div class="callout scope">
+      <h4>🎯 The change this PRD authorizes</h4>
+      <p>Remove all certification-exam ("AZ-104 aligned") framing across the product and reposition it as a <strong>real-world Azure networking skills</strong> platform. The pedagogical content stays; only the exam-shaped wording, callouts, names, and links change.</p>
+    </div>
+    <h3>Why</h3>
+    <p>Exam alignment narrows the product's perceived value to "test prep" and dates the content to a specific certification version. Reframing around durable skills broadens the audience, ages better, and matches the actual depth of the material (which goes well beyond any single exam).</p>
+    <h3>Scope of edits</h3>
+    <table>
+      <thead><tr><th>Area</th><th>Current</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td>Tagline / hero (index.html, README)</td><td>"L100 → L300 | AZ-104 Aligned"</td><td>Skills-focused tagline; drop exam reference.</td></tr>
+        <tr><td>Callout headers (module JS)</td><td>"AZ-104 Relevance", "AZ-104 Critical", "AZ-104 Tip"</td><td>"Why This Matters", "Critical Concept", "Pro Tip".</td></tr>
+        <tr><td>Module 15 title</td><td>"AZ-104 Networking Scenarios"</td><td>"Real-World Networking Scenarios".</td></tr>
+        <tr><td>Lab resource names</td><td><code>rg-az104-lab</code>, <code>vnet-exam</code></td><td><code>rg-net-lab</code>, <code>vnet-lab</code>.</td></tr>
+        <tr><td>External link (modules-extras)</td><td>AZ-104 learning-path URL</td><td>Networking-focused Microsoft Learn link, or remove.</td></tr>
+        <tr><td>README "AZ-104 alignment" section</td><td>Dedicated exam section</td><td>Remove or reframe as "Skills you'll gain".</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Footprint:</strong> 59 references across 6 files — index.html (3), README.md (8), modules-100.js (5), modules-200.js (6), modules-300.js (32), modules-extras.js (5).</p>
+  </section>
+
+  <section id="success">
+    <h2 class="sec">10. Success criteria</h2>
+    <div class="why"><strong>Why measurable criteria:</strong> "Done" must be testable. Each line below is a check you can pass or fail — no judgment calls.</div>
+    <ul>
+      <li>Zero "AZ-104" / exam-alignment references remain in any user-facing file (verifiable by a case-insensitive search returning 0 hits).</li>
+      <li>All 21 modules still load and render after edits (no broken markup or JS).</li>
+      <li>Every interactive feature (quizzes, calculator, flashcards, diagrams, labs) still functions.</li>
+      <li>Lab resource names are consistent (<code>rg-net-lab</code> / <code>vnet-lab</code>) across all CLI/portal blocks.</li>
+      <li>Renamed Module 15 retains all its lab/scenario content; only framing changed.</li>
+      <li>Product reads as a real-world skills platform end-to-end (tagline, README, callouts, links).</li>
+      <li>App remains dependency-free, offline, and CSP-strict (no new external calls introduced).</li>
+    </ul>
+  </section>
+
+  <section id="risks">
+    <h2 class="sec">11. Risks &amp; assumptions</h2>
+    <table>
+      <thead><tr><th>Type</th><th>Item</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>Risk</td><td>Reword breaks surrounding HTML in module strings.</td><td>Surgical edits against mapped line numbers; verify each module loads.</td></tr>
+        <tr><td>Risk</td><td>Renaming resource names misses a CLI block, causing inconsistent labs.</td><td>Global, consistent rename; final grep to confirm 0 stragglers.</td></tr>
+        <tr><td>Risk</td><td>Removing the exam section leaves a dangling README link/anchor.</td><td>Update table of contents / cross-references in the same pass.</td></tr>
+        <tr><td>Assumption</td><td>The 59-reference map is complete and current.</td><td>Re-run the search before and after editing.</td></tr>
+        <tr><td>Assumption</td><td>No certification claim is required for the product's value.</td><td>Confirmed by repositioning goal; skills framing is sufficient.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <p>Azure Networking Academy — Product Requirements Document v1.0 · Owner: Akshay V · Self-contained HTML, no external dependencies.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Azure Networking Academy — Comprehensive Learning Analysis</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #131c2e;
+    --panel-2: #1a2740;
+    --ink: #e8eef7;
+    --muted: #a7b4c8;
+    --line: #26344f;
+    --accent: #2f9bff;
+    --accent-2: #4fd1c5;
+    --warn: #ffb454;
+    --ok: #5ad07f;
+    --chip: #20406b;
+    /* level colors */
+    --l100: #5ad07f;   /* green  — Foundations */
+    --l200: #ffb454;   /* orange — Intermediate */
+    --l300: #ff6b6b;   /* red    — Advanced */
+    --afd: #2f9bff;    /* blue   — Azure Front Door spine */
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #16243d 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 10%, #102036 0%, transparent 50%),
+      var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px 80px; }
+
+  /* ---------- Hero ---------- */
+  header.hero {
+    padding: 64px 0 36px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 36px;
+  }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 46px);
+    line-height: 1.12;
+    margin: 0 0 14px;
+    letter-spacing: -.01em;
+  }
+  h1 .grad {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lede { font-size: 18px; color: var(--muted); max-width: 760px; margin: 0; }
+
+  /* ---------- Stat strip ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin: 30px 0 8px;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 16px;
+  }
+  .stat .n { font-size: 30px; font-weight: 700; line-height: 1; }
+  .stat .l { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .stat.l100 .n { color: var(--l100); }
+  .stat.l200 .n { color: var(--l200); }
+  .stat.l300 .n { color: var(--l300); }
+  .stat.afd  .n { color: var(--afd); }
+
+  /* ---------- Section scaffolding ---------- */
+  section { margin: 52px 0 0; scroll-margin-top: 24px; }
+  h2 {
+    font-size: 24px;
+    margin: 0 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2 .num {
+    font-size: 13px;
+    color: var(--accent-2);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    flex: none;
+  }
+  .sub { color: var(--muted); margin: 0 0 22px; max-width: 820px; }
+
+  /* ---------- Nav (sticky pills) ---------- */
+  nav.toc {
+    position: sticky; top: 0; z-index: 5;
+    background: rgba(11,18,32,.82);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 0;
+    margin-bottom: 8px;
+  }
+  nav.toc .inner { max-width: 1080px; margin: 0 auto; padding: 0 22px; display: flex; gap: 8px; flex-wrap: wrap; }
+  nav.toc a {
+    font-size: 12.5px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  nav.toc a:hover { color: var(--ink); border-color: var(--accent); text-decoration: none; }
+
+  /* ---------- Cards / panels ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  /* ---------- Level blocks ---------- */
+  .level { border-radius: 16px; border: 1px solid var(--line); overflow: hidden; margin-bottom: 22px; }
+  .level-head {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .level-head .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+  .level-head .badge {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    padding: 3px 10px; border-radius: 6px;
+  }
+  .level-head h3 { margin: 0; font-size: 18px; }
+  .level-head .count { margin-left: auto; color: var(--muted); font-size: 13px; }
+  .level-100 .level-head { background: linear-gradient(90deg, rgba(90,208,127,.14), transparent); }
+  .level-100 .dot, .level-100 .badge { background: var(--l100); color: #07210f; }
+  .level-100 { border-color: rgba(90,208,127,.35); }
+  .level-200 .level-head { background: linear-gradient(90deg, rgba(255,180,84,.14), transparent); }
+  .level-200 .dot, .level-200 .badge { background: var(--l200); color: #2a1700; }
+  .level-200 { border-color: rgba(255,180,84,.35); }
+  .level-300 .level-head { background: linear-gradient(90deg, rgba(255,107,107,.14), transparent); }
+  .level-300 .dot, .level-300 .badge { background: var(--l300); color: #2a0707; }
+  .level-300 { border-color: rgba(255,107,107,.35); }
+
+  .mod { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 14px; align-items: flex-start; }
+  .mod:first-of-type { border-top: none; }
+  .mod .ic { font-size: 20px; flex: none; width: 26px; text-align: center; }
+  .mod .body { flex: 1; }
+  .mod .t { font-weight: 600; }
+  .mod .why { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .mod .tag {
+    font-size: 11px; color: var(--afd); border: 1px solid rgba(47,155,255,.4);
+    background: rgba(47,155,255,.12); padding: 2px 8px; border-radius: 999px;
+    margin-left: 8px; white-space: nowrap;
+  }
+  .mod .ex {
+    font-size: 11px; color: var(--muted); border: 1px solid var(--line);
+    background: var(--panel-2); padding: 2px 8px; border-radius: 999px;
+    margin-left: 8px; white-space: nowrap;
+  }
+
+  /* ---------- Path / timeline ---------- */
+  ol.path { list-style: none; padding: 0; margin: 0; counter-reset: step; }
+  ol.path li {
+    position: relative; padding: 0 0 22px 46px; counter-increment: step;
+  }
+  ol.path li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: #02101f; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  ol.path li::after {
+    content: ""; position: absolute; left: 14px; top: 30px; bottom: 0;
+    width: 2px; background: var(--line);
+  }
+  ol.path li:last-child::after { display: none; }
+  ol.path .h { font-weight: 600; }
+  ol.path .d { color: var(--muted); font-size: 14px; }
+
+  /* ---------- AFD spine ---------- */
+  .spine-step {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin: 18px 0;
+  }
+  .spine-step .pill {
+    border: 1px solid rgba(47,155,255,.45);
+    background: rgba(47,155,255,.1);
+    color: var(--ink);
+    border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 600;
+    flex: 1; min-width: 180px;
+  }
+  .spine-step .pill small { display: block; color: var(--muted); font-weight: 400; margin-top: 3px; }
+  .spine-step .arrow { color: var(--afd); font-size: 20px; }
+
+  /* ---------- Why-it-matters / mental model ---------- */
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .layer {
+    border-left: 4px solid var(--line);
+    background: var(--panel);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px;
+  }
+  .layer.l100 { border-left-color: var(--l100); }
+  .layer.l200 { border-left-color: var(--l200); }
+  .layer.l300 { border-left-color: var(--l300); }
+  .layer .lt { font-weight: 600; }
+  .layer .ld { color: var(--muted); font-size: 14px; }
+
+  /* ---------- Callout ---------- */
+  .note {
+    border: 1px solid rgba(79,209,197,.4);
+    background: rgba(79,209,197,.08);
+    border-radius: 12px; padding: 16px 18px; color: var(--ink); font-size: 14px;
+  }
+  .note b { color: var(--accent-2); }
+
+  ul.clean { margin: 8px 0 0; padding-left: 20px; }
+  ul.clean li { margin: 6px 0; color: var(--muted); }
+  ul.clean li b { color: var(--ink); }
+
+  footer {
+    margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 13px;
+  }
+
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#overview">Overview</a>
+    <a href="#structure">How it's structured</a>
+    <a href="#curriculum">Full curriculum map</a>
+    <a href="#path">Recommended path</a>
+    <a href="#afd">The Front Door spine</a>
+    <a href="#how">How to learn it</a>
+    <a href="#why">Why each layer matters</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Learning Analysis · Azure Networking Academy</span>
+    <h1>A comprehensive view of <span class="grad">learning Azure Networking</span></h1>
+    <p class="lede">
+      The Academy is a hands-on, real-world skills platform — not an exam-prep course. It walks you
+      from networking first principles up to designing and securing global edge architecture, with a
+      deliberate spine of <b>Azure Front Door</b> running through it. This page maps the whole
+      curriculum, recommends a learning order, and explains <em>why</em> each layer exists.
+    </p>
+
+    <div class="stats">
+      <div class="stat"><div class="n">21</div><div class="l">modules across the full path</div></div>
+      <div class="stat l100"><div class="n">4</div><div class="l">L100 Foundations</div></div>
+      <div class="stat l200"><div class="n">9</div><div class="l">L200 Intermediate</div></div>
+      <div class="stat l300"><div class="n">8</div><div class="l">L300 Advanced</div></div>
+    </div>
+    <div class="stats" style="margin-top:14px;">
+      <div class="stat afd"><div class="n">5</div><div class="l">Azure Front Door modules</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">difficulty levels (L100→L300)</div></div>
+      <div class="stat"><div class="n">6</div><div class="l">deep-dive specialist modules</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">end-to-end capstone build</div></div>
+    </div>
+  </header>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <section id="overview">
+    <h2><span class="num">01</span> What this Academy actually teaches</h2>
+    <p class="sub">
+      The goal is practical competence: being able to design, deploy, secure, and troubleshoot real
+      Azure networks. Every module is framed around production decisions and real-world gotchas, not
+      memorization.
+    </p>
+    <div class="grid3">
+      <div class="panel">
+        <div class="t" style="font-weight:600;margin-bottom:6px;">🧱 Build the mental model</div>
+        <div style="color:var(--muted);font-size:14px;">
+          Start with the vocabulary — IP, subnets, DNS, routing — so later topics click instead of
+          feeling like trivia.
+        </div>
+      </div>
+      <div class="panel">
+        <div class="t" style="font-weight:600;margin-bottom:6px;">🔌 Connect &amp; secure</div>
+        <div style="color:var(--muted);font-size:14px;">
+          Move into the building blocks you wire together in real Azure: VNets, NSGs, DNS, load
+          balancing, hybrid connectivity, and the global edge.
+        </div>
+      </div>
+      <div class="panel">
+        <div class="t" style="font-weight:600;margin-bottom:6px;">🏗️ Design at scale</div>
+        <div style="color:var(--muted);font-size:14px;">
+          Finish on advanced architecture — Front Door at depth, WAF, firewalls, hub-spoke — and a
+          capstone that ties it together.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STRUCTURE ===================== -->
+  <section id="structure">
+    <h2><span class="num">02</span> How the path is structured</h2>
+    <p class="sub">
+      The Academy uses the Microsoft “Level” convention. Think of it as difficulty / depth, not a
+      certification track. Each level assumes you completed the one before it.
+    </p>
+    <div class="grid3">
+      <div class="panel" style="border-color:rgba(90,208,127,.35);">
+        <div style="color:var(--l100);font-weight:700;letter-spacing:.06em;">L100 · FOUNDATIONS</div>
+        <p style="color:var(--muted);font-size:14px;margin:8px 0 0;">
+          The “what do these words mean” layer. Pure concepts and the Azure landscape. No assumptions
+          about prior cloud experience.
+        </p>
+      </div>
+      <div class="panel" style="border-color:rgba(255,180,84,.35);">
+        <div style="color:var(--l200);font-weight:700;letter-spacing:.06em;">L200 · INTERMEDIATE</div>
+        <p style="color:var(--muted);font-size:14px;margin:8px 0 0;">
+          The “core building blocks” layer. The services you actually deploy and connect every day,
+          including your first look at Azure Front Door.
+        </p>
+      </div>
+      <div class="panel" style="border-color:rgba(255,107,107,.35);">
+        <div style="color:var(--l300);font-weight:700;letter-spacing:.06em;">L300 · ADVANCED</div>
+        <p style="color:var(--muted);font-size:14px;margin:8px 0 0;">
+          The “design and defend at scale” layer. Front Door at depth, WAF, firewalls, advanced
+          architecture, applied troubleshooting, and a capstone.
+        </p>
+      </div>
+    </div>
+    <div class="note" style="margin-top:18px;">
+      <b>Reading the map:</b> within L200 and L300, three modules each are <b>deep-dive specialist
+      modules</b> (marked <span class="ex">deep&nbsp;dive</span> below) — optional depth you can take
+      when a topic becomes relevant to your work, rather than required gates.
+    </div>
+  </section>
+
+  <!-- ===================== CURRICULUM MAP ===================== -->
+  <section id="curriculum">
+    <h2><span class="num">03</span> The full curriculum map</h2>
+    <p class="sub">
+      All 21 modules, grouped by level, each with a one-line “why it matters.” Modules that teach
+      Azure Front Door are tagged <span class="tag">AFD</span>.
+    </p>
+
+    <!-- L100 -->
+    <div class="level level-100">
+      <div class="level-head">
+        <span class="dot"></span><span class="badge">L100</span>
+        <h3>Foundations</h3><span class="count">4 modules · concepts &amp; the Azure landscape</span>
+      </div>
+      <div class="mod"><div class="ic">🌐</div><div class="body">
+        <div class="t">Networking Fundamentals</div>
+        <div class="why">The shared vocabulary — OSI/TCP-IP, packets, ports, IP. Everything else is built on this.</div></div></div>
+      <div class="mod"><div class="ic">☁️</div><div class="body">
+        <div class="t">The Azure Environment</div>
+        <div class="why">Regions, subscriptions, resource groups — where your networking resources actually live.</div></div></div>
+      <div class="mod"><div class="ic">🔲</div><div class="body">
+        <div class="t">Azure Virtual Networks (VNets)</div>
+        <div class="why">Your private, isolated network in the cloud — the container everything else plugs into.</div></div></div>
+      <div class="mod"><div class="ic">🔢</div><div class="body">
+        <div class="t">IP Addressing in Azure</div>
+        <div class="why">CIDR, address spaces, and subnet sizing — get this wrong early and it haunts every later design.</div></div></div>
+    </div>
+
+    <!-- L200 -->
+    <div class="level level-200">
+      <div class="level-head">
+        <span class="dot"></span><span class="badge">L200</span>
+        <h3>Intermediate</h3><span class="count">9 modules · the building blocks you deploy daily</span>
+      </div>
+      <div class="mod"><div class="ic">🛡️</div><div class="body">
+        <div class="t">Network Security Groups (NSGs)</div>
+        <div class="why">Stateful packet filtering — the first line of access control on every subnet and NIC.</div></div></div>
+      <div class="mod"><div class="ic">📇</div><div class="body">
+        <div class="t">Azure DNS &amp; Private DNS Zones</div>
+        <div class="why">Name resolution, public and private — how services find each other by name, not IP.</div></div></div>
+      <div class="mod"><div class="ic">⚖️</div><div class="body">
+        <div class="t">Azure Load Balancing Options</div>
+        <div class="why">When to use Load Balancer vs Application Gateway vs Front Door vs Traffic Manager — the decision tree.</div></div></div>
+      <div class="mod"><div class="ic">🚪</div><div class="body">
+        <div class="t">Azure Front Door Fundamentals <span class="tag">AFD</span></div>
+        <div class="why">The global edge entry point for your apps — your first hands-on with the Academy's centrepiece service.</div></div></div>
+      <div class="mod"><div class="ic">🔗</div><div class="body">
+        <div class="t">VPN Gateway &amp; ExpressRoute</div>
+        <div class="why">Hybrid connectivity — securely joining on-premises networks to Azure.</div></div></div>
+      <div class="mod"><div class="ic">🔀</div><div class="body">
+        <div class="t">VNet Peering &amp; Service Endpoints</div>
+        <div class="why">Stitching VNets together and locking PaaS access down to your network.</div></div></div>
+      <div class="mod"><div class="ic">🏰</div><div class="body">
+        <div class="t">Azure Bastion <span class="ex">deep dive</span></div>
+        <div class="why">Secure RDP/SSH to VMs with no public IPs exposed — removes a classic attack surface.</div></div></div>
+      <div class="mod"><div class="ic">📤</div><div class="body">
+        <div class="t">NAT Gateway <span class="ex">deep dive</span></div>
+        <div class="why">Scalable, predictable outbound connectivity without per-VM public IPs.</div></div></div>
+      <div class="mod"><div class="ic">🧭</div><div class="body">
+        <div class="t">Route Tables &amp; User-Defined Routes (UDR) <span class="ex">deep dive</span></div>
+        <div class="why">Override default routing — force traffic through firewalls or appliances on purpose.</div></div></div>
+    </div>
+
+    <!-- L300 -->
+    <div class="level level-300">
+      <div class="level-head">
+        <span class="dot"></span><span class="badge">L300</span>
+        <h3>Advanced</h3><span class="count">8 modules · design, secure &amp; troubleshoot at scale</span>
+      </div>
+      <div class="mod"><div class="ic">🚪</div><div class="body">
+        <div class="t">Azure Front Door — Advanced Configuration <span class="tag">AFD</span></div>
+        <div class="why">Routing rules, origin groups, health probes — making the edge route traffic intelligently.</div></div></div>
+      <div class="mod"><div class="ic">⚡</div><div class="body">
+        <div class="t">Front Door Caching &amp; Performance <span class="tag">AFD</span></div>
+        <div class="why">Cache behaviour, compression, and edge performance tuning — where latency wins are made.</div></div></div>
+      <div class="mod"><div class="ic">🔒</div><div class="body">
+        <div class="t">Front Door WAF &amp; Security <span class="tag">AFD</span></div>
+        <div class="why">Web Application Firewall, managed rule sets, and rate limiting at the global edge.</div></div></div>
+      <div class="mod"><div class="ic">🏛️</div><div class="body">
+        <div class="t">Advanced Network Architecture</div>
+        <div class="why">Hub-spoke topology and network segmentation — how real enterprises structure Azure at scale.</div></div></div>
+      <div class="mod"><div class="ic">🧪</div><div class="body">
+        <div class="t">Real-World Networking Scenarios</div>
+        <div class="why">Applied decision-making and troubleshooting drills that mirror genuine production incidents.</div></div></div>
+      <div class="mod"><div class="ic">🔥</div><div class="body">
+        <div class="t">Azure Firewall <span class="ex">deep dive</span></div>
+        <div class="why">Centralized L3–L7 filtering with threat intelligence — the managed firewall for hub-spoke.</div></div></div>
+      <div class="mod"><div class="ic">🔍</div><div class="body">
+        <div class="t">Network Watcher &amp; Troubleshooting <span class="ex">deep dive</span></div>
+        <div class="why">Diagnostics, connection troubleshoot, and flow logs — how you actually find what's broken.</div></div></div>
+      <div class="mod"><div class="ic">🏆</div><div class="body">
+        <div class="t">Capstone: Hub-Spoke with Firewall &amp; Front Door <span class="tag">AFD</span> <span class="ex">deep dive</span></div>
+        <div class="why">A full end-to-end build that wires together everything you've learned into one architecture.</div></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== RECOMMENDED PATH ===================== -->
+  <section id="path">
+    <h2><span class="num">04</span> The recommended learning path</h2>
+    <p class="sub">
+      The fastest way through is mostly sequential — each level genuinely depends on the last. Here's
+      the order that builds understanding with the least friction.
+    </p>
+    <div class="panel">
+      <ol class="path">
+        <li>
+          <div class="h">Ground yourself in the fundamentals (all of L100)</div>
+          <div class="d">Don't skip this even if you've “done networking before.” The Azure-specific framing of
+          VNets and IP addressing is what makes L200 painless. Aim to finish all four before moving on.</div>
+        </li>
+        <li>
+          <div class="h">Learn the core L200 building blocks, in order</div>
+          <div class="d">NSGs → DNS → Load Balancing → Front Door Fundamentals → VPN/ExpressRoute → Peering.
+          The load-balancing module is the natural lead-in to Front Door, so keep that pairing intact.</div>
+        </li>
+        <li>
+          <div class="h">Add the L200 deep dives when they're relevant to you</div>
+          <div class="d">Bastion, NAT Gateway, and Route Tables/UDR are optional specialist topics. Pull them in
+          when your work touches secure VM access, outbound traffic, or custom routing.</div>
+        </li>
+        <li>
+          <div class="h">Go deep on the Front Door spine (start of L300)</div>
+          <div class="d">Advanced Configuration → Caching &amp; Performance → WAF &amp; Security. This is the
+          Academy's core specialism — three modules back-to-back that turn “I can deploy Front Door” into
+          “I can design and defend a global edge.”</div>
+        </li>
+        <li>
+          <div class="h">Tackle advanced architecture &amp; applied scenarios</div>
+          <div class="d">Advanced Network Architecture and Real-World Scenarios teach you to make design tradeoffs
+          and troubleshoot like an engineer, not just configure resources.</div>
+        </li>
+        <li>
+          <div class="h">Finish with the deep dives, then the capstone</div>
+          <div class="d">Azure Firewall and Network Watcher round out your toolkit; the Hub-Spoke + Firewall +
+          Front Door capstone is the proof you can assemble it all into one coherent architecture.</div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== AFD SPINE ===================== -->
+  <section id="afd">
+    <h2><span class="num">05</span> The Azure Front Door spine</h2>
+    <p class="sub">
+      Front Door isn't a single module — it's a thread running through the whole curriculum. Five
+      modules build on each other to take you from “what is the edge?” to a defended, production-grade
+      global architecture. <b>This is the Academy's signature specialism.</b>
+    </p>
+
+    <div class="spine-step">
+      <div class="pill">Front Door Fundamentals<small>L200 · what the global edge is &amp; why it exists</small></div>
+      <span class="arrow">→</span>
+      <div class="pill">Advanced Configuration<small>L300 · routing, origins, health probes</small></div>
+      <span class="arrow">→</span>
+      <div class="pill">Caching &amp; Performance<small>L300 · latency, caching, compression</small></div>
+    </div>
+    <div class="spine-step">
+      <div class="pill">WAF &amp; Security<small>L300 · firewall rules, rate limiting at the edge</small></div>
+      <span class="arrow">→</span>
+      <div class="pill">Capstone<small>L300 · Hub-Spoke + Firewall + Front Door, end to end</small></div>
+    </div>
+
+    <div class="note" style="margin-top:8px;">
+      <b>Why this matters:</b> Azure Front Door is the global, edge-based entry point that handles routing,
+      caching, TLS termination, and web-application firewalling before traffic ever reaches your origin.
+      Mastering it is the difference between “my app is online” and “my app is fast, resilient, and
+      defended worldwide.” Roughly <b>1 in 4 modules</b> reinforce this skill.
+    </div>
+  </section>
+
+  <!-- ===================== HOW TO LEARN ===================== -->
+  <section id="how">
+    <h2><span class="num">06</span> How to actually learn it</h2>
+    <p class="sub">
+      The Academy is built for active learning. A few habits make the difference between passive
+      reading and real retention.
+    </p>
+    <div class="grid2">
+      <div class="panel">
+        <div style="font-weight:600;margin-bottom:6px;">📖 Read for the “why,” not the “what”</div>
+        <ul class="clean">
+          <li>Each module leads with <b>real-world framing</b> — read the gotchas and trap call-outs first; they're where the understanding lives.</li>
+          <li>When you hit a new term, make sure you can explain it in one plain sentence before moving on.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <div style="font-weight:600;margin-bottom:6px;">🛠️ Do the hands-on bits</div>
+        <ul class="clean">
+          <li>The labs use real Azure CLI patterns (e.g. a dedicated <b>rg-net-lab</b> resource group) so you can build, break, and rebuild safely.</li>
+          <li>Type the commands — don't just read them. Muscle memory is the point.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <div style="font-weight:600;margin-bottom:6px;">✅ Use the built-in checks</div>
+        <ul class="clean">
+          <li>Knowledge checks, flashcards, and matching exercises are spaced through the modules to reinforce, not to grade.</li>
+          <li>Treat a wrong answer as a signal to re-read that section, not as a failure.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <div style="font-weight:600;margin-bottom:6px;">💾 Track your progress</div>
+        <ul class="clean">
+          <li>Progress is saved locally in your browser and can be <b>exported/imported as JSON</b> — back it up so you never lose your place.</li>
+          <li>Work in short, regular sessions; networking concepts compound, so consistency beats cramming.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WHY EACH LAYER ===================== -->
+  <section id="why">
+    <h2><span class="num">07</span> Why each layer matters — the mental model</h2>
+    <p class="sub">
+      If you remember one thing, remember the shape: <b>concepts → building blocks → architecture.</b>
+      Each layer is the foundation the next one stands on.
+    </p>
+    <div class="stack">
+      <div class="layer l100">
+        <div class="lt">L100 Foundations — “I understand the language”</div>
+        <div class="ld">Without IP, subnets, DNS, and routing in your head, every later service feels like
+        magic. This layer turns the rest of the path from memorization into reasoning.</div>
+      </div>
+      <div class="layer l200">
+        <div class="lt">L200 Intermediate — “I can build and connect things”</div>
+        <div class="ld">These are the parts you snap together in real Azure: a VNet secured by NSGs, names
+        resolved by DNS, traffic balanced, networks peered, the edge fronted by Front Door. This is day-to-day competence.</div>
+      </div>
+      <div class="layer l300">
+        <div class="lt">L300 Advanced — “I can design, secure, and fix it at scale”</div>
+        <div class="ld">Now you make tradeoffs: how to segment with hub-spoke, defend with WAF and Azure
+        Firewall, tune Front Door for global performance, and diagnose incidents with Network Watcher. The capstone proves you can do all of it together.</div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:20px;">
+      <b>Bottom line:</b> the Academy is a complete, self-contained path from networking newcomer to
+      someone who can architect a defended, global Azure application — with Azure Front Door as the
+      through-line. 21 modules, three levels, one coherent story: <b>learn the words, build the blocks,
+      design the system.</b>
+    </div>
+  </section>
+
+  <footer>
+    Azure Networking Academy · Comprehensive Learning Analysis · companion to
+    <a href="PRD.html">the Product Requirements Document</a>. Self-contained, real-world skills focused.
+  </footer>
+
+</div>
+</body>
+</html>

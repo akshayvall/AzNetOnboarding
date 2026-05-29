@@ -1,6 +1,6 @@
 # 🌐 Azure Networking Academy
 
-> An interactive, self-paced learning platform that takes you from **networking zero** to **Azure Front Door hero** — aligned with the **AZ-104: Microsoft Azure Administrator** certification.
+> An interactive, self-paced learning platform that takes you from **networking zero** to **Azure Front Door hero** — built around real-world Azure networking skills.
 
 **Live site:** https://akshayvall.github.io/AzNetOnboarding/
 
@@ -18,7 +18,7 @@ Progress is saved in your browser's `localStorage` — you can export/import it 
 
 - Absolute beginners to computer networking
 - Developers moving into cloud / DevOps roles
-- Candidates preparing for the **AZ-104** exam
+- TPMs, PMs, and engineers who need to reason about Azure networking in production
 - Anyone who needs to understand **Azure Front Door** end-to-end (architecture → WAF → Rules Engine → Private Link)
 
 No prior Azure or networking experience required.
@@ -40,7 +40,7 @@ Start here if terms like *subnet*, *DNS*, or *TCP handshake* are new to you.
 | 4 | IP Addressing in Azure | Public/private IPs, static vs dynamic, NAT |
 
 ### ⬡ Level 200 — Intermediate (9 modules)
-Core Azure networking services — where AZ-104 really lives.
+Core Azure networking services — the day-to-day building blocks of any deployment.
 
 | # | Module | Covers |
 |---|---|---|
@@ -55,7 +55,7 @@ Core Azure networking services — where AZ-104 really lives.
 | 9 | **Route Tables & UDRs** | Custom routes, NVA forwarding, BGP route propagation |
 
 ### ⬡ Level 300 — Advanced (8 modules)
-Deep-dive on Front Door, security, and AZ-104 exam-style scenarios.
+Deep-dive on Front Door, security, and real-world architecture scenarios.
 
 | # | Module | Covers |
 |---|---|---|
@@ -63,16 +63,16 @@ Deep-dive on Front Door, security, and AZ-104 exam-style scenarios.
 | 2 | **Front Door Caching & Performance** | Cache behavior, compression, optimization strategies |
 | 3 | **Front Door WAF & Security** | WAF policies, managed rules, bot protection, DDoS |
 | 4 | Advanced Network Architecture | Hub-spoke, Azure Firewall, Network Virtual Appliances |
-| 5 | AZ-104 Networking Scenarios | Exam-style questions and real-world scenarios |
+| 5 | Real-World Networking Scenarios | Troubleshooting drills and production design scenarios |
 | 6 | **Azure Firewall** | Application/network/NAT rules, Firewall Policy, threat intel |
 | 7 | **Network Watcher** | Connection Monitor, NSG flow logs, IP flow verify, packet capture |
 | 8 | **Capstone: Hub-Spoke** | End-to-end design: Firewall + Bastion + VPN + peering + UDRs |
 
 ---
 
-## 🎓 AZ-104 alignment
+## 🎓 Skills you'll build
 
-The curriculum maps to the **"Configure and manage virtual networking"** domain of AZ-104 (which is ~25–30% of the exam), including:
+The curriculum covers the full **"configure and manage virtual networking"** skill set used in real Azure deployments:
 
 - Virtual networks, subnets, peering
 - Public & private IP addressing
@@ -82,7 +82,7 @@ The curriculum maps to the **"Configure and manage virtual networking"** domain 
 - Load balancing (Basic LB, Application Gateway, Traffic Manager, **Front Door**)
 - Network monitoring & troubleshooting
 
-The L300 **AZ-104 Networking Scenarios** module contains exam-style practice questions.
+The L300 **Real-World Networking Scenarios** module puts these together with troubleshooting drills and production design challenges.
 
 ---
 

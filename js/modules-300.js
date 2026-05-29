@@ -1349,7 +1349,7 @@ az network vnet subnet update \\
                 explanation: 'VNet peering is NON-TRANSITIVE. Even though spoke-prod peers with hub, and hub peers with spoke-dev, spoke-prod CANNOT reach spoke-dev. Traffic doesn\'t "transit" through the hub automatically. To enable spoke-to-spoke communication, you need Azure Firewall (or NVA) in the hub plus User Defined Routes (UDRs) on spoke subnets pointing to the firewall.',
                 portal: `<ol><li>Look at the topology: spoke-prod ↔ hub ↔ spoke-dev</li><li>Even though both spokes connect to the hub, a VM in spoke-prod (10.1.1.4) CANNOT ping a VM in spoke-dev (10.2.1.4)</li><li>This is by design — it provides security isolation between workloads</li><li>To enable spoke-to-spoke: deploy Azure Firewall in hub + create UDRs on spoke subnets with next-hop = Firewall IP</li><li>The Firewall then inspects and controls all inter-spoke traffic</li></ol>`,
                 cli: `<div class="lab-code-block"># Peering is non-transitive!\n# spoke-prod ↔ hub ↔ spoke-dev\n# But spoke-prod ✗ spoke-dev\n\n# To enable spoke-to-spoke, you need:\n# 1. Azure Firewall in the hub\n# 2. UDR on spoke subnets:\n#    0.0.0.0/0 → VirtualAppliance (Firewall IP)\n# 3. Firewall rules allowing spoke-to-spoke traffic</div>`,
-                tip: 'Non-transitivity is an AZ-104 exam favorite. Remember: A↔B and B↔C does NOT mean A can reach C.',
+                tip: 'Non-transitivity is a common real-world gotcha. Remember: A↔B and B↔C does NOT mean A can reach C.',
                 verification: 'You understand that VNet peering is non-transitive and spoke-to-spoke communication requires Azure Firewall + UDRs.'
             },
             {
@@ -1364,19 +1364,19 @@ az network vnet subnet update \\
 },
 
 // ──────────────────────────────────────────────
-// MODULE 15: AZ-104 Practice Scenarios
+// MODULE 15: Real-World Networking Scenarios
 // ──────────────────────────────────────────────
 {
     id: 'az104-practice',
     level: 300,
-    title: 'AZ-104 Networking Scenarios',
-    subtitle: 'Exam-style questions and real-world scenarios',
+    title: 'Real-World Networking Scenarios',
+    subtitle: 'Practice questions and real-world scenarios',
     icon: '📝',
     estimatedTime: '60m',
     learn: `
 <div class="learn-section">
-    <h2>AZ-104 Networking Topic Areas</h2>
-    <p>The AZ-104 exam covers networking under "Configure and manage virtual networking" (25-30% of the exam). Key topics:</p>
+    <h2>Core Networking Topic Areas</h2>
+    <p>Production Azure networking centers on configuring and managing virtual networking. These are the topics that matter most day-to-day:</p>
     
     <div class="accordion">
         <div class="accordion-item">
@@ -1488,11 +1488,11 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
 </div>
 
 <div class="learn-section">
-    <h2>Common Exam Traps</h2>
+    <h2>Common Traps</h2>
     
     <div class="warning-box">
         <h4>⚠️ Trap #1: VNet Peering is Non-Transitive</h4>
-        <p>If A↔B and B↔C, A cannot reach C unless A↔C peering exists. The exam loves testing this.</p>
+        <p>If A↔B and B↔C, A cannot reach C unless A↔C peering exists. This is a classic real-world mistake.</p>
     </div>
 
     <div class="warning-box">
@@ -1522,7 +1522,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
 </div>
 
 <div class="learn-section">
-    <h2>Decision Trees for the Exam</h2>
+    <h2>Decision Trees</h2>
     
     <h3>Which Load Balancer?</h3>
     <ul>
@@ -1565,7 +1565,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
             question: 'You need to deploy a Standard Load Balancer. Which public IP SKU must you use?',
             options: ['Basic', 'Standard', 'Either Basic or Standard', 'No public IP needed'],
             correct: 1,
-            explanation: 'Standard Load Balancer requires Standard SKU Public IP. You cannot mix Basic and Standard SKUs. This is a common exam question — remember: Standard goes with Standard.'
+            explanation: 'Standard Load Balancer requires Standard SKU Public IP. You cannot mix Basic and Standard SKUs. This is a common real-world gotcha — remember: Standard goes with Standard.'
         },
         {
             question: 'You want to point the naked domain "contoso.com" to your Azure Front Door. What do you configure?',
@@ -1602,7 +1602,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
         {
             type: 'flashcards',
             id: 'az104-flashcards',
-            title: 'AZ-104 Rapid Review — Full Deck',
+            title: 'Networking Rapid Review — Full Deck',
             cards: [
                 { front: 'What is Network Watcher?', back: 'Azure\'s network monitoring and diagnostics tool. Features: IP flow verify (test NSG rules), connection troubleshoot, packet capture, NSG flow logs, topology view, VPN diagnostics.' },
                 { front: 'What is Azure Bastion?', back: 'PaaS service for secure RDP/SSH access to VMs directly from the Azure portal — no public IP needed on the VM. Requires AzureBastionSubnet (/26). Developer SKU allows connection from native SSH/RDP clients.' },
@@ -1637,81 +1637,81 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
         }
     ],
     lab: {
-        title: 'Hands-On: AZ-104 Full Scenario Lab',
+        title: 'Hands-On: Full Networking Scenario Lab',
         icon: '📝',
-        scenario: 'Build a complete Azure networking environment from scratch — VNet with proper subnetting, NSG rules with correct priority ordering, Azure DNS private zone, and a Standard Load Balancer. This lab covers the most-tested AZ-104 networking topics in one hands-on exercise.',
+        scenario: 'Build a complete Azure networking environment from scratch — VNet with proper subnetting, NSG rules with correct priority ordering, Azure DNS private zone, and a Standard Load Balancer. This lab covers the most important real-world networking topics in one hands-on exercise.',
         duration: '40-50 min',
         cost: 'Free (VNets, NSGs, DNS zones, and unattached LBs are free)',
         difficulty: 'Advanced',
         prerequisites: ['Azure subscription', 'Resource group', 'Basic familiarity with Azure CLI or Portal'],
-        cleanup: `Delete the resource group to remove everything: az group delete --name rg-az104-lab --yes --no-wait`,
+        cleanup: `Delete the resource group to remove everything: az group delete --name rg-net-lab --yes --no-wait`,
         steps: [
             {
                 title: 'Scenario Setup — Create the Environment',
-                subtitle: 'Create a VNet with exam-realistic subnetting',
+                subtitle: 'Create a VNet with production-realistic subnetting',
                 type: 'confirm',
-                explanation: 'You\'ll create a VNet with three subnets matching a common AZ-104 exam scenario: a frontend subnet for web servers, a backend subnet for databases, and a GatewaySubnet for future VPN connectivity. Note the GatewaySubnet must be named exactly "GatewaySubnet" and is typically /27.',
-                portal: `<ol><li>Create resource group: <strong>rg-az104-lab</strong>, region: <strong>East US</strong></li><li>Create VNet: name: <strong>vnet-exam</strong>, address space: <strong>10.10.0.0/16</strong></li><li>Add subnet 1: <strong>snet-frontend</strong> — <strong>10.10.1.0/24</strong></li><li>Add subnet 2: <strong>snet-backend</strong> — <strong>10.10.2.0/24</strong></li><li>Add subnet 3: <strong>GatewaySubnet</strong> — <strong>10.10.255.0/27</strong></li><li>Click <strong>Review + Create</strong> → <strong>Create</strong></li></ol>`,
-                cli: `<div class="lab-code-block"># Create resource group\naz group create --name rg-az104-lab --location eastus\n\n# Create VNet with frontend subnet\naz network vnet create \\\n    --resource-group rg-az104-lab \\\n    --name vnet-exam \\\n    --address-prefix 10.10.0.0/16 \\\n    --subnet-name snet-frontend \\\n    --subnet-prefix 10.10.1.0/24\n\n# Add backend subnet\naz network vnet subnet create \\\n    --resource-group rg-az104-lab \\\n    --vnet-name vnet-exam \\\n    --name snet-backend \\\n    --address-prefix 10.10.2.0/24\n\n# Add GatewaySubnet\naz network vnet subnet create \\\n    --resource-group rg-az104-lab \\\n    --vnet-name vnet-exam \\\n    --name GatewaySubnet \\\n    --address-prefix 10.10.255.0/27</div>`,
+                explanation: 'You\'ll create a VNet with three subnets matching a common production scenario: a frontend subnet for web servers, a backend subnet for databases, and a GatewaySubnet for future VPN connectivity. Note the GatewaySubnet must be named exactly "GatewaySubnet" and is typically /27.',
+                portal: `<ol><li>Create resource group: <strong>rg-net-lab</strong>, region: <strong>East US</strong></li><li>Create VNet: name: <strong>vnet-lab</strong>, address space: <strong>10.10.0.0/16</strong></li><li>Add subnet 1: <strong>snet-frontend</strong> — <strong>10.10.1.0/24</strong></li><li>Add subnet 2: <strong>snet-backend</strong> — <strong>10.10.2.0/24</strong></li><li>Add subnet 3: <strong>GatewaySubnet</strong> — <strong>10.10.255.0/27</strong></li><li>Click <strong>Review + Create</strong> → <strong>Create</strong></li></ol>`,
+                cli: `<div class="lab-code-block"># Create resource group\naz group create --name rg-net-lab --location eastus\n\n# Create VNet with frontend subnet\naz network vnet create \\\n    --resource-group rg-net-lab \\\n    --name vnet-lab \\\n    --address-prefix 10.10.0.0/16 \\\n    --subnet-name snet-frontend \\\n    --subnet-prefix 10.10.1.0/24\n\n# Add backend subnet\naz network vnet subnet create \\\n    --resource-group rg-net-lab \\\n    --vnet-name vnet-lab \\\n    --name snet-backend \\\n    --address-prefix 10.10.2.0/24\n\n# Add GatewaySubnet\naz network vnet subnet create \\\n    --resource-group rg-net-lab \\\n    --vnet-name vnet-lab \\\n    --name GatewaySubnet \\\n    --address-prefix 10.10.255.0/27</div>`,
                 tip: 'GatewaySubnet is a reserved name in Azure — it must be exactly "GatewaySubnet" (case-sensitive). It\'s where VPN/ExpressRoute gateways are deployed. Minimum size: /27.',
-                verification: 'VNet vnet-exam exists with 3 subnets: snet-frontend (10.10.1.0/24), snet-backend (10.10.2.0/24), and GatewaySubnet (10.10.255.0/27).'
+                verification: 'VNet vnet-lab exists with 3 subnets: snet-frontend (10.10.1.0/24), snet-backend (10.10.2.0/24), and GatewaySubnet (10.10.255.0/27).'
             },
             {
                 title: 'Configure NSG Rules',
-                subtitle: 'Create NSGs with proper priority ordering — a key AZ-104 topic',
+                subtitle: 'Create NSGs with proper priority ordering — a key production skill',
                 type: 'confirm',
                 explanation: 'NSG rules are evaluated by priority number (lower = evaluated first). First match wins. You\'ll create two NSGs: nsg-frontend allows HTTP/HTTPS from the internet, and nsg-backend allows SQL (port 1433) ONLY from the frontend subnet while denying all other internet traffic.',
                 portal: `<ol><li>Create NSG 1: <strong>nsg-frontend</strong></li><li>Add inbound rule: Priority <strong>100</strong>, Source: Internet, Dest port: <strong>443</strong>, Protocol: TCP, Action: <strong>Allow</strong>, Name: AllowHTTPS</li><li>Add inbound rule: Priority <strong>110</strong>, Source: Internet, Dest port: <strong>80</strong>, Protocol: TCP, Action: <strong>Allow</strong>, Name: AllowHTTP</li><li>Associate nsg-frontend with <strong>snet-frontend</strong></li><li>Create NSG 2: <strong>nsg-backend</strong></li><li>Add inbound rule: Priority <strong>100</strong>, Source: <strong>10.10.1.0/24</strong>, Dest port: <strong>1433</strong>, Protocol: TCP, Action: <strong>Allow</strong>, Name: AllowSQL-FromFrontend</li><li>Add inbound rule: Priority <strong>200</strong>, Source: Internet, Dest port: <strong>*</strong>, Action: <strong>Deny</strong>, Name: DenyAllInternet</li><li>Associate nsg-backend with <strong>snet-backend</strong></li></ol>`,
-                cli: `<div class="lab-code-block"># Create frontend NSG\naz network nsg create --resource-group rg-az104-lab --name nsg-frontend\n\n# Allow HTTPS (priority 100)\naz network nsg rule create \\\n    --resource-group rg-az104-lab --nsg-name nsg-frontend \\\n    --name AllowHTTPS --priority 100 \\\n    --source-address-prefixes Internet --destination-port-ranges 443 \\\n    --protocol Tcp --access Allow --direction Inbound\n\n# Allow HTTP (priority 110)\naz network nsg rule create \\\n    --resource-group rg-az104-lab --nsg-name nsg-frontend \\\n    --name AllowHTTP --priority 110 \\\n    --source-address-prefixes Internet --destination-port-ranges 80 \\\n    --protocol Tcp --access Allow --direction Inbound\n\n# Associate with frontend subnet\naz network vnet subnet update \\\n    --resource-group rg-az104-lab --vnet-name vnet-exam \\\n    --name snet-frontend --network-security-group nsg-frontend\n\n# Create backend NSG\naz network nsg create --resource-group rg-az104-lab --name nsg-backend\n\n# Allow SQL only from frontend subnet (priority 100)\naz network nsg rule create \\\n    --resource-group rg-az104-lab --nsg-name nsg-backend \\\n    --name AllowSQL-FromFrontend --priority 100 \\\n    --source-address-prefixes 10.10.1.0/24 --destination-port-ranges 1433 \\\n    --protocol Tcp --access Allow --direction Inbound\n\n# Deny all internet (priority 200)\naz network nsg rule create \\\n    --resource-group rg-az104-lab --nsg-name nsg-backend \\\n    --name DenyAllInternet --priority 200 \\\n    --source-address-prefixes Internet --destination-port-ranges "*" \\\n    --protocol "*" --access Deny --direction Inbound\n\n# Associate with backend subnet\naz network vnet subnet update \\\n    --resource-group rg-az104-lab --vnet-name vnet-exam \\\n    --name snet-backend --network-security-group nsg-backend</div>`,
-                tip: 'AZ-104 trap: Priority 100 (Allow SQL from frontend) is evaluated BEFORE priority 200 (Deny Internet). Order matters! If you swapped priorities, SQL from frontend would be denied.',
+                cli: `<div class="lab-code-block"># Create frontend NSG\naz network nsg create --resource-group rg-net-lab --name nsg-frontend\n\n# Allow HTTPS (priority 100)\naz network nsg rule create \\\n    --resource-group rg-net-lab --nsg-name nsg-frontend \\\n    --name AllowHTTPS --priority 100 \\\n    --source-address-prefixes Internet --destination-port-ranges 443 \\\n    --protocol Tcp --access Allow --direction Inbound\n\n# Allow HTTP (priority 110)\naz network nsg rule create \\\n    --resource-group rg-net-lab --nsg-name nsg-frontend \\\n    --name AllowHTTP --priority 110 \\\n    --source-address-prefixes Internet --destination-port-ranges 80 \\\n    --protocol Tcp --access Allow --direction Inbound\n\n# Associate with frontend subnet\naz network vnet subnet update \\\n    --resource-group rg-net-lab --vnet-name vnet-lab \\\n    --name snet-frontend --network-security-group nsg-frontend\n\n# Create backend NSG\naz network nsg create --resource-group rg-net-lab --name nsg-backend\n\n# Allow SQL only from frontend subnet (priority 100)\naz network nsg rule create \\\n    --resource-group rg-net-lab --nsg-name nsg-backend \\\n    --name AllowSQL-FromFrontend --priority 100 \\\n    --source-address-prefixes 10.10.1.0/24 --destination-port-ranges 1433 \\\n    --protocol Tcp --access Allow --direction Inbound\n\n# Deny all internet (priority 200)\naz network nsg rule create \\\n    --resource-group rg-net-lab --nsg-name nsg-backend \\\n    --name DenyAllInternet --priority 200 \\\n    --source-address-prefixes Internet --destination-port-ranges "*" \\\n    --protocol "*" --access Deny --direction Inbound\n\n# Associate with backend subnet\naz network vnet subnet update \\\n    --resource-group rg-net-lab --vnet-name vnet-lab \\\n    --name snet-backend --network-security-group nsg-backend</div>`,
+                tip: 'Common trap: Priority 100 (Allow SQL from frontend) is evaluated BEFORE priority 200 (Deny Internet). Order matters! If you swapped priorities, SQL from frontend would be denied.',
                 verification: 'nsg-frontend allows 443 and 80 from Internet. nsg-backend allows 1433 only from 10.10.1.0/24 and denies all other Internet traffic. Both NSGs are associated with their respective subnets.'
             },
             {
                 title: 'Set Up Azure DNS',
                 subtitle: 'Create a private DNS zone with auto-registration',
                 type: 'confirm',
-                explanation: 'Private DNS zones provide name resolution within your VNet without exposing DNS records to the internet. Auto-registration automatically creates DNS records for VMs deployed in linked VNets — so VMs can find each other by name (e.g., webserver1.exam.internal).',
-                portal: `<ol><li>Search for <strong>"Private DNS zones"</strong></li><li>Click <strong>+ Create</strong></li><li>Resource group: <strong>rg-az104-lab</strong></li><li>Name: <strong>exam.internal</strong></li><li>Click <strong>Create</strong></li><li>After creation, go to <strong>Virtual network links</strong></li><li>Click <strong>+ Add</strong></li><li>Link name: <strong>link-vnet-exam</strong></li><li>Virtual network: <strong>vnet-exam</strong></li><li>Check: <strong>Enable auto registration</strong></li><li>Click <strong>OK</strong></li></ol>`,
-                cli: `<div class="lab-code-block"># Create private DNS zone\naz network private-dns zone create \\\n    --resource-group rg-az104-lab \\\n    --name exam.internal\n\n# Link to VNet with auto-registration\naz network private-dns link vnet create \\\n    --resource-group rg-az104-lab \\\n    --zone-name exam.internal \\\n    --name link-vnet-exam \\\n    --virtual-network vnet-exam \\\n    --registration-enabled true</div>`,
-                tip: 'With auto-registration enabled, any VM deployed in vnet-exam will automatically get a DNS record like vm-name.exam.internal. No manual DNS configuration needed!',
-                verification: 'Private DNS zone exam.internal exists and is linked to vnet-exam with auto-registration enabled.'
+                explanation: 'Private DNS zones provide name resolution within your VNet without exposing DNS records to the internet. Auto-registration automatically creates DNS records for VMs deployed in linked VNets — so VMs can find each other by name (e.g., webserver1.lab.internal).',
+                portal: `<ol><li>Search for <strong>"Private DNS zones"</strong></li><li>Click <strong>+ Create</strong></li><li>Resource group: <strong>rg-net-lab</strong></li><li>Name: <strong>lab.internal</strong></li><li>Click <strong>Create</strong></li><li>After creation, go to <strong>Virtual network links</strong></li><li>Click <strong>+ Add</strong></li><li>Link name: <strong>link-vnet-lab</strong></li><li>Virtual network: <strong>vnet-lab</strong></li><li>Check: <strong>Enable auto registration</strong></li><li>Click <strong>OK</strong></li></ol>`,
+                cli: `<div class="lab-code-block"># Create private DNS zone\naz network private-dns zone create \\\n    --resource-group rg-net-lab \\\n    --name lab.internal\n\n# Link to VNet with auto-registration\naz network private-dns link vnet create \\\n    --resource-group rg-net-lab \\\n    --zone-name lab.internal \\\n    --name link-vnet-lab \\\n    --virtual-network vnet-lab \\\n    --registration-enabled true</div>`,
+                tip: 'With auto-registration enabled, any VM deployed in vnet-lab will automatically get a DNS record like vm-name.lab.internal. No manual DNS configuration needed!',
+                verification: 'Private DNS zone lab.internal exists and is linked to vnet-lab with auto-registration enabled.'
             },
             {
                 title: 'Create an Azure Load Balancer',
-                subtitle: 'Deploy a Standard Load Balancer — the AZ-104 required SKU',
+                subtitle: 'Deploy a Standard Load Balancer — the recommended production SKU',
                 type: 'confirm',
                 explanation: 'The Standard Load Balancer is required for zone-redundancy, NSG-required backends, and SLA-backed availability. You\'ll create one with a frontend IP, backend pool, health probe, and load balancing rule. Remember: Standard LB requires Standard Public IP — you cannot mix SKUs.',
-                portal: `<ol><li>Search for <strong>"Load balancers"</strong> → <strong>+ Create</strong></li><li>SKU: <strong>Standard</strong></li><li>Type: <strong>Public</strong></li><li>Name: <strong>lb-frontend</strong></li><li>Region: <strong>East US</strong></li><li>Frontend IP: Create new → Name: <strong>pip-lb</strong> (Standard SKU auto-selected)</li><li>Backend pool: <strong>bp-web</strong> → Associated to <strong>vnet-exam</strong></li><li>Health probe: <strong>hp-http</strong> → Protocol: HTTP, Port: <strong>80</strong>, Path: /</li><li>Load balancing rule: <strong>rule-http</strong> → Frontend port: <strong>80</strong>, Backend port: <strong>80</strong>, Backend pool: bp-web, Health probe: hp-http</li><li>Click <strong>Review + Create</strong> → <strong>Create</strong></li></ol>`,
-                cli: `<div class="lab-code-block"># Create Standard Public IP\naz network public-ip create \\\n    --resource-group rg-az104-lab \\\n    --name pip-lb \\\n    --sku Standard \\\n    --allocation-method Static\n\n# Create Standard Load Balancer\naz network lb create \\\n    --resource-group rg-az104-lab \\\n    --name lb-frontend \\\n    --sku Standard \\\n    --frontend-ip-name fe-ip \\\n    --public-ip-address pip-lb \\\n    --backend-pool-name bp-web\n\n# Create health probe\naz network lb probe create \\\n    --resource-group rg-az104-lab \\\n    --lb-name lb-frontend \\\n    --name hp-http \\\n    --protocol Http \\\n    --port 80 \\\n    --path /\n\n# Create LB rule\naz network lb rule create \\\n    --resource-group rg-az104-lab \\\n    --lb-name lb-frontend \\\n    --name rule-http \\\n    --frontend-ip-name fe-ip \\\n    --backend-pool-name bp-web \\\n    --probe-name hp-http \\\n    --protocol Tcp \\\n    --frontend-port 80 \\\n    --backend-port 80</div>`,
-                tip: 'AZ-104 key rule: Standard LB requires Standard Public IP. Basic LB uses Basic Public IP. You CANNOT mix SKUs. The exam tests this frequently.',
+                portal: `<ol><li>Search for <strong>"Load balancers"</strong> → <strong>+ Create</strong></li><li>SKU: <strong>Standard</strong></li><li>Type: <strong>Public</strong></li><li>Name: <strong>lb-frontend</strong></li><li>Region: <strong>East US</strong></li><li>Frontend IP: Create new → Name: <strong>pip-lb</strong> (Standard SKU auto-selected)</li><li>Backend pool: <strong>bp-web</strong> → Associated to <strong>vnet-lab</strong></li><li>Health probe: <strong>hp-http</strong> → Protocol: HTTP, Port: <strong>80</strong>, Path: /</li><li>Load balancing rule: <strong>rule-http</strong> → Frontend port: <strong>80</strong>, Backend port: <strong>80</strong>, Backend pool: bp-web, Health probe: hp-http</li><li>Click <strong>Review + Create</strong> → <strong>Create</strong></li></ol>`,
+                cli: `<div class="lab-code-block"># Create Standard Public IP\naz network public-ip create \\\n    --resource-group rg-net-lab \\\n    --name pip-lb \\\n    --sku Standard \\\n    --allocation-method Static\n\n# Create Standard Load Balancer\naz network lb create \\\n    --resource-group rg-net-lab \\\n    --name lb-frontend \\\n    --sku Standard \\\n    --frontend-ip-name fe-ip \\\n    --public-ip-address pip-lb \\\n    --backend-pool-name bp-web\n\n# Create health probe\naz network lb probe create \\\n    --resource-group rg-net-lab \\\n    --lb-name lb-frontend \\\n    --name hp-http \\\n    --protocol Http \\\n    --port 80 \\\n    --path /\n\n# Create LB rule\naz network lb rule create \\\n    --resource-group rg-net-lab \\\n    --lb-name lb-frontend \\\n    --name rule-http \\\n    --frontend-ip-name fe-ip \\\n    --backend-pool-name bp-web \\\n    --probe-name hp-http \\\n    --protocol Tcp \\\n    --frontend-port 80 \\\n    --backend-port 80</div>`,
+                tip: 'Key rule: Standard LB requires Standard Public IP. Basic LB uses Basic Public IP. You CANNOT mix SKUs. This bites people frequently in production.',
                 verification: 'Standard Load Balancer lb-frontend exists with a Standard Public IP, backend pool, HTTP health probe on port 80, and a load balancing rule.'
             },
             {
                 title: 'Verify Effective Security Rules',
                 subtitle: 'Use CLI to check what rules actually apply',
                 type: 'confirm',
-                explanation: 'Effective security rules show the combined result of all NSG rules (subnet-level + NIC-level) that apply to a specific network interface. This is a critical troubleshooting skill for the AZ-104 exam. You can also use Network Watcher\'s IP Flow Verify to test if specific traffic would be allowed or denied.',
+                explanation: 'Effective security rules show the combined result of all NSG rules (subnet-level + NIC-level) that apply to a specific network interface. This is a critical real-world troubleshooting skill. You can also use Network Watcher\'s IP Flow Verify to test if specific traffic would be allowed or denied.',
                 portal: `<ol><li>If you have a VM NIC, go to: <strong>Network interface</strong> → <strong>Effective security rules</strong></li><li>Or use <strong>Network Watcher</strong> → <strong>IP flow verify</strong> to test specific traffic flows</li><li>Concept check: Frontend allows HTTP/HTTPS from Internet ✓</li><li>Concept check: Backend allows SQL 1433 from frontend subnet only ✓</li><li>Concept check: Backend denies all other Internet traffic ✓</li></ol>`,
-                cli: `<div class="lab-code-block"># If you have a NIC, check effective rules:\n# az network nic list-effective-nsg \\\n#     --resource-group rg-az104-lab \\\n#     --name your-nic-name\n\n# Verify NSG rules are correct:\naz network nsg rule list \\\n    --resource-group rg-az104-lab \\\n    --nsg-name nsg-frontend \\\n    --output table\n\naz network nsg rule list \\\n    --resource-group rg-az104-lab \\\n    --nsg-name nsg-backend \\\n    --output table</div>`,
-                tip: 'On the AZ-104 exam, "effective security rules" questions test whether you understand NSG rule evaluation order and how subnet + NIC NSGs combine.',
+                cli: `<div class="lab-code-block"># If you have a NIC, check effective rules:\n# az network nic list-effective-nsg \\\n#     --resource-group rg-net-lab \\\n#     --name your-nic-name\n\n# Verify NSG rules are correct:\naz network nsg rule list \\\n    --resource-group rg-net-lab \\\n    --nsg-name nsg-frontend \\\n    --output table\n\naz network nsg rule list \\\n    --resource-group rg-net-lab \\\n    --nsg-name nsg-backend \\\n    --output table</div>`,
+                tip: 'In real troubleshooting, "effective security rules" is how you confirm you understand NSG rule evaluation order and how subnet + NIC NSGs combine.',
                 verification: 'You can list NSG rules and understand the effective security posture: frontend allows web traffic, backend is locked down to SQL from frontend only.'
             },
             {
                 title: 'Clean Up and Review',
-                subtitle: 'Delete resources and review key exam topics',
+                subtitle: 'Delete resources and review key networking topics',
                 type: 'confirm',
-                explanation: 'Delete the resource group to clean up all resources. Then review the key AZ-104 networking topics this lab covered: VNet/subnet design and CIDR planning, NSG rules with priority ordering, Private DNS zones with auto-registration, Standard Load Balancer SKU requirements, and effective security rule evaluation.',
-                portal: `<ol><li>Go to <strong>Resource groups</strong> → <strong>rg-az104-lab</strong></li><li>Click <strong>Delete resource group</strong></li><li>Type the name to confirm → <strong>Delete</strong></li><li><strong>Key exam topics covered:</strong></li><li>✅ VNet creation with proper subnet sizing (including reserved IPs)</li><li>✅ NSG rules — priority ordering, first-match-wins</li><li>✅ Private DNS zones — auto-registration for VMs</li><li>✅ Standard LB — requires Standard Public IP (no SKU mixing)</li><li>✅ GatewaySubnet — reserved name, minimum /27</li></ol>`,
-                cli: `<div class="lab-code-block"># Delete everything\naz group delete --name rg-az104-lab --yes --no-wait\n\n# Key AZ-104 topics covered:\n# 1. VNet/Subnet design — CIDR planning, Azure reserves 5 IPs per subnet\n# 2. NSG rules — lower priority number = evaluated first, first match wins\n# 3. Private DNS zones — auto-registration links VMs to DNS automatically\n# 4. Standard LB — requires Standard Public IP, closed by default (needs NSG)\n# 5. GatewaySubnet — exact name required, minimum /27 for VPN Gateway</div>`,
-                tip: 'For the exam, remember these gotchas: Azure reserves 5 IPs per subnet (not 2), Standard LB is closed by default (must add NSG), CNAME cannot be at zone apex, and VNet peering is non-transitive.',
-                verification: 'Resource group deletion is in progress. You\'ve reviewed all key AZ-104 networking topics.'
+                explanation: 'Delete the resource group to clean up all resources. Then review the key networking topics this lab covered: VNet/subnet design and CIDR planning, NSG rules with priority ordering, Private DNS zones with auto-registration, Standard Load Balancer SKU requirements, and effective security rule evaluation.',
+                portal: `<ol><li>Go to <strong>Resource groups</strong> → <strong>rg-net-lab</strong></li><li>Click <strong>Delete resource group</strong></li><li>Type the name to confirm → <strong>Delete</strong></li><li><strong>Key topics covered:</strong></li><li>✅ VNet creation with proper subnet sizing (including reserved IPs)</li><li>✅ NSG rules — priority ordering, first-match-wins</li><li>✅ Private DNS zones — auto-registration for VMs</li><li>✅ Standard LB — requires Standard Public IP (no SKU mixing)</li><li>✅ GatewaySubnet — reserved name, minimum /27</li></ol>`,
+                cli: `<div class="lab-code-block"># Delete everything\naz group delete --name rg-net-lab --yes --no-wait\n\n# Key topics covered:\n# 1. VNet/Subnet design — CIDR planning, Azure reserves 5 IPs per subnet\n# 2. NSG rules — lower priority number = evaluated first, first match wins\n# 3. Private DNS zones — auto-registration links VMs to DNS automatically\n# 4. Standard LB — requires Standard Public IP, closed by default (needs NSG)\n# 5. GatewaySubnet — exact name required, minimum /27 for VPN Gateway</div>`,
+                tip: 'Remember these gotchas: Azure reserves 5 IPs per subnet (not 2), Standard LB is closed by default (must add NSG), CNAME cannot be at zone apex, and VNet peering is non-transitive.',
+                verification: 'Resource group deletion is in progress. You\'ve reviewed all key networking topics.'
             },
             {
                 title: 'Review: Load Balancer SKU Matching',
                 subtitle: 'Key takeaway',
                 type: 'confirm',
-                explanation: 'A Standard Load Balancer requires a Standard SKU Public IP address — you cannot mix Basic and Standard SKUs. This is one of the most frequently tested AZ-104 concepts. Standard LB is also closed by default (requires an NSG to allow traffic), unlike Basic LB which is open by default.',
-                portal: `<ol><li><strong>Standard LB requires Standard Public IP</strong> — SKU mixing is not allowed</li><li>Standard LB is <strong>closed by default</strong> — you must add NSG rules to allow traffic</li><li>Basic LB is open by default but lacks zone redundancy and SLA</li><li>Standard is required for Availability Zones and cross-VNet backends</li><li>This is a top AZ-104 exam question — always match SKUs</li></ol>`
+                explanation: 'A Standard Load Balancer requires a Standard SKU Public IP address — you cannot mix Basic and Standard SKUs. This is one of the most common real-world configuration mistakes. Standard LB is also closed by default (requires an NSG to allow traffic), unlike Basic LB which is open by default.',
+                portal: `<ol><li><strong>Standard LB requires Standard Public IP</strong> — SKU mixing is not allowed</li><li>Standard LB is <strong>closed by default</strong> — you must add NSG rules to allow traffic</li><li>Basic LB is open by default but lacks zone redundancy and SLA</li><li>Standard is required for Availability Zones and cross-VNet backends</li><li>This is a critical real-world fact — always match SKUs</li></ol>`
             }
         ]
     }

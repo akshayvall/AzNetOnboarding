@@ -20,8 +20,8 @@ const MODULES_100 = [
     <p>Before diving into Azure networking, you need a solid understanding of how networks work. Every Azure service communicates over a network, and understanding the fundamentals will make Azure concepts click naturally.</p>
     
     <div class="concept-box">
-        <h4>🎯 AZ-104 Relevance</h4>
-        <p>The AZ-104 exam assumes foundational networking knowledge. Understanding OSI layers, IP addressing, DNS, and routing is critical for configuring Azure Virtual Networks, NSGs, and load balancers.</p>
+        <h4>🎯 Why This Matters</h4>
+        <p>Foundational networking knowledge is essential before diving into Azure. Understanding OSI layers, IP addressing, DNS, and routing is critical for configuring Azure Virtual Networks, NSGs, and load balancers.</p>
     </div>
 </div>
 
@@ -546,7 +546,7 @@ dig portal.azure.com CNAME</div>`,
     </ul>
 
     <div class="warning-box">
-        <h4>⚠️ Important for AZ-104</h4>
+        <h4>⚠️ Critical Concept</h4>
         <p>The resource group region only stores metadata. A VNet in a resource group located in "East US" can be deployed to "West Europe". Don't confuse resource group location with resource location.</p>
     </div>
 </div>
@@ -983,8 +983,8 @@ az network vnet subnet list \\
     </ul>
 
     <div class="tip-box">
-        <h4>💡 AZ-104 Tip</h4>
-        <p>When you change the DNS settings on a VNet, VMs need to renew their DHCP lease to pick up the new DNS servers. Restart the VM or run <span class="code-inline">ipconfig /renew</span> on Windows or restart the networking service on Linux.</p>
+        <h4>💡 Pro Tip</h4>
+        <p>When you change the DNS settingson a VNet, VMs need to renew their DHCP lease to pick up the new DNS servers. Restart the VM or run <span class="code-inline">ipconfig /renew</span> on Windows or restart the networking service on Linux.</p>
     </div>
 </div>
 `,
@@ -1348,8 +1348,8 @@ az network public-ip create \\
     </table>
 
     <div class="tip-box">
-        <h4>💡 AZ-104 Tip</h4>
-        <p>168.63.129.16 is a critical IP to remember. NSG rules must allow traffic from this IP for load balancer health probes to work. It's always the Azure platform communicating with your VMs.</p>
+        <h4>💡 Pro Tip</h4>
+        <p>168.63.129.16is a critical IP to remember. NSG rules must allow traffic from this IP for load balancer health probes to work. It's always the Azure platform communicating with your VMs.</p>
     </div>
 </div>
 `,
