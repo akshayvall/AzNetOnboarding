@@ -958,17 +958,22 @@ az network vnet subnet list \\
     --output table</div>
 
     <h3>VNet Communication</h3>
-    <p>Resources within the same VNet can communicate by default. Here's how different communication scenarios work:</p>
+    <p>Resources within the same VNet can communicate by default. Internet egress is different: treat it as an explicit design decision rather than an assumed VNet feature.</p>
     
     <table class="content-table">
         <tr><th>Scenario</th><th>Default Behavior</th><th>How to Enable</th></tr>
         <tr><td>Same subnet</td><td>✅ Allowed</td><td>Automatic</td></tr>
         <tr><td>Different subnets, same VNet</td><td>✅ Allowed</td><td>Automatic (Azure routes internally)</td></tr>
         <tr><td>Different VNets</td><td>❌ Blocked</td><td>VNet Peering or VPN Gateway</td></tr>
-        <tr><td>VNet to Internet (outbound)</td><td>✅ Allowed</td><td>Default SNAT or NAT Gateway</td></tr>
+        <tr><td>Private subnet to Internet (outbound)</td><td>❌ No implicit outbound path</td><td>NAT Gateway, Azure Firewall/NVA, Standard Load Balancer outbound rules, or an instance public IP when justified</td></tr>
         <tr><td>Internet to VNet (inbound)</td><td>❌ Blocked</td><td>Public IP + NSG rule</td></tr>
         <tr><td>VNet to on-premises</td><td>❌ Blocked</td><td>VPN Gateway or ExpressRoute</td></tr>
     </table>
+
+    <div class="warning-box">
+        <h4>⚠️ New VNet API Behavior After March 31, 2026</h4>
+        <p>VNets created with API versions released after <strong>March 31, 2026</strong> default new subnets to private. They do not receive implicit default outbound access. This change is not retroactive: existing VNets were not all converted. For new designs, choose and monitor an explicit egress path. See <a href="https://learn.microsoft.com/azure/virtual-network/ip-services/default-outbound-access" target="_blank" rel="noopener">Default outbound access in Azure</a>.</p>
+    </div>
 </div>
 
 <div class="learn-section">
@@ -1061,10 +1066,10 @@ az network vnet subnet list \\
             id: 'vnet-communication',
             title: 'Communication Scenarios',
             description: 'Classify each communication scenario as "Allowed by Default" or "Requires Configuration".',
-            items: ['Same subnet VMs', 'Cross-subnet (same VNet)', 'Cross-VNet', 'VNet to Internet (outbound)', 'Internet to VNet (inbound)', 'VNet to on-premises'],
+            items: ['Same subnet VMs', 'Cross-subnet (same VNet)', 'Cross-VNet', 'Private subnet to Internet (outbound)', 'Internet to VNet (inbound)', 'VNet to on-premises'],
             targets: {
-                'Allowed by Default': ['Same subnet VMs', 'Cross-subnet (same VNet)', 'VNet to Internet (outbound)'],
-                'Requires Configuration': ['Cross-VNet', 'Internet to VNet (inbound)', 'VNet to on-premises']
+                'Allowed by Default': ['Same subnet VMs', 'Cross-subnet (same VNet)'],
+                'Requires Configuration': ['Cross-VNet', 'Private subnet to Internet (outbound)', 'Internet to VNet (inbound)', 'VNet to on-premises']
             }
         },
         {
@@ -1293,7 +1298,7 @@ az network public-ip create \\
 
 <div class="learn-section">
     <h2>NAT Gateway</h2>
-    <p>Azure NAT Gateway provides outbound internet connectivity for VMs in a subnet. Without a public IP or NAT Gateway, VMs use Azure's default SNAT (which has limitations).</p>
+    <p>Azure NAT Gateway provides outbound internet connectivity for VMs in a subnet. New private subnets need an explicit egress method. Some older VNets can still use Azure's implicit default outbound path, but that path has changing addresses and limited control and should be migrated.</p>
     
     <h3>Why Use NAT Gateway?</h3>
     <ul>
@@ -1359,7 +1364,7 @@ az network public-ip create \\
             question: 'What is the default allocation method for Standard SKU public IPs?',
             options: ['Dynamic', 'Static', 'Automatic', 'Reserved'],
             correct: 1,
-            explanation: 'Standard SKU public IPs only support Static allocation. Basic SKU supports both Dynamic and Static, but Basic is being retired.'
+            explanation: 'Standard SKU public IPs use Static allocation. Basic public IPs retired on September 30, 2025 and are migration history, not a current design choice.'
         },
         {
             question: 'What is the purpose of IP address 168.63.129.16?',
@@ -1381,9 +1386,9 @@ az network public-ip create \\
         },
         {
             question: 'Standard SKU public IPs are ____ by default.',
-            options: ['Open to all traffic', 'Closed to all traffic (require NSG)', 'Limited to HTTP/HTTPS only', 'Restricted to Azure internal traffic'],
+            options: ['Open to all traffic', 'Secure by default (require an NSG or another policy to allow inbound traffic)', 'Limited to HTTP/HTTPS only', 'Restricted to Azure internal traffic'],
             correct: 1,
-            explanation: 'Standard SKU public IPs are secure by default — all inbound traffic is blocked until you explicitly allow it with an NSG rule. This is a key difference from Basic SKU which is open by default.'
+            explanation: 'Standard SKU public IPs are secure by default. Inbound traffic must be explicitly allowed. Basic public IPs retired on September 30, 2025.'
         }
     ],
     interactive: [
@@ -1392,11 +1397,11 @@ az network public-ip create \\
             id: 'ip-sku-comparison',
             title: 'Public IP SKU Features',
             description: 'Classify each feature as belonging to Basic SKU, Standard SKU, or Both.',
-            items: ['Static allocation', 'Dynamic allocation', 'Zone-redundant', 'Open by default', 'Closed by default', '99.99% SLA', 'Free while attached'],
+            items: ['Static allocation', 'Explicit inbound policy', 'Zone-redundant options', 'Availability SLA', 'Current production SKU'],
             targets: {
-                'Basic SKU Only': ['Dynamic allocation', 'Open by default', 'Free while attached'],
-                'Standard SKU Only': ['Zone-redundant', 'Closed by default', '99.99% SLA'],
-                'Both SKUs': ['Static allocation']
+                'Standard SKU': ['Static allocation', 'Explicit inbound policy', 'Zone-redundant options', 'Availability SLA', 'Current production SKU'],
+                'Retired Basic SKU': [],
+                'Both': []
             }
         },
         {
@@ -1404,7 +1409,7 @@ az network public-ip create \\
             id: 'ip-flashcards',
             title: 'IP Addressing Flashcards',
             cards: [
-                { front: 'What is SNAT?', back: 'Source Network Address Translation. Azure maps private IPs to public IPs for outbound internet traffic. Without NAT Gateway, Azure uses default SNAT which can lead to port exhaustion under heavy load.' },
+                { front: 'What is SNAT?', back: 'Source Network Address Translation maps private source addresses to an egress public address. Use an explicit method such as NAT Gateway or Azure Firewall. Legacy implicit outbound can exhaust ports and does not provide a dedicated address.' },
                 { front: 'What is the IMDS endpoint?', back: '169.254.169.254 — The Instance Metadata Service endpoint. VMs can query this (no authentication needed) to get information about themselves: IP, region, tags, etc.' },
                 { front: 'What happens to a public IP when a VM is deallocated?', back: 'Dynamic public IPs are released and may change. Static public IPs are retained but you still pay for them. To avoid charges, delete unattached public IPs.' },
                 { front: 'How many public IPs can a NAT Gateway have?', back: 'Up to 16 public IP addresses or a public IP prefix. Each IP provides ~64,000 SNAT ports, so 16 IPs = over 1 million concurrent connections.' }

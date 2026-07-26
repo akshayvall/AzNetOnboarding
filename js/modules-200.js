@@ -82,7 +82,7 @@ const MODULES_200 = [
 
     <div class="tip-box">
         <h4>💡 Front Door + NSG Pattern</h4>
-        <p>When using Azure Front Door, restrict your backend to only accept traffic from Front Door by using the <span class="code-inline">AzureFrontDoor.Backend</span> service tag in your NSG. This prevents users from bypassing Front Door.</p>
+        <p>For a public origin, restrict the network source with <span class="code-inline">AzureFrontDoor.Backend</span> and validate <span class="code-inline">X-Azure-FDID</span> against your profile ID. The service tag represents all Front Door infrastructure, so it cannot identify your profile by itself. Premium Private Link is the stronger option for supported private origins.</p>
     </div>
 </div>
 
@@ -148,7 +148,7 @@ az network nsg rule create -g rg-prod --nsg-name nsg-prod \\
             question: 'You want to restrict your web app backend to only receive traffic from Azure Front Door. Which service tag do you use?',
             options: ['Internet', 'AzureLoadBalancer', 'AzureFrontDoor.Backend', 'AzureTrafficManager'],
             correct: 2,
-            explanation: 'Use the AzureFrontDoor.Backend service tag to allow only Azure Front Door IPs to reach your backend. This ensures traffic cannot bypass Front Door to reach your origin directly.'
+            explanation: 'AzureFrontDoor.Backend restricts the network source to Front Door infrastructure. A production public origin must also validate X-Azure-FDID against your profile ID; otherwise another Front Door profile could still reach it.'
         },
         {
             question: 'If an NSG is applied to both a subnet AND a NIC, how is traffic evaluated?',
@@ -360,7 +360,7 @@ az network vnet subnet show \\
     id: 'azure-dns',
     level: 200,
     title: 'Azure DNS & Private DNS Zones',
-    subtitle: 'Public zones, private zones, record management',
+    subtitle: 'Public zones, Private Resolver, hybrid forwarding, private endpoint DNS',
     icon: '📡',
     estimatedTime: '35m',
     learn: `
@@ -417,7 +417,7 @@ az network dns record-set list \\
     --output table</div>
 
     <h3>Private DNS Zones</h3>
-    <p>Private DNS zones provide name resolution within your VNets. They support auto-registration — VMs automatically get DNS records when they start.</p>
+    <p>Private DNS zones provide name resolution within linked VNets. A VNet link can enable <strong>VM auto-registration</strong>, which creates and removes records for supported virtual machines as their NICs change. Multiple VNets can be registration VNets for one zone, subject to Azure limits.</p>
     
     <div class="code-block"># Create a private DNS zone
 az network private-dns zone create \\
@@ -437,8 +437,55 @@ az network private-dns link vnet create \\
 
     <div class="concept-box">
         <h4>🔑 Auto-Registration</h4>
-        <p>When auto-registration is enabled, VMs in the linked VNet automatically get A records in the private DNS zone. This eliminates manual DNS management for internal resources. Only ONE VNet can have auto-registration enabled per private DNS zone.</p>
+        <p>Auto-registration is for VM records; it does <strong>not</strong> automatically create the service-specific records required by Private Endpoints. For Private Endpoints, use the recommended <code>privatelink</code> zone and a <strong>private DNS zone group</strong>, or manage the records yourself.</p>
     </div>
+</div>
+
+<div class="learn-section">
+    <h2>Private Endpoint DNS</h2>
+    <p>A Private Endpoint gives an Azure service a private IP in your VNet, but clients normally keep using the service's public hostname. Azure publishes a CNAME chain from that hostname to a service-specific private zone such as <code>privatelink.database.windows.net</code>. When the zone is linked and contains the endpoint record, the same application hostname resolves to the private IP inside your network.</p>
+
+    <div class="warning-box">
+        <h4>⚠️ DNS Does Not Disable the Public Endpoint</h4>
+        <p>Private DNS changes name resolution; it does not turn off public network access. Set the service's public-access policy separately, then test both the private path and the expected public denial.</p>
+    </div>
+
+    <h3>Private Endpoint Resolution Checklist</h3>
+    <ol>
+        <li>Use the exact private DNS zone recommended for the service.</li>
+        <li>Link the zone to every VNet that must resolve the name, or make it reachable through a hybrid resolver design.</li>
+        <li>Use a private DNS zone group so endpoint record lifecycle follows the Private Endpoint.</li>
+        <li>Query the normal service FQDN and confirm the final answer is the Private Endpoint IP.</li>
+        <li>Test from a network that should not have access and confirm the public path is blocked by service policy.</li>
+    </ol>
+</div>
+
+<div class="learn-section">
+    <h2>Azure DNS Private Resolver for Hybrid DNS</h2>
+    <p>DNS Private Resolver provides managed inbound and outbound DNS endpoints, so you do not have to maintain DNS forwarder VMs.</p>
+    <table class="content-table">
+        <tr><th>Component</th><th>Direction</th><th>Purpose</th></tr>
+        <tr><td><strong>Inbound endpoint</strong></td><td>On-premises → Azure</td><td>On-premises DNS conditionally forwards Azure private-zone queries to a private IP in the hub VNet.</td></tr>
+        <tr><td><strong>Outbound endpoint</strong></td><td>Azure → custom DNS</td><td>Sends queries selected by a forwarding ruleset to on-premises or another reachable DNS server.</td></tr>
+        <tr><td><strong>Forwarding ruleset</strong></td><td>Suffix-based</td><td>Links to VNets and forwards only matching namespaces, such as <code>corp.contoso.com</code>.</td></tr>
+    </table>
+
+    <div class="concept-box">
+        <h4>🔑 Hub Hybrid Pattern</h4>
+        <p>Place resolver endpoints in dedicated hub subnets. Configure on-premises DNS with conditional forwarders for Azure private namespaces to the inbound endpoint. Link an outbound forwarding ruleset to Azure VNets for on-premises namespaces. Peering alone does not make private DNS zones visible; VNet links or resolver forwarding provide the DNS path.</p>
+    </div>
+
+    <h3>Split-Horizon DNS</h3>
+    <p>Split-horizon DNS returns different answers for the same name depending on the client's resolver path. It is useful when internal clients should receive a private address while internet clients receive a public address. Document which server is authoritative for each namespace and avoid accidentally shadowing an entire public zone with an incomplete private zone.</p>
+
+    <h3>Troubleshooting Order</h3>
+    <ol>
+        <li>Run <code>nslookup</code> or <code>Resolve-DnsName</code> and record the DNS server, CNAME chain, and final address.</li>
+        <li>Check the VNet's DNS-server setting and restart or renew clients after changing it.</li>
+        <li>Verify the private zone name, VNet link, and expected A record or zone group.</li>
+        <li>For hybrid queries, verify resolver endpoint health, ruleset links, suffix matching, routes, NSGs, and on-premises conditional forwarders.</li>
+        <li>Clear client and intermediary caches only after correcting the authoritative path.</li>
+    </ol>
 </div>
 `,
     diagrams: [],
@@ -450,10 +497,10 @@ az network private-dns link vnet create \\
             explanation: 'Public DNS zones resolve from anywhere on the internet. Private DNS zones only resolve from VNets that are linked to the zone, providing internal name resolution.'
         },
         {
-            question: 'How many VNets can have auto-registration enabled for a single private DNS zone?',
-            options: ['Unlimited', '1', '5', '10'],
-            correct: 1,
-            explanation: 'Only one VNet can have auto-registration enabled per private DNS zone. Other VNets can be linked for resolution (without auto-registration) — up to 1,000 VNets.'
+            question: 'Which statement about Private DNS auto-registration is correct?',
+            options: ['Only one VNet can ever register records in a zone', 'It automatically creates every Private Endpoint record', 'It manages supported VM records; Private Endpoints should use private DNS zone groups', 'It makes the zone publicly resolvable'],
+            correct: 2,
+            explanation: 'Registration links manage supported VM records. A zone can have multiple registration VNets within Azure limits. Private Endpoint records use service-specific private zones and are normally managed through private DNS zone groups.'
         },
         {
             question: 'To point a custom domain to Azure Front Door, which DNS record type do you typically use?',
@@ -466,6 +513,18 @@ az network private-dns link vnet create \\
             options: ['In the Azure DNS zone', 'At your domain registrar', 'In the VNet DNS settings', 'In Azure AD'],
             correct: 1,
             explanation: 'You update the NS records at your domain registrar to point to Azure DNS name servers (ns1-01.azure-dns.com, etc.). This tells the internet that Azure DNS is authoritative for your domain.'
+        },
+        {
+            question: 'On-premises clients must resolve Azure Private DNS zones without DNS forwarder VMs. Which Private Resolver component receives their conditionally forwarded queries?',
+            options: ['Outbound endpoint', 'Inbound endpoint', 'Forwarding ruleset link', 'Public DNS zone'],
+            correct: 1,
+            explanation: 'An inbound endpoint exposes a private IP that on-premises DNS servers can target through a conditional forwarder. Outbound endpoints handle Azure-to-custom-DNS forwarding.'
+        },
+        {
+            question: 'A storage account hostname resolves to its Private Endpoint IP inside Azure, but the public endpoint is still reachable from the internet. What was missed?',
+            options: ['A lower DNS TTL', 'A second CNAME', 'The service public-network-access policy', 'VM auto-registration'],
+            correct: 2,
+            explanation: 'Private DNS controls resolution, not service exposure. Disable or restrict public network access separately and verify the public-path denial.'
         }
     ],
     interactive: [
@@ -477,9 +536,16 @@ az network private-dns link vnet create \\
                 { front: 'What is an Alias record in Azure DNS?', back: 'An Azure-specific feature that lets you point a record to an Azure resource (like a Public IP, Front Door, or Traffic Manager profile). Automatically updates if the resource IP changes. Supports zone apex (naked domain).' },
                 { front: 'What is the zone apex?', back: 'The root of your domain without any subdomain — e.g., contoso.com (not www.contoso.com). Standard CNAME records cannot be used at the zone apex per DNS specification. Use Azure Alias records or ANAME/ALIAS instead.' },
                 { front: 'What is TTL in DNS?', back: 'Time To Live — how long (in seconds) a DNS answer should be cached. Lower TTL = more frequent lookups but faster change propagation. Higher TTL = fewer lookups but slower updates.' },
-                { front: 'How does Private DNS auto-registration work?', back: 'When enabled, VMs in the linked VNet automatically get A records created in the private DNS zone using their hostname. Records are removed when VMs are deleted.' }
+                { front: 'How does Private DNS auto-registration work?', back: 'A registration VNet creates and removes supported VM records in the linked zone. It does not replace Private Endpoint zone groups.' },
+                { front: 'Inbound vs outbound Private Resolver endpoint?', back: 'Inbound accepts DNS queries into Azure from on-premises. Outbound sends matching Azure queries to DNS servers named in a forwarding ruleset.' },
+                { front: 'What must you test after adding Private Endpoint DNS?', back: 'The normal service FQDN resolves to the endpoint private IP from approved networks, and service policy denies the public path from unapproved networks.' }
             ]
         }
+    ],
+    references: [
+        { title: 'Azure Private DNS overview', url: 'https://learn.microsoft.com/azure/dns/private-dns-overview' },
+        { title: 'Azure DNS Private Resolver architecture', url: 'https://learn.microsoft.com/azure/dns/private-resolver-architecture' },
+        { title: 'Private Endpoint DNS configuration', url: 'https://learn.microsoft.com/azure/private-link/private-endpoint-dns' }
     ],
     lab: {
         title: 'Hands-On: Create a DNS Zone & Manage Records',
@@ -653,8 +719,23 @@ az network private-dns link vnet show \\
     --name link-to-academy \\
     --query "{LinkName:name, VNet:virtualNetwork.id, AutoRegistration:registrationEnabled}" \\
     --output table</div>`,
-                tip: 'Only ONE VNet can have auto-registration enabled per private DNS zone. Additional VNets can be linked for resolution only (without auto-registration) — up to 1,000 VNets.',
+                tip: 'Registration links manage supported VM records. Private Endpoints use their service-specific private zone and normally a private DNS zone group.',
                 verification: 'The virtual network link should show status "Completed" and registration enabled = true. Any VMs in vnet-academy will now auto-register as vmname.contoso.internal.'
+            },
+            {
+                title: 'Design the Hybrid Forwarding Path',
+                subtitle: 'Map each namespace to its resolver',
+                type: 'confirm',
+                explanation: 'Before deploying Private Resolver, document both query directions. This prevents forwarding loops and partial split-horizon answers.',
+                portal: `<ol>
+                    <li>Choose dedicated hub subnets for the inbound and outbound endpoints</li>
+                    <li>Map Azure private namespaces to the inbound endpoint for on-premises conditional forwarding</li>
+                    <li>Map the on-premises namespace, such as <code>corp.contoso.com</code>, to on-premises DNS servers in a forwarding ruleset</li>
+                    <li>Identify every VNet that needs the ruleset link</li>
+                    <li>Define tests from one Azure client and one on-premises client, including the expected final IP for each name</li>
+                </ol>`,
+                tip: 'Use the narrowest DNS suffix that owns the records. A broad rule such as "." can create loops or send unrelated queries across the hybrid link.',
+                verification: 'Your design shows Azure-to-on-premises and on-premises-to-Azure query paths, with an authoritative owner and expected answer for every test name.'
             },
             {
                 title: 'Review: Zone Apex & Alias Records',
@@ -770,6 +851,11 @@ az network private-dns link vnet show \\
         <li><strong>Internal Load Balancer:</strong> Has a private IP. Balances internal VNet traffic.</li>
     </ul>
 
+    <div class="warning-box">
+        <h4>⚠️ Basic Load Balancer Is Retired</h4>
+        <p>Basic Load Balancer retired on <strong>September 30, 2025</strong>. It is historical context, not a valid design choice. Build and migrate workloads on <strong>Standard Load Balancer</strong>, then validate NSGs because Standard is secure by default.</p>
+    </div>
+
     <h3>Key Concepts</h3>
     <ul>
         <li><strong>Frontend IP:</strong> The IP that clients connect to</li>
@@ -779,14 +865,14 @@ az network private-dns link vnet show \\
         <li><strong>Distribution:</strong> Default is 5-tuple hash (src IP, src port, dest IP, dest port, protocol)</li>
     </ul>
 
-    <h3>SKUs</h3>
+    <h3>Standard Load Balancer</h3>
     <table class="content-table">
-        <tr><th>Feature</th><th>Basic</th><th>Standard</th></tr>
-        <tr><td>Backend pool size</td><td>300</td><td>1,000</td></tr>
-        <tr><td>Health probes</td><td>TCP, HTTP</td><td>TCP, HTTP, HTTPS</td></tr>
-        <tr><td>Availability Zones</td><td>No</td><td>Yes</td></tr>
-        <tr><td>SLA</td><td>N/A</td><td>99.99%</td></tr>
-        <tr><td>Security</td><td>Open by default</td><td>Closed by default</td></tr>
+        <tr><th>Capability</th><th>Production implication</th></tr>
+        <tr><td>TCP, UDP, and HA Ports rules</td><td>Supports regional Layer 4 application and appliance traffic</td></tr>
+        <tr><td>TCP, HTTP, and HTTPS health probes</td><td>Only healthy backend instances receive new flows</td></tr>
+        <tr><td>Availability Zones</td><td>Use zone-redundant frontends and resilient backends where the region supports them</td></tr>
+        <tr><td>Secure by default</td><td>An NSG must explicitly allow the intended frontend and health-probe traffic</td></tr>
+        <tr><td>Outbound rules</td><td>Use explicit outbound rules when the load balancer also owns egress; prefer NAT Gateway for outbound-only SNAT</td></tr>
     </table>
 </div>
 
@@ -900,7 +986,7 @@ az network private-dns link vnet show \\
         icon: '⚖️',
         scenario: 'Deploy a Standard Public Load Balancer with a backend pool, health probe, and load balancing rule to distribute HTTP traffic across web servers.',
         duration: '30-40 minutes',
-        cost: '~$0.03 (Standard LB hourly rate for short lab)',
+        cost: 'Standard Load Balancer rules and processed data are billable; check current regional pricing and delete lab resources',
         difficulty: 'Intermediate',
         prerequisites: ['Resource group rg-academy-lab', 'VNet vnet-academy with snet-web subnet'],
         cleanup: `# Delete the load balancer and public IP
@@ -1126,7 +1212,7 @@ az network lb rule list \\
         <li><strong>Global HTTP/HTTPS load balancing</strong> — Route users to the nearest healthy backend</li>
         <li><strong>CDN/Caching</strong> — Cache content at the edge for faster delivery</li>
         <li><strong>SSL/TLS termination</strong> — Offload SSL at the edge</li>
-        <li><strong>WAF (Web Application Firewall)</strong> — Protect against OWASP top 10, bots, DDoS</li>
+        <li><strong>WAF (Web Application Firewall)</strong> — Custom rules in Standard; managed rule sets and Bot Manager in Premium</li>
         <li><strong>URL-based routing</strong> — Route /api/* to API backends, /images/* to storage</li>
         <li><strong>Session affinity</strong> — Sticky sessions for stateful apps</li>
         <li><strong>Health probes</strong> — Automatically detect unhealthy origins</li>
@@ -1234,9 +1320,17 @@ az network lb rule list \\
         <tr><td>Compression</td><td>Yes</td><td>Yes</td></tr>
         <tr><td>WAF</td><td>Custom rules only</td><td>Custom + Managed rules + Bot protection</td></tr>
         <tr><td>Private Link origins</td><td>No</td><td>Yes</td></tr>
-        <tr><td>Advanced analytics</td><td>Basic</td><td>Enhanced reports + WAF logs</td></tr>
+        <tr><td>Security fit</td><td>Public origins with explicit origin lockdown</td><td>Private origins and full managed WAF capabilities</td></tr>
         <tr><td>Price</td><td>Lower</td><td>Higher</td></tr>
     </table>
+
+    <h3>Protect the Origin, Not Just the Edge</h3>
+    <p>Front Door security can be bypassed if an attacker can call the origin directly. Choose one of these production patterns:</p>
+    <ul>
+        <li><strong>Premium + Private Link:</strong> Give Front Door private connectivity to a supported origin and disable public access. This is required when the origin must not be internet-reachable.</li>
+        <li><strong>Public origin:</strong> Restrict inbound traffic to the <code>AzureFrontDoor.Backend</code> service tag and validate the <code>X-Azure-FDID</code> header against your Front Door profile ID. The service tag identifies Front Door infrastructure, not your specific profile, so it is insufficient by itself.</li>
+    </ul>
+    <p>Test both paths: the Front Door hostname must succeed, while direct origin requests and requests with a missing or incorrect profile ID must fail. Send Front Door access, health-probe, and WAF logs to an approved Azure Monitor destination through diagnostic settings.</p>
 </div>
 
 <div class="learn-section">
@@ -1245,7 +1339,7 @@ az network lb rule list \\
     
     <div class="warning-box">
         <h4>⚠️ Front Door Classic is Deprecated</h4>
-        <p>Azure Front Door (Classic) is on the retirement path. Microsoft recommends migrating all Classic profiles to the new Standard or Premium tier. Classic cannot be created via the Azure Portal anymore — only Standard/Premium.</p>
+        <p>Azure Front Door (Classic) retires on <strong>March 31, 2027</strong>. Inventory Classic profiles now and migrate them to Standard or Premium with enough time to validate domains, certificates, WAF behavior, rules, origin health, and monitoring before the retirement date.</p>
     </div>
 
     <h3>Architecture Comparison</h3>
@@ -1290,7 +1384,7 @@ az network lb rule list \\
             <h4>Premium — Best for Security/Enterprise</h4>
             <ul>
                 <li>Everything in Standard, plus:</li>
-                <li>Managed WAF rule sets (OWASP DRS 2.1)</li>
+                <li>Supported Microsoft-managed WAF rule sets</li>
                 <li>Bot Manager rule set</li>
                 <li>Private Link to origins (no public IPs needed)</li>
                 <li>Enhanced WAF logs and analytics</li>
@@ -1301,20 +1395,21 @@ az network lb rule list \\
 
     <div class="concept-box">
         <h4>🔑 Migration Path</h4>
-        <p>Microsoft provides a one-click migration from Classic to Standard/Premium in the Portal: Front Door Classic resource → <strong>Migration</strong> blade → choose Standard or Premium. The migration is non-disruptive and preserves your configuration. You cannot migrate back to Classic.</p>
+        <p>Use the Classic profile's migration workflow to assess and move to Standard or Premium. Treat it as a production change: review unsupported or transformed settings, validate the generated configuration, test the endpoint and WAF policy, monitor after cutover, and retain a documented recovery plan for the application.</p>
     </div>
 </div>
 
 <div class="learn-section">
     <h2>Front Door Pricing Model</h2>
-    <p>Front Door pricing has three components — understand these for cost planning:</p>
+    <p>Front Door cost depends on the selected tier and usage. Check the current regional pricing page or calculator during design because rates change.</p>
     
     <table class="content-table">
-        <tr><th>Component</th><th>Standard</th><th>Premium</th></tr>
-        <tr><td><strong>Base fee</strong> (per hour)</td><td>~$0.035/hr (~$25/mo)</td><td>~$0.165/hr (~$120/mo)</td></tr>
-        <tr><td><strong>Requests</strong> (per 10K)</td><td>~$0.01</td><td>~$0.012</td></tr>
-        <tr><td><strong>Data transfer</strong> (per GB out)</td><td>~$0.08 (varies by zone)</td><td>~$0.08 (varies by zone)</td></tr>
-        <tr><td><strong>Private Link</strong></td><td>N/A</td><td>~$0.01 per GB</td></tr>
+        <tr><th>Cost driver</th><th>Design question</th></tr>
+        <tr><td><strong>Profile base fee</strong></td><td>Does the workload require Premium-only Private Link or managed WAF?</td></tr>
+        <tr><td><strong>Requests</strong></td><td>What is the request volume, including probes, bots, and cache misses?</td></tr>
+        <tr><td><strong>Data transfer</strong></td><td>Which client and origin regions exchange data, and what is the cache-hit ratio?</td></tr>
+        <tr><td><strong>Private Link</strong></td><td>How much origin traffic traverses the Premium private-origin path?</td></tr>
+        <tr><td><strong>Logs</strong></td><td>Which access, health, and WAF logs are retained in Log Analytics, and for how long?</td></tr>
     </table>
 
     <div class="tip-box">
@@ -1529,7 +1624,7 @@ az afd route create \\
         icon: '🚪',
         scenario: 'Create an Azure Front Door Standard profile with an endpoint, origin group, origin, and route. Then test it by accessing the Front Door URL and verifying traffic flows through the global edge network.',
         duration: '25-35 minutes',
-        cost: '~$0.50/day (Standard tier — delete after lab to stop charges)',
+        cost: 'Front Door base, request, transfer, and log-ingestion charges apply; check current pricing and delete the lab profile',
         difficulty: 'Intermediate',
         prerequisites: ['Resource group rg-academy-lab'],
         cleanup: `# Delete the Front Door profile (this removes all endpoints, origins, and routes)
@@ -1569,7 +1664,7 @@ az afd profile show \\
     --profile-name fd-academy \\
     --query "{Name:name, SKU:sku.name, State:provisioningState}" \\
     --output table</div>`,
-                tip: 'Standard tier is sufficient for most workloads. Only upgrade to Premium if you need managed WAF rule sets (OWASP, bot protection) or Private Link origins.',
+                tip: 'Choose Standard for public-origin delivery with custom WAF rules. Choose Premium when requirements include Private Link origins, Microsoft-managed WAF rule sets, or Bot Manager.',
                 verification: 'The Front Door profile should show provisioning state "Succeeded" in the portal.'
             },
             {
@@ -1782,7 +1877,7 @@ az afd endpoint show \\
                 <li>IPsec/IKE encrypted tunnel over internet</li>
                 <li>Requires on-premises VPN device</li>
                 <li>Up to 10 Gbps (VpnGw5)</li>
-                <li>Cost: ~$140–$3,000/month (gateway)</li>
+                <li>Cost varies by gateway SKU, runtime, and data transfer</li>
             </ul>
         </div>
         <div class="comparison-card">
@@ -1792,7 +1887,7 @@ az afd endpoint show \\
                 <li>No VPN device needed</li>
                 <li>Uses SSTP, OpenVPN, or IKEv2</li>
                 <li>Good for remote workers</li>
-                <li>Cost: Same gateway as S2S</li>
+                <li>Shares the selected VPN Gateway capacity</li>
             </ul>
         </div>
         <div class="comparison-card">
@@ -1802,7 +1897,7 @@ az afd endpoint show \\
                 <li>Does NOT go over the internet</li>
                 <li>Up to 100 Gbps</li>
                 <li>Low latency, high reliability</li>
-                <li>Cost: $55–$13,000/month + provider</li>
+                <li>Azure circuit, gateway, egress plan, and provider charges apply</li>
             </ul>
         </div>
     </div>
@@ -1824,6 +1919,15 @@ az afd endpoint show \\
         3. A <strong>Local Network Gateway</strong> resource (represents on-prem network)<br>
         4. A <strong>Connection</strong> resource (links VPN Gateway to Local Network Gateway)</p>
     </div>
+
+    <h3>BGP and Resilient VPN Design</h3>
+    <p>Border Gateway Protocol (BGP) exchanges prefixes dynamically between Azure and on-premises routers. It reduces manual route maintenance and lets routing converge when a path fails, but only when advertisements, autonomous system numbers, and failover policy are designed and tested correctly.</p>
+    <ul>
+        <li><strong>Active-active:</strong> Use both VPN Gateway instances and terminate tunnels on redundant on-premises devices. A single tunnel to one device preserves a hidden single point of failure.</li>
+        <li><strong>Availability Zones:</strong> In supported regions, choose an AZ gateway SKU and zone-redundant public IPs so the gateway instances are distributed across zones.</li>
+        <li><strong>Dual tunnels:</strong> Build and monitor all intended tunnel combinations, then test device, tunnel, instance, and zone failure separately.</li>
+        <li><strong>BGP controls:</strong> Advertise only approved, non-overlapping prefixes. Watch learned routes, AS paths, and unexpected default routes before blaming the tunnel.</li>
+    </ul>
 </div>
 
 <div class="learn-section">
@@ -1844,6 +1948,21 @@ az afd endpoint show \\
     <div class="warning-box">
         <h4>⚠️ Key Point</h4>
         <p>ExpressRoute does NOT encrypt traffic by default. If you need encryption, you must configure IPsec VPN over ExpressRoute (which adds complexity). For most compliance needs, the private nature of the circuit is sufficient.</p>
+    </div>
+
+    <h3>Design ExpressRoute for Failure</h3>
+    <ul>
+        <li><strong>Provider edge:</strong> Each ExpressRoute circuit connects redundantly to two Microsoft Enterprise Edge routers. Both BGP sessions must be configured and healthy.</li>
+        <li><strong>Site and peering diversity:</strong> For critical workloads, use redundant on-premises routers and consider a second circuit through another provider or peering location. One circuit is not protection from every provider or facility failure.</li>
+        <li><strong>Gateway resilience:</strong> Use a zone-redundant ExpressRoute virtual network gateway where supported and size it for aggregate and failover throughput.</li>
+        <li><strong>Backup path:</strong> A coexisting Site-to-Site VPN can provide a diverse internet path. BGP controls route preference; rehearse failover and failback rather than assuming the backup works.</li>
+    </ul>
+
+    <h3>ExpressRoute FastPath</h3>
+    <p>FastPath improves data-path performance by sending supported ExpressRoute traffic directly to VNet resources instead of through the gateway data path. The ExpressRoute gateway is still required for route exchange. Use FastPath only after checking current circuit, gateway, peering, and feature support.</p>
+    <div class="warning-box">
+        <h4>⚠️ Performance Can Bypass an Inspection Design</h4>
+        <p>FastPath changes the data path. Confirm that required Azure Firewall or NVA inspection, UDR behavior, private endpoint support, and observability still work for your topology. A lower-latency path is a defect if it bypasses a mandated control.</p>
     </div>
 </div>
 `,
@@ -1905,6 +2024,18 @@ az afd endpoint show \\
             options: ['Yes, always encrypted', 'No, you must add IPsec VPN over ExpressRoute for encryption', 'Yes, with Azure-managed keys', 'Encryption is optional in the portal'],
             correct: 1,
             explanation: 'ExpressRoute does NOT encrypt traffic by default. The circuit is private, but not encrypted. For encryption, you can configure IPsec VPN tunnels over the ExpressRoute circuit.'
+        },
+        {
+            question: 'Which design best removes a single-tunnel failure from a production Site-to-Site VPN?',
+            options: ['One tunnel to one on-premises device with static routes', 'Active-active AZ VPN Gateway with BGP and redundant tunnels to redundant on-premises devices', 'A larger GatewaySubnet only', 'A NAT Gateway on the spoke'],
+            correct: 1,
+            explanation: 'Resilience requires independent Azure gateway instances, on-premises devices, and tunnels. BGP provides dynamic route convergence, and an AZ SKU adds zone resilience where supported.'
+        },
+        {
+            question: 'What does ExpressRoute FastPath change?',
+            options: ['It encrypts the circuit', 'It removes the need for an ExpressRoute gateway', 'It sends supported data traffic directly to VNet resources while the gateway continues route exchange', 'It converts ExpressRoute to a VPN'],
+            correct: 2,
+            explanation: 'FastPath bypasses the virtual network gateway data path for supported traffic to reduce latency and improve throughput. The gateway remains necessary for route exchange, and inspection requirements must be revalidated.'
         }
     ],
     interactive: [
@@ -1925,10 +2056,10 @@ az afd endpoint show \\
         icon: '🔐',
         scenario: 'Set up the Azure-side components for a Site-to-Site VPN connection: create a GatewaySubnet, deploy a VPN Gateway, and configure a Local Network Gateway to simulate an on-premises connection.',
         duration: '35-45 minutes (gateway deployment takes 30-45 min)',
-        cost: '~$0.04/hour (VpnGw1 — DELETE IMMEDIATELY after lab!)',
+        cost: 'VPN Gateway is billable while provisioned; check the current regional SKU rate and delete it after the lab',
         difficulty: 'Intermediate-Advanced',
         prerequisites: ['Resource group rg-academy-lab', 'VNet vnet-academy (10.0.0.0/16)'],
-        cleanup: `⚠️ DELETE IMMEDIATELY AFTER LAB — VPN Gateways cost ~$0.04/hour (~$27/month)!
+        cleanup: `⚠️ DELETE IMMEDIATELY AFTER LAB — VPN Gateway remains billable while provisioned.
 # Delete in this order:
 az network vpn-connection delete --name conn-onprem --resource-group rg-academy-lab --yes 2>/dev/null
 az network vnet-gateway delete --name vpngw-academy --resource-group rg-academy-lab --yes
@@ -2132,7 +2263,7 @@ az network vnet-gateway show \\
                 title: '⚠️ CLEAN UP — Delete the Gateway!',
                 subtitle: 'CRITICAL: Avoid ongoing charges',
                 type: 'confirm',
-                explanation: '⚠️ VPN Gateways cost approximately $0.04/hour (~$27/month) even when idle! DELETE IT NOW unless you plan to use it for further labs. Gateway deletion also takes 15-20 minutes.',
+                explanation: '⚠️ VPN Gateways are billed while provisioned, even when idle. Check current regional pricing, then delete the lab gateway unless you plan to continue using it. Gateway deletion can take several minutes.',
                 portal: `<ol>
                     <li><strong>FIRST:</strong> Delete any Connections (go to vpngw-academy → Connections → delete each)</li>
                     <li>Go to vpngw-academy → <strong>Delete</strong> → confirm</li>
@@ -2199,12 +2330,13 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
         <li><strong>Non-transitive:</strong> If VNet A peers with B, and B peers with C, A and C cannot communicate (unless you also peer A↔C)</li>
         <li><strong>No IP overlap:</strong> Peered VNets cannot have overlapping address spaces</li>
         <li><strong>Bidirectional setup:</strong> Both sides must configure peering</li>
-        <li><strong>Gateway transit:</strong> Let one VNet's VPN Gateway be shared by peered VNets</li>
+        <li><strong>Gateway transit:</strong> A spoke can use a hub's VPN or ExpressRoute gateway for on-premises routes. It does not make peering transitive or route traffic between spokes.</li>
+        <li><strong>Forwarded traffic:</strong> Hub routing through Azure Firewall or another NVA requires deliberate UDRs plus compatible peering settings. Selecting <em>Allow forwarded traffic</em> permits forwarded packets; it does not create routes.</li>
     </ul>
 
     <div class="warning-box">
         <h4>⚠️ Non-Transitive!</h4>
-        <p>This is a very common real-world question. VNet peering is NOT transitive. You need explicit peering between each pair of VNets that need to communicate, or use a hub VNet with gateway transit.</p>
+        <p>VNet peering is not transitive. Use direct spoke-to-spoke peering when that traffic should take the direct path, or route through a hub firewall/NVA with UDRs when centralized inspection is required. Gateway transit shares on-premises connectivity; it is not a spoke-to-spoke router.</p>
     </div>
 </div>
 
@@ -2215,33 +2347,41 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
         <div class="comparison-card">
             <h4>Service Endpoints</h4>
             <ul>
-                <li>Extends VNet identity to Azure services</li>
-                <li>Traffic stays on Azure backbone</li>
-                <li>Service still has a public IP</li>
-                <li>Configured per subnet</li>
-                <li>Free</li>
-                <li>Good for: restricting service access to your VNet</li>
+                <li>Adds an optimized route from a selected subnet to a supported Azure service</li>
+                <li>Lets the service firewall recognize and allow that subnet</li>
+                <li>Uses the service's public endpoint and public DNS name</li>
+                <li>Configured per subnet and service type</li>
+                <li>No endpoint NIC or private IP to operate</li>
+                <li>Good for: simple subnet-based restrictions when a public service endpoint is acceptable</li>
             </ul>
         </div>
         <div class="comparison-card">
             <h4>Private Endpoints</h4>
             <ul>
-                <li>Brings Azure service INTO your VNet</li>
-                <li>Gets a private IP in your subnet</li>
-                <li>Service accessed via private IP only</li>
-                <li>Works with Private DNS zones</li>
-                <li>Per-endpoint cost</li>
-                <li>Good for: full private access to services</li>
+                <li>Creates a private-link NIC for a specific service subresource</li>
+                <li>Gets a private IP in the selected subnet</li>
+                <li>Requires correct DNS so the service name resolves to that private IP</li>
+                <li>Does not disable the service's public endpoint automatically</li>
+                <li>Has per-endpoint and data-processing cost drivers</li>
+                <li>Good for: private client-to-service access, including from peered VNets and connected on-premises networks</li>
             </ul>
         </div>
     </div>
 
     <div class="concept-box">
         <h4>🔑 Service Endpoint vs Private Endpoint</h4>
-        <p><strong>Service Endpoint:</strong> "I'll keep my public IP, but only accept traffic from your VNet subnet."<br>
-        <strong>Private Endpoint:</strong> "I'll move into your VNet and get a private IP. No more public endpoint."<br><br>
-        Private Endpoints are more secure but cost more. Azure Front Door Premium can use Private Endpoints to connect to origins.</p>
+        <p><strong>Service Endpoint:</strong> Traffic still targets the service's public endpoint, while the service firewall can allow the selected VNet subnet.<br>
+        <strong>Private Endpoint:</strong> Clients can target a private IP for one service subresource, provided DNS returns the private address.<br><br>
+        Neither option changes the service firewall or public-network-access setting by itself. For a private-only design, configure Private DNS, approve the connection, disable or restrict public access on the service, and test from both authorized and unauthorized networks. Azure Front Door Premium is required for Private Link origins.</p>
     </div>
+
+    <h3>Private Endpoint DNS Checklist</h3>
+    <ol>
+        <li>Use the service's documented Private DNS zone and create the required record, normally through a Private DNS zone group.</li>
+        <li>Link the zone to every VNet that must resolve it. Registration links are for VM hostname registration, not Private Endpoint records.</li>
+        <li>For on-premises clients, conditionally forward the service's public DNS zone through Azure DNS Private Resolver or an Azure DNS forwarder so the private CNAME chain resolves correctly.</li>
+        <li>Verify name resolution and the destination IP before testing ports. A successful private connection with public DNS resolution still sends clients to the wrong endpoint.</li>
+    </ol>
 </div>
 `,
     diagrams: [
@@ -2286,7 +2426,13 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
             question: 'What is Gateway Transit in VNet peering?',
             options: ['A way to connect VNets across regions', 'Allows a peered VNet to use the other VNet\'s VPN Gateway', 'Encrypts traffic between peered VNets', 'Routes traffic through Azure Firewall'],
             correct: 1,
-            explanation: 'Gateway Transit lets a peered VNet use the VPN/ExpressRoute gateway in the other VNet. Hub VNet has the gateway, spoke VNets access on-premises through the hub\'s gateway — classic hub-spoke pattern.'
+            explanation: 'Gateway Transit lets a peered VNet use the VPN or ExpressRoute gateway in the other VNet for on-premises connectivity. It does not make peering transitive or automatically route traffic between spokes.'
+        },
+        {
+            question: 'You create a Private Endpoint for a storage account. Is its public endpoint now disabled?',
+            options: ['Yes, always', 'Only when the Private DNS zone is linked', 'No, public network access is a separate service setting', 'Only for clients in peered VNets'],
+            correct: 2,
+            explanation: 'A Private Endpoint adds a private access path. Disable or restrict public network access separately, configure Private DNS, and test both the private path and direct public access.'
         }
     ],
     interactive: [
@@ -2295,10 +2441,11 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
             id: 'peering-flashcards',
             title: 'Peering & Endpoints Review',
             cards: [
-                { front: 'What is Gateway Transit?', back: 'Allows a spoke VNet to use the hub VNet\'s VPN or ExpressRoute gateway. Enabled on the hub side ("Allow gateway transit") and spoke side ("Use remote gateways").' },
-                { front: 'What happens to traffic with Service Endpoints?', back: 'Traffic from your subnet to the Azure service takes an optimal route over the Azure backbone. The service\'s public IP is preserved, but you can restrict access to only your VNet/subnet.' },
+                { front: 'What is Gateway Transit?', back: 'Allows a spoke VNet to use the hub VNet\'s VPN or ExpressRoute gateway for on-premises routes. It does not provide spoke-to-spoke transit.' },
+                { front: 'What happens to traffic with Service Endpoints?', back: 'Traffic from the enabled subnet takes an optimized route to the service\'s public endpoint. The service firewall must be configured to allow that subnet.' },
                 { front: 'Can Private Endpoints work across regions?', back: 'Yes! You can create a Private Endpoint in any VNet, regardless of the Azure service\'s region. The private IP in your VNet connects to the service via the Microsoft backbone.' },
-                { front: 'What is hub-spoke topology?', back: 'A central "hub" VNet with shared services (VPN Gateway, Firewall, etc.) connected to multiple "spoke" VNets via peering. Spokes communicate through the hub. Common enterprise pattern.' }
+                { front: 'Does a Private Endpoint disable public access?', back: 'No. It adds a private path. Public network access and service firewall rules remain separate controls.' },
+                { front: 'What is hub-spoke topology?', back: 'A central hub VNet hosts shared connectivity or security services and peers with workload spokes. Spoke-to-spoke traffic requires direct peering or deliberate UDR-based routing through a firewall/NVA.' }
             ]
         }
     ],

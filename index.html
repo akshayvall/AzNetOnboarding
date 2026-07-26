@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
     <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="theme-color" content="#0078d4">
     <title>Azure Networking Academy — L100 to L300</title>
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
 </head>
 <body>
     <a href="#content" class="skip-link">Skip to main content</a>
@@ -59,8 +61,10 @@
                 <div class="dashboard-hero">
                     <h1>Welcome to Azure Networking Academy</h1>
                     <p>Master Azure Networking from fundamentals to advanced — from core concepts to production architecture.</p>
-                    <p class="last-updated" style="font-size:0.85rem; color:#8a8a8a; margin-top:0.5rem;">Content last updated: May 2026</p>
+                    <p class="last-updated" style="font-size:0.85rem; color:#8a8a8a; margin-top:0.5rem;">Content verified: July 26, 2026</p>
                 </div>
+
+                <section id="masteryDashboard" class="mastery-dashboard" aria-label="Learning route and mastery progress"></section>
 
                 <div class="level-cards">
                     <div class="level-card level-100-card">
@@ -73,7 +77,7 @@
                             <div class="progress-bar-container"><div class="progress-bar" id="l100Progress"></div></div>
                             <span id="l100ProgressText">0/4 modules</span>
                         </div>
-                        <button class="btn-primary" onclick="app.startLevel(100)">Start Foundations →</button>
+                        <button class="btn-primary" data-app-action="start-level" data-level="100">Start Foundations →</button>
                     </div>
 
                     <div class="level-card level-200-card">
@@ -86,7 +90,7 @@
                             <div class="progress-bar-container"><div class="progress-bar" id="l200Progress"></div></div>
                             <span id="l200ProgressText">0/9 modules</span>
                         </div>
-                        <button class="btn-primary" onclick="app.startLevel(200)">Start Intermediate →</button>
+                        <button class="btn-primary" data-app-action="start-level" data-level="200">Start Intermediate →</button>
                     </div>
 
                     <div class="level-card level-300-card">
@@ -99,7 +103,7 @@
                             <div class="progress-bar-container"><div class="progress-bar" id="l300Progress"></div></div>
                             <span id="l300ProgressText">0/8 modules</span>
                         </div>
-                        <button class="btn-primary" onclick="app.startLevel(300)">Start Advanced →</button>
+                        <button class="btn-primary" data-app-action="start-level" data-level="300">Start Advanced →</button>
                     </div>
                 </div>
 
@@ -133,7 +137,7 @@
             <!-- Module View (shown when a module is selected) -->
             <div id="moduleView" class="view">
                 <div class="module-header">
-                    <button class="btn-back" onclick="app.showDashboard()">← Back</button>
+                    <button class="btn-back" data-app-action="show-dashboard">← Back</button>
                     <div class="module-title-area">
                         <span class="module-level-badge" id="moduleLevelBadge"></span>
                         <h1 id="moduleTitle"></h1>
@@ -143,12 +147,14 @@
                     </div>
                 </div>
 
+                <section id="masteryPanel" class="mastery-panel" aria-label="Module outcome and mastery evidence" hidden></section>
+
                 <div class="module-tabs">
-                    <button class="tab active" data-tab="learn" onclick="app.switchTab('learn')">📖 Learn</button>
-                    <button class="tab" data-tab="diagrams" onclick="app.switchTab('diagrams')">📊 Diagrams</button>
-                    <button class="tab" data-tab="interactive" onclick="app.switchTab('interactive')">🔬 Interactive</button>
-                    <button class="tab" data-tab="quiz" onclick="app.switchTab('quiz')">✅ Quiz</button>
-                    <button class="tab" data-tab="lab" onclick="app.switchTab('lab')">🧪 Lab</button>
+                    <button class="tab active" data-tab="learn" data-app-action="switch-tab">📖 Learn</button>
+                    <button class="tab" data-tab="diagrams" data-app-action="switch-tab">📊 Diagrams</button>
+                    <button class="tab" data-tab="interactive" data-app-action="switch-tab">🔬 Interactive</button>
+                    <button class="tab" data-tab="quiz" data-app-action="switch-tab">✅ Quiz</button>
+                    <button class="tab" data-tab="lab" data-app-action="switch-tab">🧪 Lab</button>
                 </div>
 
                 <div class="module-content">
@@ -160,9 +166,9 @@
                 </div>
 
                 <div class="module-navigation">
-                    <button class="btn-secondary" id="prevModule" onclick="app.prevModule()">← Previous Module</button>
-                    <button class="btn-primary" id="completeModule" onclick="app.completeModule()">✓ Mark Complete</button>
-                    <button class="btn-secondary" id="nextModule" onclick="app.nextModule()">Next Module →</button>
+                    <button class="btn-secondary" id="prevModule" data-app-action="prev-module">← Previous Module</button>
+                    <button class="btn-primary" id="completeModule" data-app-action="complete-module">Check my progress</button>
+                    <button class="btn-secondary" id="nextModule" data-app-action="next-module">Next Module →</button>
                 </div>
             </div>
         </main>
@@ -173,7 +179,7 @@
 
     <!-- Search Palette (Ctrl+K) -->
     <div id="searchPalette" class="search-palette" role="dialog" aria-modal="true" aria-label="Search modules" hidden>
-        <div class="search-palette-backdrop" onclick="app.closeSearch()"></div>
+        <div class="search-palette-backdrop" data-app-action="close-search"></div>
         <div class="search-palette-inner">
             <input id="searchInput" type="search" autocomplete="off" placeholder="Search modules, topics, tags…" aria-label="Search">
             <ul id="searchResults" class="search-results" role="listbox"></ul>
@@ -181,16 +187,32 @@
         </div>
     </div>
 
+    <dialog id="diagnosticDialog" class="diagnostic-dialog" aria-labelledby="diagnosticTitle">
+        <div class="diagnostic-dialog-head">
+            <div><p class="mastery-eyebrow">Starting point</p><h2 id="diagnosticTitle">Azure networking mastery diagnostic</h2></div>
+            <button type="button" class="icon-button" data-mastery-action="close-diagnostic" aria-label="Close diagnostic">×</button>
+        </div>
+        <p>Answer from memory. The result recommends where to begin; it does not block any module.</p>
+        <form id="diagnosticForm" class="diagnostic-form"></form>
+        <p id="diagnosticFeedback" role="status" aria-live="polite"></p>
+        <div class="diagnostic-actions">
+            <button type="button" class="btn-secondary" data-mastery-action="close-diagnostic">Cancel</button>
+            <button type="button" class="btn-primary" data-mastery-action="submit-diagnostic">Get recommendation</button>
+        </div>
+    </dialog>
+
     <!-- Scripts -->
     <script src="js/progress.js"></script>
     <script src="js/modules-100.js"></script>
     <script src="js/modules-200.js"></script>
     <script src="js/modules-300.js"></script>
     <script src="js/modules-extras.js"></script>
+    <script src="js/mastery-content.js"></script>
     <script src="js/quiz-engine.js"></script>
     <script src="js/interactive.js"></script>
     <script src="js/lab-engine.js"></script>
     <script src="js/diagrams.js"></script>
+    <script src="js/mastery-engine.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

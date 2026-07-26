@@ -22,6 +22,8 @@ const app = {
         this.buildNavigation();
         this.updateProgress();
         this.bindEvents();
+        this.registerServiceWorker();
+        MasteryEngine.init(MODULES);
         this.showDashboard();
 
         // Check if returning to a specific module
@@ -42,19 +44,32 @@ const app = {
             
             container.innerHTML = levelModules.map(mod => {
                 const status = ProgressManager.getModuleStatus(mod.id);
+                const metadata = MasteryEngine.getMetadata(mod.id);
+                const mastery = metadata ? MasteryEngine.getStatus(mod) : null;
                 const classes = [
-                    status.completed ? 'completed' : '',
+                    mastery && MasteryEngine.STATE_RANK[mastery.state] >= MasteryEngine.STATE_RANK.practiced
+                        ? 'completed' : status.completed ? 'completed' : '',
                 ].filter(Boolean).join(' ');
                 const timeLabel = mod.estimatedTime ? `<span style="font-size:10px;color:#888;margin-left:auto;white-space:nowrap">⏱ ${mod.estimatedTime}</span>` : '';
                 
-                return `<li class="${classes}" data-module="${mod.id}" onclick="app.loadModule('${mod.id}')">
-                    <span style="flex:1">${mod.icon} ${mod.title}</span>${timeLabel}
+                return `<li class="${classes}" data-module="${this.escapeAttr(mod.id)}">
+                    <button type="button" class="module-link" data-app-action="load-module" data-module-id="${this.escapeAttr(mod.id)}">
+                        <span style="flex:1">${mod.icon} ${mod.title}</span>${timeLabel}
+                    </button>
                 </li>`;
             }).join('');
         }
     },
 
     bindEvents() {
+        if (this.eventsBound) return;
+        this.eventsBound = true;
+
+        document.addEventListener('click', event => {
+            const control = event.target.closest('[data-app-action]');
+            if (control) this.handleAppAction(control);
+        });
+
         document.getElementById('resetProgress').addEventListener('click', () => {
             if (confirm('Reset ALL progress? This cannot be undone.')) {
                 ProgressManager.resetAll();
@@ -117,6 +132,55 @@ const app = {
         }
     },
 
+    handleAppAction(control) {
+        switch (control.dataset.appAction) {
+            case 'start-level':
+                this.startLevel(Number(control.dataset.level));
+                break;
+            case 'show-dashboard':
+                this.showDashboard();
+                break;
+            case 'switch-tab':
+                this.switchTab(control.dataset.tab);
+                break;
+            case 'prev-module':
+                this.prevModule();
+                break;
+            case 'complete-module':
+                this.completeModule();
+                break;
+            case 'next-module':
+                this.nextModule();
+                break;
+            case 'load-module':
+                this.loadModule(control.dataset.moduleId);
+                break;
+            case 'pick-search':
+                this.pickSearch(control.dataset.id);
+                break;
+            case 'close-search':
+                this.closeSearch();
+                break;
+            case 'print-cheat-sheet':
+                this.printCheatSheet();
+                break;
+            case 'toggle-accordion': {
+                const item = control.closest('.accordion-item');
+                if (!item) return;
+                const isOpen = item.classList.toggle('open');
+                control.setAttribute('aria-expanded', String(isOpen));
+                break;
+            }
+        }
+    },
+
+    registerServiceWorker() {
+        if (!('serviceWorker' in navigator) || !['http:', 'https:'].includes(window.location.protocol)) return;
+        navigator.serviceWorker.register('./sw.js').catch(error => {
+            console.warn('Service worker registration failed:', error);
+        });
+    },
+
     openSearch() {
         const p = document.getElementById('searchPalette');
         if (!p) return;
@@ -147,7 +211,7 @@ const app = {
         items = items.slice(0, 15);
         if (!items.length) { ul.innerHTML = '<li class="search-empty">No matches</li>'; return; }
         ul.innerHTML = items.map((m, i) =>
-            `<li class="search-item ${i === 0 ? 'active' : ''}" data-id="${m.id}" onclick="app.pickSearch('${m.id}')">
+            `<li class="search-item ${i === 0 ? 'active' : ''}" data-id="${this.escapeAttr(m.id)}" data-app-action="pick-search">
                 <span class="search-icon">${m.icon}</span>
                 <span class="search-title">${this.escapeHtml(m.title)}</span>
                 <span class="search-sub">L${m.level} · ${this.escapeHtml(m.subtitle || '')}</span>
@@ -232,7 +296,7 @@ const app = {
         }
         learnHtml += `
             <div class="learn-section" style="text-align:right;background:transparent;border:0;padding:0">
-                <button class="btn-secondary" onclick="app.printCheatSheet()" title="Print or save a one-page cheat-sheet">🖨️ Cheat-sheet (PDF)</button>
+                <button class="btn-secondary" data-app-action="print-cheat-sheet" title="Print or save a one-page cheat-sheet">🖨️ Cheat-sheet (PDF)</button>
             </div>`;
         document.getElementById('tab-learn').innerHTML = learnHtml;
         this.initCopyButtons();
@@ -274,13 +338,14 @@ const app = {
         // Update complete button
         const status = ProgressManager.getModuleStatus(moduleId);
         const completeBtn = document.getElementById('completeModule');
-        if (status.completed) {
-            completeBtn.textContent = '✓ Completed';
-            completeBtn.style.background = 'var(--success)';
-        } else {
-            completeBtn.textContent = '✓ Mark Complete';
-            completeBtn.style.background = '';
-        }
+        const metadata = MasteryEngine.getMetadata(moduleId);
+        const mastery = metadata ? MasteryEngine.getStatus(mod) : null;
+        completeBtn.textContent = mastery
+            ? `${MasteryEngine.STATE_LABELS[mastery.state]} · Check my progress`
+            : status.completed ? '✓ Activity complete' : 'Mark activity complete';
+        completeBtn.style.background = mastery && MasteryEngine.STATE_RANK[mastery.state] >= MasteryEngine.STATE_RANK.practiced
+            ? 'var(--success)' : '';
+        MasteryEngine.renderModulePanel(mod);
 
         // Switch to learn tab
         this.switchTab('learn');
@@ -294,17 +359,6 @@ const app = {
         // Scroll to top
         document.getElementById('content').scrollTop = 0;
 
-        // Init accordions in content
-        setTimeout(() => {
-            document.querySelectorAll('.accordion-header').forEach(header => {
-                if (!header.dataset.bound) {
-                    header.dataset.bound = 'true';
-                    header.addEventListener('click', function() {
-                        this.parentElement.classList.toggle('open');
-                    });
-                }
-            });
-        }, 100);
     },
 
     switchTab(tabName) {
@@ -336,6 +390,24 @@ const app = {
 
     completeModule() {
         if (!this.currentModule) return;
+        const metadata = MasteryEngine.getMetadata(this.currentModule.id);
+        if (metadata) {
+            ProgressManager.markContentReviewed(this.currentModule.id);
+            const mastery = MasteryEngine.getStatus(this.currentModule);
+            const nextTab = mastery.missing.includes('quiz') ? 'quiz' : mastery.missing.includes('lab') ? 'lab' : 'learn';
+            const message = mastery.missing.length
+                ? `Next evidence: ${mastery.missing.join(', ')}`
+                : `${MasteryEngine.STATE_LABELS[mastery.state]} mastery recorded`;
+            this.switchTab(nextTab);
+            this.showToast(message, mastery.missing.length ? 'warning' : 'success');
+            MasteryEngine.renderModulePanel(this.currentModule);
+            this.buildNavigation();
+            this.updateProgress();
+            document.querySelectorAll('#sidebar li').forEach(li => {
+                li.classList.toggle('active', li.dataset.module === this.currentModule.id);
+            });
+            return;
+        }
         const status = ProgressManager.getModuleStatus(this.currentModule.id);
         
         if (status.completed) {
@@ -375,8 +447,10 @@ const app = {
     updateProgress() {
         const stats = ProgressManager.getStats();
         const progress = ProgressManager.getProgress();
-        const totalModules = MODULES.length;
-        const overallPct = Math.round((stats.modulesCompleted / totalModules) * 100);
+        const realModules = MasteryEngine.getRealModules(MODULES, ACADEMY_MASTERY);
+        const practicedModules = realModules.filter(module =>
+            MasteryEngine.STATE_RANK[MasteryEngine.getStatus(module).state] >= MasteryEngine.STATE_RANK.practiced);
+        const overallPct = Math.round((practicedModules.length / realModules.length) * 100);
 
         // Overall progress bar
         document.getElementById('overallProgress').style.width = `${overallPct}%`;
@@ -384,11 +458,13 @@ const app = {
 
         // Level progress
         [100, 200, 300].forEach(level => {
-            const levelModules = MODULES.filter(m => m.level === level);
-            const completed = levelModules.filter(m => progress.completedModules.includes(m.id)).length;
+            const levelModules = realModules.filter(m => m.level === level);
+            const completed = levelModules.filter(module =>
+                MasteryEngine.STATE_RANK[MasteryEngine.getStatus(module).state] >= MasteryEngine.STATE_RANK.practiced).length;
             const pct = Math.round((completed / levelModules.length) * 100);
             const totalTime = levelModules.reduce((sum, m) => sum + (parseInt(m.estimatedTime) || 0), 0);
-            const completedTime = levelModules.filter(m => progress.completedModules.includes(m.id)).reduce((sum, m) => sum + (parseInt(m.estimatedTime) || 0), 0);
+            const completedTime = levelModules.filter(module =>
+                MasteryEngine.STATE_RANK[MasteryEngine.getStatus(module).state] >= MasteryEngine.STATE_RANK.practiced).reduce((sum, m) => sum + (parseInt(m.estimatedTime) || 0), 0);
 
             const bar = document.getElementById(`l${level}Progress`);
             const text = document.getElementById(`l${level}ProgressText`);
@@ -402,10 +478,11 @@ const app = {
         const statLabs = document.getElementById('statLabs');
         const statStreak = document.getElementById('statStreak');
         
-        if (statModules) statModules.textContent = stats.modulesCompleted;
+        if (statModules) statModules.textContent = practicedModules.length;
         if (statQuizzes) statQuizzes.textContent = stats.quizzesPassed;
         if (statLabs) statLabs.textContent = stats.labsCompleted;
         if (statStreak) statStreak.textContent = stats.streak;
+        MasteryEngine.renderDashboard(MODULES);
 
         // Build progress tracker
         this.buildTracker(progress);
@@ -416,14 +493,17 @@ const app = {
         const summary = document.getElementById('trackerSummary');
         if (!grid || !summary) return;
 
-        const totalTime = MODULES.reduce((s, m) => s + (parseInt(m.estimatedTime) || 0), 0);
-        const completedTime = MODULES.filter(m => progress.completedModules.includes(m.id)).reduce((s, m) => s + (parseInt(m.estimatedTime) || 0), 0);
+        const realModules = MasteryEngine.getRealModules(MODULES, ACADEMY_MASTERY);
+        const totalTime = realModules.reduce((s, m) => s + (parseInt(m.estimatedTime) || 0), 0);
+        const completedTime = realModules.filter(module =>
+            MasteryEngine.STATE_RANK[MasteryEngine.getStatus(module).state] >= MasteryEngine.STATE_RANK.practiced).reduce((s, m) => s + (parseInt(m.estimatedTime) || 0), 0);
         const remainingTime = totalTime - completedTime;
-        const completedCount = progress.completedModules.length;
+        const completedCount = realModules.filter(module =>
+            MasteryEngine.STATE_RANK[MasteryEngine.getStatus(module).state] >= MasteryEngine.STATE_RANK.practiced).length;
 
         summary.innerHTML = `
             <div class="tracker-summary-item"><span class="dot" style="background:var(--success)"></span> ${completedCount} completed</div>
-            <div class="tracker-summary-item"><span class="dot" style="background:#e0e0e0"></span> ${MODULES.length - completedCount} remaining</div>
+            <div class="tracker-summary-item"><span class="dot" style="background:#e0e0e0"></span> ${realModules.length - completedCount} remaining</div>
             <div class="tracker-summary-item"><span class="dot" style="background:var(--azure-blue)"></span> ~${totalTime}m total · ~${remainingTime}m left</div>
             <div class="tracker-summary-item"><span class="dot" style="background:var(--warning)"></span> ${Object.keys(progress.quizScores).length} quizzes · ${progress.completedLabs.length} labs</div>
         `;
@@ -433,12 +513,14 @@ const app = {
         const levelClasses = { 100: 'l100', 200: 'l200', 300: 'l300' };
 
         [100, 200, 300].forEach(level => {
-            const mods = MODULES.filter(m => m.level === level);
-            const done = mods.filter(m => progress.completedModules.includes(m.id)).length;
+            const mods = realModules.filter(m => m.level === level);
+            const done = mods.filter(module =>
+                MasteryEngine.STATE_RANK[MasteryEngine.getStatus(module).state] >= MasteryEngine.STATE_RANK.practiced).length;
             html += `<div class="tracker-level-header ${levelClasses[level]}">${levelNames[level]} (${done}/${mods.length})</div>`;
 
             mods.forEach(mod => {
-                const isDone = progress.completedModules.includes(mod.id);
+                const mastery = MasteryEngine.getStatus(mod);
+                const isDone = MasteryEngine.STATE_RANK[mastery.state] >= MasteryEngine.STATE_RANK.practiced;
                 const quizScore = progress.quizScores[mod.id];
                 const labDone = progress.completedLabs.includes(mod.id);
                 const quizBadge = quizScore 
@@ -449,11 +531,11 @@ const app = {
                     : (mod.lab ? `<span class="tracker-badge lab-pending">Lab</span>` : '');
                 const timeBadge = mod.estimatedTime ? `<span class="tracker-badge time">⏱ ${mod.estimatedTime}</span>` : '';
 
-                html += `<div class="tracker-row ${isDone ? 'completed' : ''}" onclick="app.loadModule('${mod.id}')">
+                html += `<div class="tracker-row ${isDone ? 'completed' : ''}" data-app-action="load-module" data-module-id="${this.escapeAttr(mod.id)}">
                     <div class="tracker-status ${isDone ? 'done' : 'pending'}">${isDone ? '✓' : mod.icon}</div>
                     <div class="tracker-info">
                         <div class="tracker-title">${mod.title}</div>
-                        <div class="tracker-subtitle">${mod.subtitle}</div>
+                        <div class="tracker-subtitle">${MasteryEngine.STATE_LABELS[mastery.state]} · ${mod.subtitle}</div>
                     </div>
                     <div class="tracker-badges">${timeBadge}${quizBadge}${labBadge}</div>
                 </div>`;
@@ -524,9 +606,9 @@ const app = {
             <p style="color:#666;font-size:12px">Azure Networking Academy — Level ${mod.level} · ~${this.escapeHtml(mod.estimatedTime || '')}</p>
             ${content}
             <footer>Generated ${new Date().toLocaleString()} &mdash; Azure Networking Academy</footer>
-            <script>setTimeout(()=>window.print(), 400);<\/script>
             </body></html>`);
         win.document.close();
+        win.setTimeout(() => win.print(), 400);
     },
 
     // ─── TOAST ──────────────────────────────────

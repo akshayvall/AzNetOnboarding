@@ -18,10 +18,28 @@ const LabEngine = {
         this.currentLab = moduleId;
         this.currentStep = 0;
         this.lab = lab;
-        this.stepResults = new Array(lab.steps.length).fill(null);
+        this.stepResults = ProgressManager.getLabSteps(moduleId, lab.steps.length);
         this.expandedSteps = {};
         this.expandedSteps[0] = true;
+        this.bindEvents(container);
         this.render();
+    },
+
+    bindEvents(container) {
+        if (container.dataset.labEventsBound) return;
+        container.dataset.labEventsBound = 'true';
+        container.addEventListener('click', event => {
+            const control = event.target.closest('[data-lab-action]');
+            if (!control) return;
+            const stepIndex = Number(control.dataset.stepIndex);
+            switch (control.dataset.labAction) {
+                case 'toggle-step': this.toggleStep(stepIndex); break;
+                case 'show-method': this.showMethod(stepIndex, control.dataset.method); break;
+                case 'confirm-step': this.confirmStep(stepIndex); break;
+                case 'check-step': this.checkStep(stepIndex); break;
+                case 'show-hint': this.showHint(stepIndex); break;
+            }
+        });
     },
 
     render() {
@@ -82,28 +100,27 @@ const LabEngine = {
 
         return `
         <div class="lab-step-v2 ${statusClass}" id="lab-step-${index}">
-            <div class="lab-step-header" onclick="LabEngine.toggleStep(${index})">
-                <div class="lab-step-num ${isCompleted ? 'done' : ''}">${isCompleted ? '✓' : index + 1}</div>
-                <div class="lab-step-title-area">
-                    <h4>${step.title}</h4>
+            <button type="button" class="lab-step-header" data-lab-action="toggle-step" data-step-index="${index}" aria-expanded="${isExpanded && !isLocked}" aria-controls="lab-step-body-${index}" ${isLocked ? 'disabled aria-disabled="true"' : ''}>
+                <span class="lab-step-num ${isCompleted ? 'done' : ''}">${isCompleted ? '✓' : index + 1}</span>
+                <span class="lab-step-title-area">
+                    <span class="lab-step-title">${step.title}</span>
                     ${step.subtitle ? `<span class="lab-step-subtitle">${step.subtitle}</span>` : ''}
-                </div>
+                </span>
                 <span class="lab-step-chevron ${isExpanded ? 'open' : ''}">${isLocked ? '🔒' : '▸'}</span>
-            </div>
-            ${isExpanded && !isLocked ? `
-            <div class="lab-step-body">
+            </button>
+            <div class="lab-step-body" id="lab-step-body-${index}" ${isExpanded && !isLocked ? '' : 'hidden'}>
                 ${step.explanation ? `<div class="lab-step-explain">${step.explanation}</div>` : ''}
 
                 ${step.portal ? `
-                <div class="lab-method-toggle">
-                    <button class="lab-method-btn active" onclick="LabEngine.showMethod(${index},'portal')">🌐 Azure Portal</button>
-                    ${step.cli ? `<button class="lab-method-btn" onclick="LabEngine.showMethod(${index},'cli')">⌨️ Azure CLI</button>` : ''}
-                    ${step.powershell ? `<button class="lab-method-btn" onclick="LabEngine.showMethod(${index},'ps')">🔷 PowerShell</button>` : ''}
+                <div class="lab-method-toggle" role="group" aria-label="Instruction method">
+                    <button type="button" class="lab-method-btn active" data-lab-action="show-method" data-step-index="${index}" data-method="portal" aria-pressed="true" aria-controls="lab-portal-${index}">🌐 Azure Portal</button>
+                    ${step.cli ? `<button type="button" class="lab-method-btn" data-lab-action="show-method" data-step-index="${index}" data-method="cli" aria-pressed="false" aria-controls="lab-cli-${index}">⌨️ Azure CLI</button>` : ''}
+                    ${step.powershell ? `<button type="button" class="lab-method-btn" data-lab-action="show-method" data-step-index="${index}" data-method="ps" aria-pressed="false" aria-controls="lab-ps-${index}">🔷 PowerShell</button>` : ''}
                 </div>
                 <div class="lab-method-content" id="lab-method-${index}">
                     <div class="lab-portal-steps" id="lab-portal-${index}">${step.portal}</div>
-                    ${step.cli ? `<div class="lab-cli-steps" id="lab-cli-${index}" style="display:none">${step.cli}</div>` : ''}
-                    ${step.powershell ? `<div class="lab-ps-steps" id="lab-ps-${index}" style="display:none">${step.powershell}</div>` : ''}
+                    ${step.cli ? `<div class="lab-cli-steps" id="lab-cli-${index}" hidden>${step.cli}</div>` : ''}
+                    ${step.powershell ? `<div class="lab-ps-steps" id="lab-ps-${index}" hidden>${step.powershell}</div>` : ''}
                 </div>
                 ` : ''}
 
@@ -117,7 +134,7 @@ const LabEngine = {
                 </div>` : ''}
 
                 ${this.renderValidation(step, index, isCompleted)}
-            </div>` : ''}
+            </div>
         </div>`;
     },
 
@@ -127,9 +144,9 @@ const LabEngine = {
         if (step.type === 'confirm') {
             return `
             <div class="lab-confirm-section">
-                <button class="btn-primary lab-confirm-btn" onclick="LabEngine.confirmStep(${index})">✓ I've completed this step</button>
+                <button type="button" class="btn-primary lab-confirm-btn" data-lab-action="confirm-step" data-step-index="${index}">✓ I've completed this step</button>
             </div>
-            <div class="lab-validation" id="lab-validation-${index}"></div>`;
+            <div class="lab-validation" id="lab-validation-${index}" role="status" aria-live="polite"></div>`;
         }
 
         let inputHtml = '';
@@ -148,13 +165,13 @@ const LabEngine = {
         if (inputHtml) {
             return `${inputHtml}
             <div style="display:flex;gap:8px;margin-top:12px">
-                <button class="btn-primary" onclick="LabEngine.checkStep(${index})" style="font-size:13px;padding:8px 20px">Submit Answer</button>
-                ${step.hint ? `<button class="btn-secondary" onclick="LabEngine.showHint(${index})" style="font-size:13px;padding:8px 16px">💡 Hint</button>` : ''}
+                <button type="button" class="btn-primary" data-lab-action="check-step" data-step-index="${index}" style="font-size:13px;padding:8px 20px">Submit Answer</button>
+                ${step.hint ? `<button type="button" class="btn-secondary" data-lab-action="show-hint" data-step-index="${index}" style="font-size:13px;padding:8px 16px">💡 Hint</button>` : ''}
             </div>
-            <div class="lab-validation" id="lab-validation-${index}"></div>`;
+            <div class="lab-validation" id="lab-validation-${index}" role="status" aria-live="polite"></div>`;
         }
 
-        return `<div class="lab-confirm-section"><button class="btn-primary lab-confirm-btn" onclick="LabEngine.confirmStep(${index})">✓ I've completed this step</button></div><div class="lab-validation" id="lab-validation-${index}"></div>`;
+        return `<div class="lab-confirm-section"><button type="button" class="btn-primary lab-confirm-btn" data-lab-action="confirm-step" data-step-index="${index}">✓ I've completed this step</button></div><div class="lab-validation" id="lab-validation-${index}" role="status" aria-live="polite"></div>`;
     },
 
     toggleStep(index) {
@@ -166,18 +183,22 @@ const LabEngine = {
 
     showMethod(index, method) {
         const els = { portal: document.getElementById(`lab-portal-${index}`), cli: document.getElementById(`lab-cli-${index}`), ps: document.getElementById(`lab-ps-${index}`) };
-        Object.entries(els).forEach(([k, el]) => { if (el) el.style.display = k === method ? 'block' : 'none'; });
+        Object.entries(els).forEach(([key, element]) => {
+            if (element) element.hidden = key !== method;
+        });
         const container = document.querySelector(`#lab-step-${index} .lab-method-toggle`);
         if (container) {
-            container.querySelectorAll('.lab-method-btn').forEach(btn => btn.classList.remove('active'));
-            const methodMap = { portal: 0, cli: 1, ps: 2 };
-            const btns = container.querySelectorAll('.lab-method-btn');
-            if (btns[methodMap[method]]) btns[methodMap[method]].classList.add('active');
+            container.querySelectorAll('.lab-method-btn').forEach(button => {
+                const isSelected = button.dataset.method === method;
+                button.classList.toggle('active', isSelected);
+                button.setAttribute('aria-pressed', String(isSelected));
+            });
         }
     },
 
     confirmStep(index) {
         this.stepResults[index] = true;
+        ProgressManager.saveLabSteps(this.currentLab, this.stepResults);
         if (index + 1 < this.lab.steps.length) this.expandedSteps[index + 1] = true;
         this.expandedSteps[index] = false;
         if (this.stepResults.every(r => r === true)) {

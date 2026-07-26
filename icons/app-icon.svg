@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Azure Networking Academy</title>
+  <desc id="description">A globe connected to four network nodes.</desc>
+  <rect width="512" height="512" rx="96" fill="#0078d4"/>
+  <circle cx="256" cy="256" r="132" fill="none" stroke="#ffffff" stroke-width="24"/>
+  <path d="M124 256h264M256 124c48 50 72 94 72 132s-24 82-72 132c-48-50-72-94-72-132s24-82 72-132z" fill="none" stroke="#ffffff" stroke-width="18"/>
+  <g fill="#50e6ff" stroke="#ffffff" stroke-width="12">
+    <circle cx="92" cy="256" r="28"/>
+    <circle cx="420" cy="256" r="28"/>
+    <circle cx="256" cy="92" r="28"/>
+    <circle cx="256" cy="420" r="28"/>
+  </g>
+</svg>

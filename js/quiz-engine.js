@@ -13,7 +13,40 @@ const QuizEngine = {
         this.answers = new Array(questions.length).fill(null);
         this.questions = questions;
         this.submitted = new Set();
+        this.bindEvents();
         this.render();
+    },
+
+    bindEvents() {
+        const container = document.getElementById('tab-quiz');
+        if (container.dataset.quizEventsBound) return;
+        container.dataset.quizEventsBound = 'true';
+
+        container.addEventListener('click', event => {
+            const control = event.target.closest('[data-quiz-action]');
+            if (!control) return;
+            switch (control.dataset.quizAction) {
+                case 'prev-question': this.prevQuestion(); break;
+                case 'submit-answer': this.submitAnswer(); break;
+                case 'next-question': this.nextQuestion(); break;
+                case 'show-results': this.showResults(); break;
+                case 'go-to-question': this.goToQuestion(Number(control.dataset.questionIndex)); break;
+                case 'retake-quiz': this.init(this.currentQuiz, this.questions); break;
+                case 'review-material': app.switchTab('learn'); break;
+            }
+        });
+
+        container.addEventListener('change', event => {
+            const input = event.target.closest('[data-option-index]');
+            if (input) this.selectOption(Number(input.dataset.optionIndex));
+        });
+
+        container.addEventListener('keydown', event => {
+            const input = event.target.closest('[data-option-index]');
+            if (!input || ![' ', 'Enter'].includes(event.key)) return;
+            event.preventDefault();
+            this.selectOption(Number(input.dataset.optionIndex));
+        });
     },
 
     render() {
@@ -46,14 +79,12 @@ const QuizEngine = {
                     <h3>${this.currentQuestion + 1}. ${typeBadge} ${this.escapeHtml(q.question)}</h3>
                     <div class="quiz-options">
                         ${q.options.map((opt, i) => `
-                            <div class="quiz-option ${this.getOptionClass(i)}" 
-                                 onclick="QuizEngine.selectOption(${i})"
-                                 data-index="${i}">
-                                <input type="${isMulti ? 'checkbox' : 'radio'}" name="q${this.currentQuestion}" 
+                            <label class="quiz-option ${this.getOptionClass(i)}" data-index="${i}">
+                                    <input type="${isMulti ? 'checkbox' : 'radio'}" name="q${this.currentQuestion}" data-option-index="${i}"
                                        ${isMulti ? (selectedSet.has(i) ? 'checked' : '') : (current === i ? 'checked' : '')}
                                        ${this.isAnswered() ? 'disabled' : ''}>
                                 <span>${this.escapeHtml(opt)}</span>
-                            </div>
+                            </label>
                         `).join('')}
                     </div>
                     <div class="quiz-explanation ${this.isAnswered() ? 'show' : ''}" id="quizExplanation">
@@ -62,20 +93,20 @@ const QuizEngine = {
                 </div>
 
                 <div class="quiz-actions">
-                    <button class="btn-secondary" onclick="QuizEngine.prevQuestion()" 
+                    <button type="button" class="btn-secondary" data-quiz-action="prev-question"
                             ${this.currentQuestion === 0 ? 'disabled style="opacity:0.3"' : ''}>
                         ← Previous
                     </button>
                     ${!this.isAnswered() ? 
-                        `<button class="btn-primary" onclick="QuizEngine.submitAnswer()" id="submitBtn"
+                        `<button type="button" class="btn-primary" data-quiz-action="submit-answer" id="submitBtn"
                                  ${this.isAnswerReady() ? '' : 'disabled style="opacity:0.5"'}>
                             Check Answer
                         </button>` : ''}
                     ${this.currentQuestion < totalQ - 1 ?
-                        `<button class="btn-primary" onclick="QuizEngine.nextQuestion()">
+                        `<button type="button" class="btn-primary" data-quiz-action="next-question">
                             Next Question →
                         </button>` :
-                        `<button class="btn-primary" onclick="QuizEngine.showResults()" 
+                        `<button type="button" class="btn-primary" data-quiz-action="show-results"
                                  style="background:var(--success)">
                             See Results
                         </button>`
@@ -89,7 +120,7 @@ const QuizEngine = {
                         const style = i === this.currentQuestion ? 'background:var(--azure-blue);color:#fff;' :
                             ans !== null ? (isCorrect ? 'background:var(--success);color:#fff;' : 'background:var(--error);color:#fff;') :
                             'background:#eee;color:#666;';
-                        return `<div onclick="QuizEngine.goToQuestion(${i})" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;${style}">${i + 1}</div>`;
+                        return `<button type="button" class="quiz-question-jump" aria-label="Go to question ${i + 1}" data-quiz-action="go-to-question" data-question-index="${i}" style="width:32px;height:32px;border:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;${style}">${i + 1}</button>`;
                     }).join('')}
                 </div>
             </div>
@@ -172,6 +203,19 @@ const QuizEngine = {
         `;
     },
 
+    calculateResult() {
+        const total = this.questions.length;
+        const correct = this.questions.reduce((count, question, index) =>
+            count + (this.isQuestionCorrect(index) ? 1 : 0), 0);
+        const pct = Math.round((correct / total) * 100);
+        const taggedCritical = this.questions
+            .map((question, index) => question.critical === true ? index : -1)
+            .filter(index => index >= 0);
+        const criticalIndexes = taggedCritical.length ? taggedCritical : [0];
+        const criticalMisses = criticalIndexes.filter(index => !this.isQuestionCorrect(index)).length;
+        return { total, correct, pct, criticalMisses, passed: pct >= 80 && criticalMisses === 0 };
+    },
+
     prevQuestion() {
         if (this.currentQuestion > 0) {
             this.currentQuestion--;
@@ -193,15 +237,12 @@ const QuizEngine = {
 
     showResults() {
         const container = document.getElementById('tab-quiz');
-        const total = this.questions.length;
-        const correct = this.questions.reduce((count, q, i) => {
-            return count + (this.isQuestionCorrect(i) ? 1 : 0);
-        }, 0);
-        const pct = Math.round((correct / total) * 100);
-        const passed = pct >= 70;
+        const { total, correct, pct, criticalMisses, passed } = this.calculateResult();
+        const reviewWasDue = ProgressManager.isReviewDue(this.currentQuiz);
 
         // Save score
-        ProgressManager.saveQuizScore(this.currentQuiz, correct, total);
+        ProgressManager.saveQuizScore(this.currentQuiz, correct, total, criticalMisses);
+        if (passed && reviewWasDue) ProgressManager.recordReview(this.currentQuiz, true);
 
         container.innerHTML = `
             <div class="quiz-results fade-in">
@@ -209,14 +250,15 @@ const QuizEngine = {
                 <div class="score-display ${passed ? 'passed' : 'failed'}">${pct}%</div>
                 <p>${correct} out of ${total} correct</p>
                 <p style="color:var(--text-secondary);margin:12px 0">
-                    ${passed ? 'Great job! You\'ve demonstrated solid understanding of this topic.' : 
-                    'You need 70% to pass. Review the material and try again.'}
+                    ${passed ? 'You passed the 80% threshold and the critical concept check.' :
+                    criticalMisses > 0 ? 'Review the first critical concept and try again. Critical questions must be correct.' :
+                    'You need 80% to pass. Review the material and try again.'}
                 </p>
                 <div style="display:flex;gap:12px;justify-content:center;margin-top:20px">
-                    <button class="btn-secondary" onclick="QuizEngine.init('${this.currentQuiz}', QuizEngine.questions)">
+                    <button class="btn-secondary" data-quiz-action="retake-quiz">
                         ↺ Retake Quiz
                     </button>
-                    <button class="btn-primary" onclick="app.switchTab('learn')">
+                    <button class="btn-primary" data-quiz-action="review-material">
                         📖 Review Material
                     </button>
                 </div>
@@ -239,6 +281,10 @@ const QuizEngine = {
         `;
 
         app.updateProgress();
+        if (app.currentModule && typeof MasteryEngine !== 'undefined') {
+            MasteryEngine.renderModulePanel(app.currentModule);
+            MasteryEngine.renderDashboard(MODULES);
+        }
     },
 
     escapeHtml(text) {

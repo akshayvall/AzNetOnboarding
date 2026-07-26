@@ -31,7 +31,7 @@ const MODULES_EXTRAS = [
     <h3>Bastion SKUs</h3>
     <table class="content-table">
         <tr><th>Feature</th><th>Developer</th><th>Basic</th><th>Standard</th><th>Premium</th></tr>
-        <tr><td>Price</td><td>Free (preview)</td><td>$</td><td>$$</td><td>$$$</td></tr>
+        <tr><td>Cost model</td><td>Availability and pricing vary</td><td>Base managed service</td><td>More scale and features</td><td>Private-only and recording features</td></tr>
         <tr><td>Host scaling</td><td>Shared</td><td>2 instances</td><td>2–50</td><td>2–50</td></tr>
         <tr><td>Connect via native client (<span class="code-inline">az network bastion</span>)</td><td>—</td><td>—</td><td>✔</td><td>✔</td></tr>
         <tr><td>VNet peering connectivity</td><td>—</td><td>✔</td><td>✔</td><td>✔</td></tr>
@@ -40,6 +40,7 @@ const MODULES_EXTRAS = [
         <tr><td>Session recording</td><td>—</td><td>—</td><td>—</td><td>✔</td></tr>
         <tr><td>Private-only deployment (no public IP)</td><td>—</td><td>—</td><td>—</td><td>✔</td></tr>
     </table>
+    <p class="source-note">Bastion feature availability and pricing vary by region and can change. Verify the current SKU comparison and pricing page before design or deployment.</p>
 
     <h3>Requirements</h3>
     <ul>
@@ -291,22 +292,22 @@ az network bastion rdp \\
     learn: `
 <div class="learn-section">
     <h2>Why NAT Gateway?</h2>
-    <p>Every VM in Azure can reach the internet by default using an implicit, shared outbound SNAT mechanism. That works for light workloads — but at scale you run into <strong>SNAT port exhaustion</strong>: the shared pool of source ports runs out and outbound connections fail with mysterious timeouts.</p>
+    <p>Outbound internet access must be designed explicitly. VNets created by API versions released after <strong>March 31, 2026</strong> use private subnets by default, so their VMs do not receive implicit default outbound access. Older VNets can still have default outbound access, but it is not a production design.</p>
     <p><strong>NAT Gateway</strong> gives a subnet a dedicated pool of public IPs and ~64,000 SNAT ports per attached public IP. It is the Microsoft-recommended way to provide outbound connectivity.</p>
 
     <div class="concept-box">
-        <h4>🔑 Four Ways a VM Can Reach the Internet</h4>
+        <h4>🔑 Explicit Ways a VM Can Reach the Internet</h4>
         <ol>
             <li><strong>Public IP on the VM</strong> — direct, but exposes inbound too. Not ideal.</li>
             <li><strong>Public Load Balancer outbound rules</strong> — shared with inbound LB traffic.</li>
-            <li><strong>Default outbound</strong> — implicit, will be deprecated Sept 2025 for new VNets!</li>
-            <li><strong>NAT Gateway</strong> — <span style="color:var(--success);font-weight:600">Microsoft-recommended</span>. Dedicated, predictable.</li>
+            <li><strong>Azure Firewall</strong> — controlled egress with centralized filtering and logging.</li>
+            <li><strong>NAT Gateway</strong> — <span style="color:var(--success);font-weight:600">Microsoft-recommended</span> for scalable, deterministic subnet egress.</li>
         </ol>
     </div>
 
     <div class="warning-box">
-        <h4>⚠️ Default Outbound Deprecation</h4>
-        <p>Microsoft announced that <strong>default outbound access will be retired for new VNets on September 30, 2025</strong>. Any new subnet must have an <em>explicit</em> outbound method (NAT Gateway, Load Balancer rule, or public IP). Existing VNets keep default access but should migrate.</p>
+        <h4>⚠️ Private Subnet Default Applies to New API Versions</h4>
+        <p>The March 31, 2026 change is scoped to <strong>new VNets created with API versions released after that date</strong>. It does not retroactively change every existing VNet. Existing deployments should still migrate away from implicit default outbound access because the address is not dedicated and can change.</p>
     </div>
 
     <h3>How NAT Gateway Works</h3>
@@ -328,6 +329,20 @@ az network bastion rdp \\
         <tr><td>Complexity</td><td>Simple</td><td>Requires LB + backend pool</td></tr>
         <tr><td>Microsoft recommendation</td><td>✔ Preferred</td><td>Only if you also need inbound LB</td></tr>
     </table>
+
+    <h3>Routing Comes Before SNAT</h3>
+    <p>NAT Gateway is not a route or firewall. Azure first selects the effective route. If a UDR sends <code>0.0.0.0/0</code> to Azure Firewall or an NVA, that appliance owns egress and the subnet NAT Gateway is not used for that flow. If the selected next hop is Internet, NAT Gateway provides the outbound source address and takes precedence over instance public IPs and Load Balancer outbound rules for new outbound connections.</p>
+
+    <div class="concept-box">
+        <h4>🔑 Diagnose Before Adding Public IPs</h4>
+        <ol>
+            <li>Inspect the NIC's <strong>effective routes</strong> and confirm the destination uses the expected next hop.</li>
+            <li>Compare the observed egress IP with the NAT Gateway public IP or prefix.</li>
+            <li>Review NAT Gateway metrics such as connection count, dropped packets, bytes, and datapath availability.</li>
+            <li>Correlate failures with connection churn, long idle flows, destination-specific spikes, and application retry behavior.</li>
+            <li>Add public IP capacity only after the evidence points to SNAT pressure; also fix connection pooling and unbounded retries.</li>
+        </ol>
+    </div>
 </div>
 `,
     diagrams: [
@@ -383,10 +398,16 @@ az network bastion rdp \\
             type: 'multi-select'
         },
         {
-            question: 'When does default outbound access for NEW Azure VNets retire?',
-            options: ['Already retired', 'September 30, 2025', 'January 2027', 'It will not retire'],
+            question: 'Which statement correctly describes the private-subnet default introduced after March 31, 2026?',
+            options: ['Every existing VNet immediately lost internet access', 'Only VNets created with API versions released after that date default to private subnets', 'NAT Gateway is attached automatically', 'NSG AllowInternetOutBound guarantees SNAT'],
             correct: 1,
-            explanation: 'Microsoft announced retirement for new VNets on September 30, 2025. New subnets must use NAT Gateway, LB outbound rules, or an instance-level public IP.'
+            explanation: 'The change applies to new VNets created with API versions released after March 31, 2026. It is not retroactive. Those private subnets need an explicit outbound method such as NAT Gateway, Azure Firewall, Load Balancer outbound rules, or an instance public IP.'
+        },
+        {
+            question: 'A subnet has a NAT Gateway, but its effective route for 0.0.0.0/0 points to Azure Firewall. Which resource supplies internet SNAT for that flow?',
+            options: ['The NAT Gateway', 'The VM public IP', 'Azure Firewall', 'The NSG'],
+            correct: 2,
+            explanation: 'Route selection happens first. The UDR sends the flow to Azure Firewall, so the firewall handles inspection and egress SNAT. NAT Gateway is used when the selected next hop is Internet.'
         }
     ],
     interactive: [
@@ -404,7 +425,7 @@ az network bastion rdp \\
     ],
     references: [
         { title: 'What is Azure NAT Gateway?', url: 'https://learn.microsoft.com/azure/nat-gateway/nat-overview' },
-        { title: 'Default outbound access retirement', url: 'https://learn.microsoft.com/azure/virtual-network/ip-services/default-outbound-access' },
+        { title: 'Default outbound access and private subnets', url: 'https://learn.microsoft.com/azure/virtual-network/ip-services/default-outbound-access' },
         { title: 'SNAT port exhaustion troubleshooting', url: 'https://learn.microsoft.com/azure/load-balancer/troubleshoot-outbound-connection' }
     ],
     lab: {
@@ -412,7 +433,7 @@ az network bastion rdp \\
         icon: '🔀',
         scenario: 'Create a NAT Gateway, attach a public IP, associate it with a subnet, and verify outbound traffic is SNAT\'d to the NAT Gateway IP.',
         duration: '20-30 minutes',
-        cost: '~$0.045/hour + data processing',
+        cost: 'Billable while provisioned, plus processed data; check current regional pricing before deployment',
         difficulty: 'Intermediate',
         prerequisites: ['Resource group rg-academy-lab', 'VNet vnet-academy', 'A VM in snet-web (no public IP)'],
         cleanup: `az network nat gateway delete --name natgw-academy --resource-group rg-academy-lab
@@ -462,6 +483,19 @@ az network public-ip delete --name pip-natgw --resource-group rg-academy-lab`,
                     <li>The returned IP should match <code>pip-natgw</code> — not the VM\'s implicit default IP.</li>
                 </ol>`,
                 verification: 'Public IP reported by ifconfig.me matches the NAT Gateway public IP. Confirmed deterministic outbound.'
+            },
+            {
+                title: 'Inspect Routes and NAT Metrics',
+                type: 'confirm',
+                explanation: 'Prove both halves of the path: the subnet selects the Internet next hop, then NAT Gateway translates the source. Metrics provide a baseline for future SNAT investigations.',
+                portal: `<ol>
+                    <li>Open the VM NIC → <strong>Effective routes</strong> and inspect the route used for <code>0.0.0.0/0</code></li>
+                    <li>Open <code>natgw-academy</code> → <strong>Metrics</strong></li>
+                    <li>Chart connection count, dropped packets, bytes, and datapath availability while generating several outbound requests</li>
+                    <li>Record the egress public IP and a screenshot of the metric baseline</li>
+                </ol>`,
+                tip: 'A NAT Gateway cannot repair a UDR that sends traffic to the wrong appliance. Always inspect effective routes before scaling SNAT capacity.',
+                verification: 'The effective route uses the expected next hop, the observed source IP matches pip-natgw, and NAT metrics show the test connections without unexplained drops.'
             }
         ]
     }
@@ -817,7 +851,7 @@ az network public-ip delete --name pip-natgw --resource-group rg-academy-lab`,
         icon: '🔥',
         scenario: 'Deploy Azure Firewall Standard, configure an application rule allowing only Microsoft-related FQDNs, and verify the policy works from a spoke VM.',
         duration: '45-60 minutes',
-        cost: '~$1.25/hour Firewall Standard + data processing (delete after lab!)',
+        cost: 'Azure Firewall deployment and data processing are billable; check current regional pricing and delete the lab resources promptly',
         difficulty: 'Advanced',
         prerequisites: ['Hub VNet with AzureFirewallSubnet (/26)', 'Spoke VNet peered to hub', 'VM in spoke with Bastion access'],
         cleanup: `az network firewall delete --name fw-academy --resource-group rg-academy-lab
@@ -936,7 +970,7 @@ az network vnet subnet update \\
     id: 'network-watcher',
     level: 300,
     title: 'Network Watcher & Troubleshooting',
-    subtitle: 'Connection Monitor, IP Flow Verify, NSG Flow Logs, Packet Capture',
+    subtitle: 'Connection Monitor, IP Flow Verify, VNet Flow Logs, Packet Capture',
     icon: '🔍',
     estimatedTime: '40m',
     learn: `
@@ -951,31 +985,42 @@ az network vnet subnet update \\
         <tr><td><strong>Next Hop</strong></td><td>Given a destination IP, what is the effective next hop from this VM? Useful when UDRs are misconfigured.</td></tr>
         <tr><td><strong>Connection Troubleshoot</strong></td><td>Tests connectivity from VM A to any IP/FQDN:port. Shows hop-by-hop latency and identifies firewall/NSG drops.</td></tr>
         <tr><td><strong>Connection Monitor</strong></td><td>Continuous, scheduled connectivity tests with alerts. Replaces the deprecated Connection Monitor v1.</td></tr>
-        <tr><td><strong>NSG Flow Logs</strong></td><td>Log every packet 5-tuple (allowed and denied) to a storage account. Feeds Traffic Analytics.</td></tr>
+        <tr><td><strong>VNet Flow Logs</strong></td><td>Record IP flows for a virtual network, subnet, or network interface to a storage account. They work independently of NSGs and can feed Traffic Analytics.</td></tr>
         <tr><td><strong>Packet Capture</strong></td><td>Wireshark-compatible PCAPs from a VM without installing anything (uses the Network Watcher agent VM extension).</td></tr>
         <tr><td><strong>VPN Troubleshoot</strong></td><td>Diagnose VPN gateway connectivity issues with one click.</td></tr>
     </table>
 
     <div class="concept-box">
         <h4>🔑 Diagnostic Workflow</h4>
-        <p>When a user reports "my VM can\'t reach X":<br>
-        1. <strong>IP Flow Verify</strong> first — is NSG blocking it?<br>
-        2. <strong>Next Hop</strong> — is the UDR sending it somewhere unexpected?<br>
-        3. <strong>Connection Troubleshoot</strong> — hop-by-hop trace with latency.<br>
-        4. <strong>Packet Capture</strong> — last resort, wire-level evidence.</p>
+        <p>When a user reports "my VM can\'t reach X," first define the source, destination name and resolved IP, protocol, port, and failure time. Then:<br>
+        1. <strong>DNS lookup</strong> — did the name resolve to the intended public or private address?<br>
+        2. <strong>IP Flow Verify</strong> — is an NSG denying the exact tuple?<br>
+        3. <strong>Next Hop + effective routes</strong> — is a UDR or BGP route steering traffic incorrectly?<br>
+        4. <strong>Connection Troubleshoot</strong> — can Azure reach the endpoint, and where does latency or loss appear?<br>
+        5. <strong>VNet flow logs</strong> — did the flow occur, in which direction, and at what volume?<br>
+        6. <strong>Packet Capture</strong> — collect narrowly filtered wire evidence only when earlier checks cannot explain the failure.</p>
     </div>
 
-    <h3>NSG Flow Logs v2 + Traffic Analytics</h3>
-    <p>NSG Flow Logs (v2) write 5-tuple + state (allow/deny) + bytes to a storage account every minute. When you enable <strong>Traffic Analytics</strong>, Log Analytics ingests this data and provides:</p>
+    <h3>Topology Is Context, Not Proof</h3>
+    <p>Network Watcher topology helps inventory resource relationships in a scope, but a line on the diagram does not prove end-to-end reachability. Validate the data plane with effective routes, NSG evaluation, DNS answers, connection tests, and logs.</p>
+
+    <h3>VNet Flow Logs + Traffic Analytics</h3>
+    <p>VNet flow logs record network flows at the virtual-network layer, including 5-tuple data, direction, flow state, encryption state, and throughput information. When you enable <strong>Traffic Analytics</strong>, Log Analytics processes the stored records and provides:</p>
     <ul>
         <li>Top talkers, blocked flows, malicious IP correlation</li>
         <li>Geo-map of traffic sources</li>
         <li>Integration with Azure Sentinel / Microsoft Defender for Cloud</li>
     </ul>
+    <p>Traffic Analytics processes flow logs into Log Analytics, so it adds ingestion cost and processing delay. Use it for trends, communication patterns, and investigations over time; use Connection Troubleshoot or packet capture for immediate diagnosis. Set workspace retention deliberately and restrict access to network telemetry.</p>
 
     <div class="warning-box">
-        <h4>⚠️ Flow Logs v1 Retirement</h4>
-        <p>NSG Flow Logs v1 is retired. New logs must use <strong>v2</strong> format (includes flow state). If you have legacy v1 logs, migrate to v2 — and eventually to <strong>VNet Flow Logs</strong> (which replaces NSG Flow Logs entirely and works without NSGs).</p>
+        <h4>⚠️ Packet Captures Can Contain Sensitive Data</h4>
+        <p>Packet captures can expose tokens, headers, queries, and unencrypted payloads. Require an incident or change ticket, filter by host, port, and protocol, cap bytes and duration, write to an approved location, limit RBAC access, and delete the capture when the investigation closes. Never collect broad production traffic merely to "see what is happening."</p>
+    </div>
+
+    <div class="warning-box">
+        <h4>⚠️ NSG Flow Logs Are a Migration Topic</h4>
+        <p>New NSG flow logs cannot be created after <strong>June 30, 2025</strong>, and the feature retires on <strong>September 30, 2027</strong>. Existing NSG flow-log deployments should migrate to VNet flow logs. Do not build new monitoring around NSG flow logs.</p>
     </div>
 </div>
 `,
@@ -1004,13 +1049,13 @@ az network vnet subnet update \\
         },
         {
             question: 'SCENARIO: A spoke VM cannot reach SQL PaaS at sqlsrv.database.windows.net. You want to confirm whether a misconfigured UDR is sending traffic to the wrong next hop. Which tool do you use FIRST?',
-            options: ['Packet Capture', 'NSG Flow Logs', 'Next Hop', 'Connection Monitor'],
+            options: ['Packet Capture', 'VNet Flow Logs', 'Next Hop', 'Connection Monitor'],
             correct: 2,
             explanation: 'Next Hop immediately shows the effective next-hop type and IP for a given destination from a specific VM NIC. Perfect for catching UDR misconfigurations without waiting for logs.',
             type: 'scenario'
         },
         {
-            question: 'Which of these can NSG Flow Logs v2 provide? (Select all that apply)',
+            question: 'Which of these can VNet flow logs provide? (Select all that apply)',
             options: [
                 '5-tuple flow records every minute',
                 'Allowed vs denied flow state',
@@ -1019,12 +1064,12 @@ az network vnet subnet update \\
                 'Input for Traffic Analytics dashboards'
             ],
             correct: [0, 1, 3, 4],
-            explanation: 'Flow logs record 5-tuple, action, and byte counts — but NOT payloads. For payload inspection use Packet Capture or a TAP-like solution.',
+            explanation: 'VNet flow logs record flow metadata and byte counts, but not packet payloads. For payload inspection, use Packet Capture with strict access and retention controls.',
             type: 'multi-select'
         },
         {
             question: 'You need CONTINUOUS, scheduled connectivity checks from VMs to an external HTTPS endpoint with alerting. Which tool?',
-            options: ['IP Flow Verify', 'Connection Troubleshoot (one-shot)', 'Connection Monitor', 'NSG Flow Logs'],
+            options: ['IP Flow Verify', 'Connection Troubleshoot (one-shot)', 'Connection Monitor', 'VNet Flow Logs'],
             correct: 2,
             explanation: 'Connection Monitor runs continuous synthetic tests with configurable frequency, thresholds, and Azure Monitor alerts. The others are one-shot or passive.'
         }
@@ -1048,7 +1093,7 @@ az network vnet subnet update \\
                 'Next Hop': ['Find what next hop a VM uses for 203.0.113.10'],
                 'Packet Capture': ['Capture Wireshark-compatible packets from a VM'],
                 'Connection Monitor': ['Continuously monitor connectivity VM-A → api.example.com'],
-                'NSG Flow Logs + Traffic Analytics': ['See top internet talkers in the last 24 hours'],
+                'VNet Flow Logs + Traffic Analytics': ['See top internet talkers in the last 24 hours'],
                 'VPN Troubleshoot': ['One-click VPN gateway diagnosis']
             }
         }
@@ -1056,7 +1101,8 @@ az network vnet subnet update \\
     references: [
         { title: 'What is Azure Network Watcher?', url: 'https://learn.microsoft.com/azure/network-watcher/network-watcher-overview' },
         { title: 'IP Flow Verify overview', url: 'https://learn.microsoft.com/azure/network-watcher/ip-flow-verify-overview' },
-        { title: 'NSG Flow Logs v2', url: 'https://learn.microsoft.com/azure/network-watcher/nsg-flow-logs-overview' },
+        { title: 'VNet flow logs overview', url: 'https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-overview' },
+        { title: 'Migrate from NSG flow logs', url: 'https://learn.microsoft.com/azure/network-watcher/nsg-flow-logs-migrate' },
         { title: 'Connection Monitor', url: 'https://learn.microsoft.com/azure/network-watcher/connection-monitor-overview' }
     ],
     lab: {
@@ -1064,10 +1110,13 @@ az network vnet subnet update \\
         icon: '🔍',
         scenario: 'Intentionally create an NSG rule that blocks outbound HTTPS, then use Network Watcher IP Flow Verify to prove exactly which rule matched — the real-world troubleshooting workflow.',
         duration: '25 minutes',
-        cost: 'Free',
+        cost: 'Storage is billable; Traffic Analytics also adds Log Analytics ingestion when enabled',
         difficulty: 'Intermediate',
         prerequisites: ['A VM in your lab VNet', 'An NSG attached to its subnet or NIC'],
-        cleanup: '# Remove the blocking rule after the lab:\naz network nsg rule delete --nsg-name nsg-web-tier --resource-group rg-academy-lab --name BlockOutHttps',
+        cleanup: `# Remove the blocking rule after the lab
+    az network nsg rule delete --nsg-name nsg-web-tier --resource-group rg-academy-lab --name BlockOutHttps
+    # Delete the VNet flow log in Network Watcher before deleting its storage account
+    az storage account delete --name "$FLOW_STORAGE" --resource-group rg-academy-lab --yes`,
         steps: [
             {
                 title: 'Create a Blocking Rule (on purpose)',
@@ -1106,36 +1155,65 @@ az network vnet subnet update \\
                 verification: 'Result shows <strong>Access: Deny</strong> and Rule: <code>BlockOutHttps</code>. This is exactly how real troubleshooting works.'
             },
             {
-                title: 'Enable NSG Flow Logs v2',
+                title: 'Create a VNet Flow Log',
                 type: 'confirm',
-                explanation: 'Flow logs give you historical visibility. Requires a storage account.',
-                cli: `<div class="lab-code-block"># Create a storage account for logs
+                explanation: 'VNet flow logs provide historical visibility without depending on an NSG. Store them in a same-region storage account and use a short retention period for this lab.',
+                cli: `<div class="lab-code-block"># Create and record a storage account for logs
+FLOW_STORAGE="stflowlogs$RANDOM$RANDOM"
+echo "Record for cleanup: $FLOW_STORAGE"
 az storage account create \\
-    --name stflowlogs$RANDOM \\
+    --name "$FLOW_STORAGE" \
     --resource-group rg-academy-lab \\
     --location eastus \\
     --sku Standard_LRS
 
-# Enable v2 flow logs
-az network watcher flow-log create \\
-    --name fl-nsg-web \\
-    --nsg nsg-web-tier \\
-    --resource-group rg-academy-lab \\
-    --storage-account &lt;storage-account-name&gt; \\
-    --retention 7 \\
-    --format JSON \\
-    --log-version 2</div>`,
-                tip: 'Combine with Log Analytics workspace to enable Traffic Analytics dashboards.'
+# Create the VNet flow log in the portal so the target IDs and
+# regional Network Watcher resource are selected explicitly.</div>`,
+                portal: `<ol>
+                    <li>Open <strong>Network Watcher</strong> → <strong>Logs</strong> → <strong>Flow logs</strong></li>
+                    <li>Click <strong>+ Create</strong> and choose <strong>Virtual network</strong> as the target type</li>
+                    <li>Select <code>vnet-academy</code> and the storage account created above</li>
+                    <li>Enable flow logs, choose the latest available version, and set retention to <strong>7 days</strong></li>
+                    <li>Leave Traffic Analytics off unless you already have a Log Analytics workspace for the lab</li>
+                    <li>Create the flow log and confirm its provisioning state is <strong>Succeeded</strong></li>
+                </ol>`,
+                tip: 'Traffic Analytics adds processing and Log Analytics ingestion cost. Enable it only when you intend to query or visualize the records.',
+                verification: 'Network Watcher → Flow logs shows a VNet flow log targeting vnet-academy with status Enabled.'
             },
             {
-                title: 'Remove the Blocking Rule',
+                title: 'Read the Evidence Safely',
                 type: 'confirm',
-                explanation: 'Cleanup step — rerun IP Flow Verify to confirm the traffic is now allowed.',
+                explanation: 'Generate a small set of allowed and denied test flows, then distinguish immediate troubleshooting from historical analytics.',
+                portal: `<ol>
+                    <li>Generate one allowed connection and one denied connection covered by the test rule</li>
+                    <li>After flow-log delivery, inspect the storage container for records from the target VNet</li>
+                    <li>If Traffic Analytics is enabled, wait for processing and compare its top-talker view with the raw flow metadata</li>
+                    <li>Confirm that neither source contains packet payloads</li>
+                    <li>Document the test timestamp, source, destination, port, expected decision, and observed evidence</li>
+                </ol>`,
+                tip: 'Flow logs answer who communicated, when, and how much. Packet capture answers what was on the wire and therefore carries a much higher privacy and security burden.',
+                verification: 'The evidence note links the exact test flow to its log record or explains the expected processing delay.'
+            },
+            {
+                title: 'Remove the Blocking Rule and Lab Telemetry',
+                type: 'confirm',
+                explanation: 'Rerun IP Flow Verify after removing the deny rule, then delete the lab flow log before deleting its storage account. This prevents ongoing storage and analytics charges.',
+                portal: `<ol>
+                    <li>Delete the VNet flow log under Network Watcher → Flow logs</li>
+                    <li>Confirm no other lab flow log writes to the recorded storage account</li>
+                    <li>Delete the storage account and, if created only for this lab, the Log Analytics workspace</li>
+                </ol>`,
                 cli: `<div class="lab-code-block">az network nsg rule delete \\
     --nsg-name nsg-web-tier \\
     --resource-group rg-academy-lab \\
-    --name BlockOutHttps</div>`,
-                verification: 'Rerunning IP Flow Verify now shows <strong>Access: Allow</strong> via the default AllowInternetOutBound rule.'
+    --name BlockOutHttps
+
+# After deleting the flow log in Network Watcher:
+az storage account delete \
+    --name "$FLOW_STORAGE" \
+    --resource-group rg-academy-lab \
+    --yes</div>`,
+                verification: 'IP Flow Verify now shows Allow, the VNet flow log is gone, and the recorded storage account no longer exists.'
             }
         ]
     }
@@ -1164,8 +1242,9 @@ az network watcher flow-log create \\
         <li><strong>Front Door Premium</strong> → Public entry point with WAF</li>
         <li><strong>Private DNS Zone</strong> for privatelink.database.windows.net</li>
         <li><strong>UDRs</strong> forcing spoke-to-spoke and spoke-to-internet through the firewall</li>
-        <li><strong>NSGs</strong> with AzureFrontDoor.Backend service tag on the web tier</li>
+        <li><strong>Origin protection:</strong> Front Door Premium Private Link to the internal origin; a public-origin alternative must combine the <code>AzureFrontDoor.Backend</code> service tag with profile-ID header validation</li>
         <li><strong>NAT Gateway</strong> on management subnet for deterministic outbound</li>
+        <li><strong>Observability:</strong> Diagnostic settings, Connection Monitor, VNet flow logs, alerts, and an evidence pack</li>
     </ul>
 
     <h3>What You\'ll Prove You Can Do</h3>
@@ -1173,24 +1252,23 @@ az network watcher flow-log create \\
         <li>✔ Plan non-overlapping CIDR blocks across a hub and two spokes</li>
         <li>✔ Deploy VNet peering with "Use remote gateway" + "Allow gateway transit"</li>
         <li>✔ Force-tunnel spoke traffic through a central firewall</li>
-        <li>✔ Secure a backend by locking the NSG to Front Door\'s service tag</li>
+        <li>✔ Prove the origin cannot be reached by bypassing Front Door</li>
         <li>✔ Use Private Endpoints + Private DNS to keep PaaS traffic off the internet</li>
-        <li>✔ Troubleshoot with Network Watcher when something doesn\'t route as expected</li>
+        <li>✔ Troubleshoot with effective routes, DNS evidence, Connection Monitor, and VNet flow logs</li>
+        <li>✔ Estimate cost, set a budget, clean up, and defend the architecture and its tradeoffs</li>
     </ul>
 
     <div class="tip-box">
-        <h4>💡 Download the Bicep Starter</h4>
-        <p>A starter Bicep template is available in the <code>capstone/</code> folder of the GitHub repo. Deploy with:</p>
-        <div class="code-block">az deployment group create \\
-    --resource-group rg-capstone \\
-    --template-file main.bicep \\
-    --parameters adminUsername=azureuser</div>
-        <p>Then walk through the lab steps on this page to validate each component.</p>
+        <h4>💡 Author the Infrastructure as Code</h4>
+        <p>Create your own <code>main.bicep</code> and small modules for networking, security, observability, and edge resources. Parameterize location, address spaces, feature switches, log retention, and an SSH public key. Use resource outputs rather than copying IDs. The goal is to demonstrate design judgment, not deploy an opaque starter.</p>
+        <div class="code-block">az bicep build --file main.bicep
+az deployment group what-if --resource-group rg-capstone --template-file main.bicep
+az deployment group create --resource-group rg-capstone --template-file main.bicep</div>
     </div>
 
     <div class="warning-box">
         <h4>⚠️ Cost Warning</h4>
-        <p>This architecture will cost ~$50/day if left running (Firewall + VPN Gateway + Front Door + Bastion). <strong>Deploy, validate, screenshot, delete.</strong> The entire resource group should be deleted with <code>az group delete -n rg-capstone --yes</code> when you finish.</p>
+        <p>Firewall, VPN Gateway, Front Door Premium, Bastion, Log Analytics, and data processing are billable. Estimate current regional cost with the Azure pricing calculator, set a temporary budget alert, deploy only the features you can validate in the session, then delete the resource group. Do not rely on a hard-coded hourly estimate.</p>
     </div>
 </div>
 `,
@@ -1216,12 +1294,12 @@ az network watcher flow-log create \\
             question: 'SCENARIO: In your hub-spoke deployment, the spoke VMs cannot reach the internet. Effective routes show 0.0.0.0/0 → Virtual Appliance → 10.100.1.4 (firewall). What is the most likely cause?',
             options: [
                 'NSG on the spoke subnet is blocking all outbound traffic',
-                'The firewall\'s NIC does not have IP forwarding enabled, or the firewall has no Allow rule for this destination',
+                'The Azure Firewall policy has no matching allow rule, or the peering/UDR path is incomplete',
                 'VNet peering is not configured',
                 'Front Door is blocking the traffic'
             ],
             correct: 1,
-            explanation: 'When UDR is correct (route shows virtual appliance) but traffic still fails, look at the NVA itself: IP forwarding must be enabled on its NIC, AND the firewall must have an Allow rule. Firewall has an implicit deny-all.',
+            explanation: 'The route proves only the selected next hop. Azure Firewall still needs a matching network or application rule, and the peering path must permit forwarded traffic. Azure Firewall is managed; you do not enable IP forwarding on one of its NICs.',
             type: 'scenario'
         },
         {
@@ -1248,14 +1326,16 @@ az network watcher flow-log create \\
         { title: 'Hub-spoke network topology (Cloud Adoption Framework)', url: 'https://learn.microsoft.com/azure/architecture/networking/architecture/hub-spoke' },
         { title: 'Azure landing zone reference architecture', url: 'https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/' },
         { title: 'Private Endpoint + Private DNS', url: 'https://learn.microsoft.com/azure/private-link/private-endpoint-dns' },
-        { title: 'Front Door with internal origin (Private Link)', url: 'https://learn.microsoft.com/azure/frontdoor/private-link' }
+        { title: 'Front Door with internal origin (Private Link)', url: 'https://learn.microsoft.com/azure/frontdoor/private-link' },
+        { title: 'Bicep deployment what-if', url: 'https://learn.microsoft.com/azure/azure-resource-manager/bicep/deploy-what-if' },
+        { title: 'Azure Monitor diagnostic settings', url: 'https://learn.microsoft.com/azure/azure-monitor/essentials/diagnostic-settings' }
     ],
     lab: {
         title: 'Capstone Lab: Full Hub-Spoke Validation',
         icon: '🏆',
-        scenario: 'Deploy and validate the enterprise reference topology. Each step validates one layer — peering, UDR, NSG, Private Endpoint, Front Door. If any step fails, use Network Watcher to diagnose.',
+        scenario: 'Author, deploy, and defend the enterprise reference topology. Validate peering, routing, private DNS, origin isolation, edge security, telemetry, cost, and cleanup with recorded evidence.',
         duration: '60-90 minutes',
-        cost: '~$2/hour — delete the entire resource group when done',
+        cost: 'Multiple billable services; estimate current regional cost, set a budget alert, and delete the resource group when done',
         difficulty: 'Advanced',
         prerequisites: ['You have completed all L100, L200, L300 modules', 'Azure subscription with Contributor permissions', 'Azure CLI authenticated'],
         cleanup: 'az group delete --name rg-capstone --yes --no-wait',
@@ -1268,16 +1348,38 @@ az network watcher flow-log create \\
                 tip: 'The #1 cause of hub-spoke failures: overlapping CIDR. Peering silently breaks when ranges overlap.'
             },
             {
-                title: 'Deploy Hub + 2 Spokes + Peering',
+                title: 'Author and Review the Bicep',
                 type: 'confirm',
-                explanation: 'Deploy the three VNets and configure bidirectional peering with gateway transit enabled.',
-                cli: `<div class="lab-code-block"># See /capstone/main.bicep in the repo for the full template.
-az group create -n rg-capstone -l eastus
-az deployment group create \\
-    -g rg-capstone \\
-    --template-file capstone/main.bicep \\
-    --parameters adminUsername=azureuser adminPassword='YourStr0ngP@ss!'</div>`,
-                verification: 'az network vnet peering list -g rg-capstone --vnet-name vnet-hub shows two peerings in Connected state.'
+                explanation: 'Write the deployment yourself. Separate modules by responsibility, use parameters and outputs, and avoid passwords. Expensive resources should have Boolean feature switches so a what-if review can constrain the deployment.',
+                portal: `<ol>
+                    <li>Create <code>main.bicep</code> plus modules for VNets/peering, security, observability, and Front Door</li>
+                    <li>Use an SSH public-key parameter for Linux administration; do not place passwords or secrets in source or command history</li>
+                    <li>Add diagnostic settings for the resources you deploy and send logs to a Log Analytics workspace</li>
+                    <li>Add outputs for resource IDs, private IPs, endpoint hostname, and log workspace ID</li>
+                    <li>Run lint/build and inspect <strong>what-if</strong> before deployment</li>
+                </ol>`,
+                cli: `<div class="lab-code-block">az group create --name rg-capstone --location eastus
+az bicep build --file main.bicep
+az deployment group what-if \
+    --resource-group rg-capstone \
+    --template-file main.bicep
+
+# Deploy only after reviewing the what-if output
+az deployment group create \
+    --resource-group rg-capstone \
+    --template-file main.bicep</div>`,
+                verification: 'Bicep builds successfully, what-if contains only intended resources, no secret or literal password appears in source or command history, and the deployment outputs are populated.'
+            },
+            {
+                title: 'Validate Hub, Spokes, and Peering',
+                type: 'confirm',
+                explanation: 'Confirm both peering directions and the gateway-transit settings you actually intend. Peering is non-transitive; forwarded spoke-to-spoke traffic needs UDRs, an inspecting hop, and allow-forwarded-traffic.',
+                cli: `<div class="lab-code-block">az network vnet peering list \
+    --resource-group rg-capstone \
+    --vnet-name vnet-hub \
+    --query "[].{Name:name,State:peeringState,Forwarded:allowForwardedTraffic,GatewayTransit:allowGatewayTransit}" \
+    --output table</div>`,
+                verification: 'Every required peering direction is Connected and its forwarding and gateway settings match the architecture diagram.'
             },
             {
                 title: 'Validate Firewall Force-Tunnel',
@@ -1298,38 +1400,54 @@ az deployment group create \\
                 verification: 'nslookup returns a 10.x.x.x address from the private endpoint subnet.'
             },
             {
-                title: 'Lock Down Web Tier to Front Door Only',
+                title: 'Prove Origin Isolation',
                 type: 'confirm',
-                explanation: 'Update the web-tier NSG: deny Internet, allow only AzureFrontDoor.Backend. This ensures users cannot bypass Front Door to hit origins directly.',
-                cli: `<div class="lab-code-block">az network nsg rule create \\
-    --nsg-name nsg-web-tier \\
-    --resource-group rg-capstone \\
-    --name AllowFrontDoorOnly \\
-    --priority 100 \\
-    --direction Inbound \\
-    --access Allow \\
-    --protocol Tcp \\
-    --source-address-prefixes AzureFrontDoor.Backend \\
-    --destination-port-ranges 443
-
-az network nsg rule create \\
-    --nsg-name nsg-web-tier \\
-    --resource-group rg-capstone \\
-    --name DenyInternet \\
-    --priority 200 \\
-    --direction Inbound \\
-    --access Deny \\
-    --protocol '*' \\
-    --source-address-prefixes Internet \\
-    --destination-port-ranges '*'</div>`,
-                verification: 'curl directly to the origin public IP from your laptop times out. curl to the Front Door hostname succeeds.'
+                explanation: 'For the Premium design, approve the Front Door managed Private Endpoint and disable public access on the origin. If you deliberately use a public origin instead, the service tag is only the IP filter; also validate the <code>X-Azure-FDID</code> header against this profile ID at the origin.',
+                portal: `<ol>
+                    <li>Approve the pending private endpoint connection on the origin resource</li>
+                    <li>Disable or deny public network access to the origin where the service supports it</li>
+                    <li>Send the same harmless request through the Front Door hostname and directly to every origin hostname or IP</li>
+                    <li>Confirm Front Door succeeds and every bypass path fails</li>
+                    <li>For any public-origin variant, send a request without the expected profile-ID header and confirm the origin rejects it even when the source is in the Front Door service tag</li>
+                </ol>`,
+                verification: 'Front Door returns the expected content; direct origin requests and requests with a missing or incorrect profile-ID header are denied.'
+            },
+            {
+                title: 'Collect the Operations Evidence',
+                type: 'confirm',
+                explanation: 'A production design is incomplete until operators can detect failure and prove the route a request took.',
+                portal: `<ol>
+                    <li>Enable and verify diagnostic settings for Front Door access and WAF logs, Firewall logs, and other deployed services</li>
+                    <li>Create a Connection Monitor test for one critical private dependency</li>
+                    <li>Create a VNet flow log for a selected VNet and document retention and Traffic Analytics cost choices</li>
+                    <li>Capture effective routes, a private DNS answer, a successful Front Door request ID, a blocked WAF test, and an origin-bypass denial</li>
+                    <li>Write one alert condition and one first-response action for each critical path</li>
+                </ol>`,
+                verification: 'The evidence pack contains timestamps and resource names for routing, DNS, edge, WAF, flow-log, and connectivity checks.'
+            },
+            {
+                title: 'Defend the Architecture',
+                type: 'confirm',
+                explanation: 'Present the design as a decision, not a diagram. Explain where it fails, what it costs, and why each control exists.',
+                portal: `<ol>
+                    <li>Explain why self-managed hub-spoke was chosen over Virtual WAN, or defend the opposite choice</li>
+                    <li>Describe the DNS path in both directions and the consequence of a resolver failure</li>
+                    <li>Walk through internet ingress, private PaaS access, spoke egress, and on-premises failover</li>
+                    <li>Name the top three failure modes, their signals, and the first operator action</li>
+                    <li>State the monthly cost drivers and one lower-cost alternative</li>
+                </ol>`,
+                verification: 'A reviewer can trace every packet path, challenge every assumption, and map each important failure to telemetry and recovery action.'
             },
             {
                 title: 'Clean Up',
                 type: 'confirm',
-                explanation: 'The capstone deploys ~$2/hour of resources. Delete now.',
-                cli: '<div class="lab-code-block">az group delete --name rg-capstone --yes --no-wait</div>',
-                warning: 'Forgetting this step is the most common way to rack up an unexpected Azure bill.'
+                explanation: 'Export the evidence you need, then remove the entire deployment and verify deletion rather than assuming the asynchronous command completed.',
+                cli: `<div class="lab-code-block">az group delete --name rg-capstone --yes --no-wait
+
+# Check later; false confirms the group is gone
+az group exists --name rg-capstone</div>`,
+                warning: 'Delete temporary packet captures and exported logs that contain sensitive data according to your retention plan. Confirm the resource group no longer exists and close the temporary budget alert.',
+                verification: '<code>az group exists --name rg-capstone</code> returns <code>false</code>, and no temporary evidence remains in unapproved storage.'
             }
         ]
     }

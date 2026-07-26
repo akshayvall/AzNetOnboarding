@@ -243,6 +243,19 @@ Action: Modify Response Header → Overwrite
         <h4>💡 Why Private Link Origins Matter</h4>
         <p>Without Private Link, your origin needs a public endpoint (even if restricted by NSG/service tag). With Private Link, the origin has zero public exposure. This is the most secure pattern: Front Door (edge security) + Private Link (private connectivity) + WAF (application security).</p>
     </div>
+
+    <h3>Lock Down a Public Origin</h3>
+    <p>When a supported origin cannot use Private Link, keep its public endpoint from becoming a Front Door bypass:</p>
+    <ol>
+        <li>Allow inbound origin traffic only from the <code>AzureFrontDoor.Backend</code> service tag.</li>
+        <li>Validate <code>X-Azure-FDID</code> against this profile's Front Door ID. The service tag identifies all Front Door backend infrastructure; the header binds the request to your profile.</li>
+        <li>Deny unmatched traffic and preserve a separate, tightly controlled operator path if the application needs one.</li>
+        <li>Test the Front Door hostname and the origin hostname independently. The edge path must succeed; direct origin access must fail.</li>
+    </ol>
+    <div class="warning-box">
+        <h4>⚠️ One Control Is Not Enough</h4>
+        <p>A service-tag-only rule can admit traffic from another customer's Front Door profile. A header-only rule can be spoofed by an internet client. Enforce the network source and profile ID together, or use Front Door Premium with Private Link and disable public origin access.</p>
+    </div>
 </div>
 `,
     diagrams: [
@@ -299,6 +312,12 @@ Action: Modify Response Header → Overwrite
             options: ['Buy from a third-party CA and upload to Key Vault', 'Use Front Door Managed certificates (auto-provisioned and renewed)', 'Generate self-signed certificates', 'Use Let\'s Encrypt manually'],
             correct: 1,
             explanation: 'Azure Front Door Managed certificates are the simplest option. Front Door automatically provisions certificates from DigiCert and handles renewal — no manual management needed.'
+        },
+        {
+            question: 'A public App Service origin should accept requests only through your Front Door profile. Which control set is required?',
+            options: ['X-Azure-FDID header validation only', 'AzureFrontDoor.Backend service tag only', 'AzureFrontDoor.Backend service tag plus validation of X-Azure-FDID against your profile ID', 'A public DNS CNAME only'],
+            correct: 2,
+            explanation: 'The service tag restricts the network source to Front Door infrastructure, while X-Azure-FDID identifies your specific profile. Use both and verify direct origin requests fail.'
         }
     ],
     interactive: [
@@ -323,7 +342,8 @@ Action: Modify Response Header → Overwrite
                 { front: 'What is the difference between URL Redirect and URL Rewrite?', back: 'Redirect: Client sees the new URL (browser URL bar changes). Returns 301/302 to client.\nRewrite: Client never sees the change (transparent). Front Door modifies the URL before forwarding to origin.' },
                 { front: 'Can Front Door Managed certs cover zone apex domains?', back: 'Yes, but the domain must use Azure DNS with an Alias record. Managed certs from DigiCert cover both www and naked domains.' },
                 { front: 'What is the _dnsauth TXT record?', back: 'A DNS TXT record Front Door uses to validate domain ownership. Create it at _dnsauth.[yourdomain] with the value provided by Azure. This proves you control the domain.' },
-                { front: 'How does Private Link origin approval work?', back: 'When you configure a Private Link origin, the origin resource shows a pending Private Endpoint connection. You must approve this connection on the origin resource side before traffic flows.' }
+                { front: 'How does Private Link origin approval work?', back: 'When you configure a Private Link origin, the origin resource shows a pending Private Endpoint connection. You must approve this connection on the origin resource side before traffic flows.' },
+                { front: 'How do you protect a public Front Door origin?', back: 'Allow AzureFrontDoor.Backend sources and validate X-Azure-FDID against your profile ID. Then prove the Front Door URL succeeds and the direct origin URL fails.' }
             ]
         }
     ],
@@ -332,7 +352,7 @@ Action: Modify Response Header → Overwrite
         icon: '⚙️',
         scenario: 'You will create a Rules Engine rule set on Azure Front Door to enforce HTTPS redirects and inject security headers — the two most common rules every production Front Door should have.',
         duration: '25-35 min',
-        cost: '~$0.50/day (Front Door Standard)',
+        cost: 'Front Door profile, requests, transfer, and diagnostic-log charges can apply; check current pricing and remove unused lab resources',
         difficulty: 'Advanced',
         prerequisites: ['Azure subscription', 'Front Door Standard/Premium profile (from L200 lab or create a new one)', 'A working route with at least one origin'],
         cleanup: `Delete the rule set if desired (Front Door → Rule sets → Delete). The Front Door profile itself can stay for future labs.`,
@@ -396,6 +416,22 @@ Action: Modify Response Header → Overwrite
                 cli: `<div class="lab-code-block"># Test 1: HTTP should redirect to HTTPS\ncurl -I http://your-endpoint.azurefd.net\n# Expected: 301 Moved Permanently\n# Location: https://your-endpoint.azurefd.net/\n\n# Test 2: HTTPS should include security headers\ncurl -I https://your-endpoint.azurefd.net\n# Expected headers in response:\n# X-Content-Type-Options: nosniff\n# X-Frame-Options: DENY</div>`,
                 tip: 'If you don\'t see the headers immediately, wait 2-3 minutes for propagation. Front Door changes are eventually consistent across all global PoPs.',
                 verification: 'HTTP requests return 301 redirect to HTTPS. HTTPS responses include both X-Content-Type-Options and X-Frame-Options headers.'
+            },
+            {
+                title: 'Test for Origin Bypass',
+                subtitle: 'Prove the edge controls cannot be skipped',
+                type: 'confirm',
+                explanation: 'A healthy Front Door endpoint does not prove the origin is protected. For a public origin, configure its access restrictions to allow AzureFrontDoor.Backend only when X-Azure-FDID matches your profile ID, then test both entry points. For a Premium Private Link origin, disable public network access after the private connection is approved.',
+                portal: `<ol><li>Record the Front Door profile ID and origin hostname</li><li>For a public origin, add an allow restriction for <code>AzureFrontDoor.Backend</code> with an <code>X-Azure-FDID</code> header filter equal to the profile ID</li><li>Add or retain a lower-priority deny for other public traffic</li><li>Request the Front Door hostname and confirm the application succeeds</li><li>Request the origin hostname directly and confirm it is denied</li><li>Capture both status codes and the Front Door <code>x-azure-ref</code> response header as evidence</li></ol>`,
+                cli: `<div class="lab-code-block"># Expected to succeed through Front Door
+curl -I https://your-endpoint.azurefd.net/
+
+# Expected to fail when origin restrictions are active
+curl -I https://your-origin-hostname/
+
+# A client-supplied profile header must not bypass the network restriction
+curl -I -H "X-Azure-FDID: wrong-profile-id" https://your-origin-hostname/</div>`,
+                verification: 'The Front Door request succeeds and includes x-azure-ref. Direct origin requests, including one with an incorrect profile header, are denied.'
             },
             {
                 title: 'Review: HTTPS Redirect Status Codes',
@@ -501,7 +537,19 @@ Action: Modify Response Header → Overwrite
 
     <div class="warning-box">
         <h4>⚠️ Don't Cache Sensitive Data</h4>
-        <p>Never cache responses containing user-specific data (auth tokens, personal info, session data). Ensure your application sends <span class="code-inline">Cache-Control: private</span> or <span class="code-inline">no-store</span> for such responses. Caching sensitive data at the edge could expose it to other users.</p>
+        <p>Never cache responses containing user-specific data, authentication state, tokens, personal information, or session data. Put public static content on a cache-enabled route; keep authenticated and personalized paths on routes with caching disabled. The origin should also send <span class="code-inline">Cache-Control: private</span> or <span class="code-inline">no-store</span> as a second control. Do not add a rule that overrides those headers with a public TTL.</p>
+    </div>
+
+    <h3>Authenticated-Response Safety Gate</h3>
+    <ol>
+        <li><strong>Separate routes:</strong> Cache only paths whose response is identical for every authorized and anonymous caller, such as versioned static assets.</li>
+        <li><strong>Protect dynamic paths:</strong> Disable edge caching for account, cart, profile, token, and API routes. Cookies or authorization headers are not a safe substitute for a deliberately isolated cache key.</li>
+        <li><strong>Test two identities:</strong> Identity A requests a page containing an A-only marker. Identity B requests the same URL in a separate session. B must never receive A's marker, whether the response reports a cache hit or miss.</li>
+        <li><strong>Test state changes:</strong> Repeat after sign-in, sign-out, role changes, and cache purge. Record the URL, identity, cache header, and response marker.</li>
+    </ol>
+    <div class="concept-box">
+        <h4>🔑 Security Beats Cache-Hit Ratio</h4>
+        <p>A lower cache-hit ratio is acceptable when content varies by identity or authorization. The acceptance criterion is isolation: no caller receives another caller's representation.</p>
     </div>
 </div>
 
@@ -614,6 +662,12 @@ az afd endpoint purge \\
             options: ['The percentage of requests served from cache vs total requests', 'The number of cache servers per edge location', 'The time it takes to cache new content', 'The size of the cached content'],
             correct: 0,
             explanation: 'Cache hit ratio = cache hits / total requests. A higher ratio means more requests are served from edge cache (faster, cheaper). Monitor this metric to optimize caching strategy.'
+        },
+        {
+            question: 'What is the strongest validation before enabling caching on a route that might return personalized content?',
+            options: ['Confirm the second request is faster', 'Check only that Cache-Control exists', 'Use two separate identities and prove neither can receive the other identity\'s response marker', 'Increase the cache TTL'],
+            correct: 2,
+            explanation: 'A two-identity test exercises the actual confidentiality boundary. Personalized routes should normally have edge caching disabled and return private or no-store from the origin.'
         }
     ],
     interactive: [
@@ -625,29 +679,30 @@ az afd endpoint purge \\
                 { front: 'What is a cache key?', back: 'The unique identifier for a cached resource. By default it includes the URL path and (optionally) query string. Two requests with the same cache key return the same cached content.' },
                 { front: 'When should you use "Ignore Query String" caching?', back: 'When the page content doesn\'t change based on query parameters. Common for static assets. Ignoring query strings increases cache hit ratio by consolidating requests.' },
                 { front: 'What is cache revalidation?', back: 'When a cached item\'s TTL expires, Front Door checks with the origin if content changed (using If-Modified-Since or ETag). If unchanged, origin returns 304 Not Modified and the cache is refreshed — no full download needed.' },
-                { front: 'What is a stale response?', back: 'A cached response past its TTL. Front Door may serve stale content while revalidating with the origin in the background (stale-while-revalidate pattern).' }
+                { front: 'What is a stale response?', back: 'A cached response past its TTL. Front Door may serve stale content while revalidating with the origin in the background (stale-while-revalidate pattern).' },
+                { front: 'How do you test authenticated cache isolation?', back: 'Use two separate identities against the same URL. Give each response a user-specific marker and prove neither identity ever receives the other marker.' }
             ]
         }
     ],
     lab: {
         title: 'Hands-On: Configure & Test Front Door Caching',
         icon: '⚡',
-        scenario: 'You will enable caching on a Front Door route, observe cache hit/miss behavior using response headers, and perform a cache purge — the key operational tasks for managing Front Door performance.',
+        scenario: 'Enable caching only for a public static path, observe cache behavior, prove personalized content is isolated with two identities, and perform a targeted purge.',
         duration: '20-30 min',
-        cost: '~$0.50/day (Front Door Standard)',
+        cost: 'Front Door profile, request, transfer, and diagnostic-log charges can apply; check current pricing and remove unused lab resources',
         difficulty: 'Advanced',
-        prerequisites: ['Azure subscription', 'Front Door Standard/Premium profile with a working route and origin'],
+        prerequisites: ['Azure subscription', 'Front Door Standard/Premium profile with a working route and origin', 'A non-sensitive static test path', 'Two test identities if the origin has authenticated content'],
         cleanup: `Caching can be disabled by editing the route. No additional resources to delete.`,
         steps: [
             {
                 title: 'Enable Caching on a Route',
-                subtitle: 'Turn on edge caching for your Front Door route',
+                subtitle: 'Limit edge caching to public static content',
                 type: 'confirm',
-                explanation: 'Caching is configured per-route in Front Door. When enabled, Front Door stores responses at its 100+ edge PoPs so subsequent requests are served locally without contacting your origin.',
-                portal: `<ol><li>Open your Front Door profile → <strong>Front Door manager</strong></li><li>Click on your <strong>Route</strong> to edit it</li><li>Check the box: <strong>Enable caching</strong></li><li>Set <strong>Query string caching behavior</strong> to: <strong>Ignore Query Strings</strong></li><li>This means /page.html?utm_source=google and /page.html share the same cache entry</li><li>Click <strong>Update</strong></li></ol>`,
+                explanation: 'Caching is configured per route. Use a route that matches only public, non-personalized static content. Do not enable caching on a catch-all route that also serves authenticated pages or APIs.',
+                portal: `<ol><li>Open your Front Door profile → <strong>Front Door manager</strong></li><li>Create or select a route whose pattern matches only a static path such as <code>/static/*</code></li><li>Confirm authenticated, profile, cart, and API paths use a different route with caching disabled</li><li>Enable caching on the static route</li><li>Use <strong>Ignore Query Strings</strong> only if query parameters cannot change the representation</li><li>Click <strong>Update</strong></li></ol>`,
                 cli: `<div class="lab-code-block">az afd route update \\\n    --resource-group rg-academy \\\n    --profile-name fd-cache-lab \\\n    --endpoint-name your-endpoint \\\n    --route-name default-route \\\n    --enable-caching true \\\n    --query-string-caching-behavior IgnoreQueryString</div>`,
-                tip: '"Ignore Query Strings" is best for static content where query params are tracking codes (utm_source, fbclid). It maximizes cache hit ratio.',
-                verification: 'The route now shows "Caching: Enabled" with query string behavior set to "Ignore Query Strings".'
+                tip: 'Treat query parameters as representation inputs until the application owner proves otherwise. Never ignore authorization, tenant, locale, or version parameters that change content.',
+                verification: 'Only the public static route shows caching enabled; authenticated and personalized routes remain uncached.'
             },
             {
                 title: 'Configure Cache Duration',
@@ -678,6 +733,14 @@ az afd endpoint purge \\
                 cli: `<div class="lab-code-block"># Second request — expect a cache HIT\ncurl -I https://your-endpoint.azurefd.net/\n\n# Look for this header:\n# X-Cache: TCP_HIT    (served from edge cache!)\n\n# The difference:\n# TCP_MISS = origin was contacted (slower)\n# TCP_HIT  = served from edge cache (faster, no origin load)</div>`,
                 tip: 'TCP_HIT means zero load on your origin for this request. High cache hit ratios reduce origin costs and improve latency.',
                 verification: 'The curl response shows X-Cache: TCP_HIT, confirming the second request was served from cache.'
+            },
+            {
+                title: 'Run the Two-Identity Isolation Test',
+                subtitle: 'Prove no personalized response enters the shared cache',
+                type: 'confirm',
+                explanation: 'Use two independent authenticated sessions against the same personalized URL. Each identity must see only its own marker. This test is required even when the origin sends no-store, because it catches route or Rules Engine overrides that accidentally cache the response.',
+                portal: `<ol><li>Sign in as Identity A in one private browser session and request the same profile or test URL twice</li><li>Record an A-only marker from the body, the response status, <code>Cache-Control</code>, and <code>X-Cache</code></li><li>Sign in as Identity B in a separate private session and request the identical URL</li><li>Confirm B sees only the B marker and never the A marker</li><li>Repeat in reverse order, then sign A out and retest anonymously</li><li>If any identity sees another identity's marker, disable caching on the route immediately and purge the affected path</li></ol>`,
+                verification: 'Identity A, Identity B, and the anonymous session each receive only their authorized representation; personalized responses report private/no-store and are not shared from the edge cache.'
             },
             {
                 title: 'Purge Cache',
@@ -1380,7 +1443,7 @@ az network vnet subnet update \\
     
     <div class="accordion">
         <div class="accordion-item">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Configure Virtual Networks</div>
+            <button type="button" class="accordion-header" data-app-action="toggle-accordion" aria-expanded="false">Configure Virtual Networks</button>
             <div class="accordion-body">
                 <ul>
                     <li>Create and configure VNets and subnets</li>
@@ -1392,7 +1455,7 @@ az network vnet subnet update \\
             </div>
         </div>
         <div class="accordion-item">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Secure Access to Virtual Networks</div>
+            <button type="button" class="accordion-header" data-app-action="toggle-accordion" aria-expanded="false">Secure Access to Virtual Networks</button>
             <div class="accordion-body">
                 <ul>
                     <li>Create and configure NSGs and ASGs</li>
@@ -1403,10 +1466,10 @@ az network vnet subnet update \\
             </div>
         </div>
         <div class="accordion-item">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Configure Load Balancing</div>
+            <button type="button" class="accordion-header" data-app-action="toggle-accordion" aria-expanded="false">Configure Load Balancing</button>
             <div class="accordion-body">
                 <ul>
-                    <li>Configure Azure Load Balancer (basic and standard)</li>
+                    <li>Configure Standard Load Balancer and recognize retired Basic Load Balancer designs during migration</li>
                     <li>Configure Application Gateway</li>
                     <li>Configure Azure Front Door</li>
                     <li>Troubleshoot load balancing</li>
@@ -1414,13 +1477,13 @@ az network vnet subnet update \\
             </div>
         </div>
         <div class="accordion-item">
-            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">Monitor Virtual Networking</div>
+            <button type="button" class="accordion-header" data-app-action="toggle-accordion" aria-expanded="false">Monitor Virtual Networking</button>
             <div class="accordion-body">
                 <ul>
                     <li>Configure Network Watcher</li>
                     <li>Configure monitoring and diagnostics</li>
                     <li>Troubleshoot connectivity issues</li>
-                    <li>Analyze NSG flow logs</li>
+                    <li>Analyze VNet flow logs and plan migration from existing NSG flow logs</li>
                 </ul>
             </div>
         </div>
@@ -1507,7 +1570,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
 
     <div class="warning-box">
         <h4>⚠️ Trap #4: Standard vs Basic SKU</h4>
-        <p>Standard LB + Standard Public IP + Standard NSG go together. You cannot mix Basic and Standard SKUs. Standard is closed by default (requires NSG).</p>
+        <p>Basic Load Balancer retired on September 30, 2025. Use Standard Load Balancer with Standard Public IPs and explicit NSG rules for current deployments.</p>
     </div>
 
     <div class="warning-box">
@@ -1592,10 +1655,10 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
             explanation: 'ExpressRoute does NOT encrypt traffic by default. The circuit is private (doesn\'t cross the internet), but the data is not encrypted. For encryption, you can add IPsec VPN over ExpressRoute.'
         },
         {
-            question: 'You have a VM with no public IP and no NAT Gateway. Outbound internet traffic uses Azure\'s default SNAT. What risk does this pose?',
-            options: ['No risk — default SNAT always works', 'SNAT port exhaustion under high connection volume', 'Traffic is blocked entirely', 'DNS resolution fails'],
+            question: 'A legacy VNet still relies on Azure\'s implicit default outbound path. What risk does this pose?',
+            options: ['No risk — implicit outbound is a production guarantee', 'Changing egress addresses and SNAT port exhaustion under high connection volume', 'Traffic is always blocked', 'DNS resolution always fails'],
             correct: 1,
-            explanation: 'Default SNAT provides a limited number of SNAT ports. Under high outbound connection volume, you may experience port exhaustion — connections fail. NAT Gateway solves this with 64,000+ ports per IP.'
+            explanation: 'Implicit outbound does not provide a dedicated egress address and can exhaust SNAT ports. Migrate to an explicit method such as NAT Gateway or Azure Firewall. New private subnets do not receive this implicit path.'
         }
     ],
     interactive: [
@@ -1604,7 +1667,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
             id: 'az104-flashcards',
             title: 'Networking Rapid Review — Full Deck',
             cards: [
-                { front: 'What is Network Watcher?', back: 'Azure\'s network monitoring and diagnostics tool. Features: IP flow verify (test NSG rules), connection troubleshoot, packet capture, NSG flow logs, topology view, VPN diagnostics.' },
+                { front: 'What is Network Watcher?', back: 'Azure\'s network monitoring and diagnostics tool. Features include IP Flow Verify, Connection Troubleshoot, Connection Monitor, packet capture, VNet flow logs, topology, and VPN diagnostics.' },
                 { front: 'What is Azure Bastion?', back: 'PaaS service for secure RDP/SSH access to VMs directly from the Azure portal — no public IP needed on the VM. Requires AzureBastionSubnet (/26). Developer SKU allows connection from native SSH/RDP clients.' },
                 { front: 'What is a system route in Azure?', back: 'Azure automatically creates routes for VNet subnets, VNet peering, service endpoints, and the internet. System routes can be overridden by User Defined Routes (UDRs).' },
                 { front: 'Can a subnet belong to multiple VNets?', back: 'No. A subnet exists within exactly one VNet. Subnets cannot span VNets. Each subnet gets a portion of the parent VNet\'s address space.' },
@@ -1612,9 +1675,9 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
                 { front: 'What is IP flow verify?', back: 'A Network Watcher feature that tests whether a packet would be allowed or denied by NSG rules. You provide source IP, destination IP, port, and protocol — it tells you which rule allows or denies the traffic.' },
                 { front: 'How many IPs does Azure reserve per subnet?', back: '5 addresses: x.x.x.0 (network), x.x.x.1 (default gateway), x.x.x.2 and x.x.x.3 (Azure DNS mapping), x.x.x.255 (broadcast). So /24 = 251 usable, /28 = 11 usable.' },
                 { front: 'What IP address do health probes come from?', back: '168.63.129.16 — Azure\'s virtual public IP for platform services. Must be allowed in NSG for LB health probes, DHCP, DNS, and instance metadata to work.' },
-                { front: 'Standard vs Basic Load Balancer?', back: 'Standard: zone-redundant, 99.99% SLA, closed by default (needs NSG), uses Standard PIP. Basic: single zone, no SLA, open by default, uses Basic PIP. Cannot mix SKUs. Basic is being retired.' },
+                { front: 'Standard vs retired Basic Load Balancer?', back: 'Use Standard for current deployments: it supports production availability features, is secure by default, and uses Standard Public IPs. Basic retired on September 30, 2025 and appears only in migration scenarios.' },
                 { front: 'What is a Service Endpoint?', back: 'Extends your VNet identity to Azure PaaS services. Traffic stays on MS backbone. The service keeps its public IP but adds a firewall rule to accept traffic only from your VNet. Free, quick to enable.' },
-                { front: 'Service Endpoint vs Private Endpoint?', back: 'Service Endpoint: service keeps public IP, adds VNet firewall rule. Free. Private Endpoint: creates a NIC with private IP in your VNet. Service accessible via private IP only. Costs ~$7.50/mo.' },
+                { front: 'Service Endpoint vs Private Endpoint?', back: 'Service Endpoint extends subnet identity to a supported public PaaS endpoint. Private Endpoint creates a private IP in your VNet and requires correct DNS and service public-access policy. Check current regional pricing rather than memorizing a fixed amount.' },
                 { front: 'What is an Application Security Group (ASG)?', back: 'Logical grouping of VMs by role (e.g., asg-webservers, asg-dbservers). Use in NSG rules instead of IP addresses. Makes rules dynamic — add a VM to an ASG and rules auto-apply.' },
                 { front: 'CNAME at zone apex — allowed?', back: 'No! DNS standard prohibits CNAME records at the zone apex (e.g., contoso.com). For Azure, use an Alias record pointing to the Azure resource. Alias records auto-update when the target IP changes.' },
                 { front: 'What is forced tunneling?', back: 'Routing all internet-bound traffic from Azure through on-premises firewall via VPN/ExpressRoute. Done with UDR: 0.0.0.0/0 → VNetGateway. Also used with Azure Firewall as next-hop.' },
@@ -1710,8 +1773,8 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
                 title: 'Review: Load Balancer SKU Matching',
                 subtitle: 'Key takeaway',
                 type: 'confirm',
-                explanation: 'A Standard Load Balancer requires a Standard SKU Public IP address — you cannot mix Basic and Standard SKUs. This is one of the most common real-world configuration mistakes. Standard LB is also closed by default (requires an NSG to allow traffic), unlike Basic LB which is open by default.',
-                portal: `<ol><li><strong>Standard LB requires Standard Public IP</strong> — SKU mixing is not allowed</li><li>Standard LB is <strong>closed by default</strong> — you must add NSG rules to allow traffic</li><li>Basic LB is open by default but lacks zone redundancy and SLA</li><li>Standard is required for Availability Zones and cross-VNet backends</li><li>This is a critical real-world fact — always match SKUs</li></ol>`
+                explanation: 'A Standard Load Balancer requires a Standard SKU Public IP address and explicit NSG allowance. Basic Load Balancer retired on September 30, 2025, so it is migration history rather than a current alternative.',
+                portal: `<ol><li><strong>Standard LB requires Standard Public IP</strong></li><li>Standard LB is <strong>secure by default</strong> — add explicit NSG rules for intended traffic</li><li>Basic Load Balancer retired on September 30, 2025</li><li>Use migration guidance when you encounter Basic resources</li><li>Validate availability-zone and backend requirements against the current Standard SKU documentation</li></ol>`
             }
         ]
     }

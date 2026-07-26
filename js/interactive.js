@@ -8,8 +8,21 @@ const InteractiveEngine = {
         return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     },
 
+    escapeHtml(str) {
+        return this.escapeAttr(str);
+    },
+
+    inlineArg(value) {
+        return this.escapeAttr(JSON.stringify(String(value)));
+    },
+
+    escapeSelector(value) {
+        return CSS.escape(String(value));
+    },
+
     render(exercises) {
         const container = document.getElementById('tab-interactive');
+        this.bindEvents(container);
         if (!exercises || exercises.length === 0) {
             container.innerHTML = '<p>No interactive exercises for this module yet.</p>';
             return;
@@ -30,54 +43,100 @@ const InteractiveEngine = {
         });
     },
 
+    bindEvents(container) {
+        if (container.dataset.interactiveEventsBound) return;
+        container.dataset.interactiveEventsBound = 'true';
+
+        container.addEventListener('click', event => {
+            const control = event.target.closest('[data-interactive-action]');
+            if (!control) return;
+            const exerciseId = control.dataset.exerciseId;
+            switch (control.dataset.interactiveAction) {
+                case 'check-drag-drop': this.checkDragDrop(exerciseId); break;
+                case 'reset-drag-drop': this.resetDragDrop(exerciseId); break;
+                case 'calculate-subnet': this.calculateSubnet(exerciseId); break;
+                case 'flip-card': this.flipCard(exerciseId); break;
+                case 'prev-card': this.prevCard(exerciseId); break;
+                case 'next-card': this.nextCard(exerciseId); break;
+            }
+        });
+
+        container.addEventListener('change', event => {
+            const control = event.target.closest('[data-interactive-change]');
+            if (!control) return;
+            if (control.dataset.interactiveChange === 'move-drag-item') {
+                this.moveDragItem(control.dataset.exerciseId, control.dataset.itemKey, control.value);
+            } else if (control.dataset.interactiveChange === 'calculate-subnet') {
+                this.calculateSubnet(control.dataset.exerciseId);
+            }
+        });
+
+        container.addEventListener('input', event => {
+            const control = event.target.closest('[data-interactive-input="calculate-subnet"]');
+            if (control) this.calculateSubnet(control.dataset.exerciseId);
+        });
+    },
+
     // ─── DRAG & DROP ──────────────────────────────
     renderDragDrop(exercise) {
         const targetNames = Object.keys(exercise.targets);
+        const exerciseId = this.escapeAttr(exercise.id);
+        const items = this.shuffle(exercise.items.map((value, index) => ({ value, index })));
         return `
-        <div class="interactive-exercise" id="exercise-${exercise.id}">
-            <h3>🎯 ${exercise.title}</h3>
-            <p class="exercise-description">${exercise.description}</p>
-            <div class="drag-drop-area">
-                <div class="drag-source" id="source-${exercise.id}">
+        <div class="interactive-exercise" id="exercise-${exerciseId}">
+            <h3>🎯 ${this.escapeHtml(exercise.title)}</h3>
+            <p class="exercise-description">${this.escapeHtml(exercise.description)}</p>
+            <p class="drag-instructions" id="drag-instructions-${exerciseId}">Drag each item to a category, or use the destination menu beside each item. Items can be moved again before checking answers.</p>
+            <div class="drag-drop-area" aria-describedby="drag-instructions-${exerciseId}">
+                <div class="drag-source" id="source-${exerciseId}" aria-label="Items not yet placed">
                     <h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Items to place:</h4>
-                    ${this.shuffle(exercise.items).map(item => `
-                        <div class="drag-item" draggable="true" data-exercise="${this.escapeAttr(exercise.id)}" data-value="${this.escapeAttr(item)}">
-                            ${this.escapeAttr(item)}
+                    ${items.map(({ value, index }) => `
+                        <div class="drag-item-row">
+                            <div class="drag-item" draggable="true" data-exercise="${exerciseId}" data-item-key="${index}" data-value="${this.escapeAttr(value)}">
+                                ${this.escapeHtml(value)}
+                            </div>
+                            <label class="sr-only" for="drag-move-${exerciseId}-${index}">Move ${this.escapeHtml(value)} to a category</label>
+                            <select class="drag-move-select" id="drag-move-${exerciseId}-${index}" data-interactive-change="move-drag-item" data-exercise-id="${exerciseId}" data-item-key="${index}" aria-label="Move ${this.escapeAttr(value)} to a category">
+                                <option value="">Not placed</option>
+                                ${targetNames.map(target => `<option value="${this.escapeAttr(target)}">${this.escapeHtml(target)}</option>`).join('')}
+                            </select>
                         </div>
                     `).join('')}
                 </div>
                 <div class="drag-target">
                     ${targetNames.map(target => `
                         <div style="margin-bottom:12px">
-                            <div class="label" style="font-weight:600;font-size:13px;margin-bottom:4px">${target}</div>
-                            <div class="drop-zone" data-exercise="${exercise.id}" data-target="${target}">
+                            <div class="label" id="drop-label-${exerciseId}-${targetNames.indexOf(target)}" style="font-weight:600;font-size:13px;margin-bottom:4px">${this.escapeHtml(target)}</div>
+                            <div class="drop-zone" data-exercise="${exerciseId}" data-target="${this.escapeAttr(target)}" aria-labelledby="drop-label-${exerciseId}-${targetNames.indexOf(target)}">
                             </div>
                         </div>
                     `).join('')}
                 </div>
             </div>
             <div style="margin-top:12px;display:flex;gap:8px">
-                <button class="btn-primary" onclick="InteractiveEngine.checkDragDrop('${exercise.id}')">Check Answers</button>
-                <button class="btn-secondary" onclick="InteractiveEngine.resetDragDrop('${exercise.id}')">Reset</button>
+                <button type="button" class="btn-primary" data-interactive-action="check-drag-drop" data-exercise-id="${exerciseId}">Check Answers</button>
+                <button type="button" class="btn-secondary" data-interactive-action="reset-drag-drop" data-exercise-id="${exerciseId}">Reset</button>
             </div>
-            <div class="lab-validation" id="validation-${exercise.id}"></div>
+            <div class="lab-validation" id="validation-${exerciseId}" role="status" aria-live="polite"></div>
+            <div class="sr-only drag-status" id="drag-status-${exerciseId}" role="status" aria-live="polite" aria-atomic="true"></div>
         </div>
         `;
     },
 
     initDragDrop(exerciseId) {
-        const items = document.querySelectorAll(`.drag-item[data-exercise="${exerciseId}"]`);
-        const zones = document.querySelectorAll(`.drop-zone[data-exercise="${exerciseId}"]`);
+        const escapedId = this.escapeSelector(exerciseId);
+        const items = document.querySelectorAll(`.drag-item[data-exercise="${escapedId}"]`);
+        const zones = document.querySelectorAll(`.drop-zone[data-exercise="${escapedId}"]`);
         const source = document.getElementById(`source-${exerciseId}`);
 
         items.forEach(item => {
             item.addEventListener('dragstart', e => {
-                e.dataTransfer.setData('text/plain', e.target.dataset.value);
+                e.dataTransfer.setData('text/plain', e.currentTarget.dataset.itemKey);
                 e.dataTransfer.setData('exercise', exerciseId);
-                e.target.classList.add('dragging');
+                e.currentTarget.classList.add('dragging');
             });
             item.addEventListener('dragend', e => {
-                e.target.classList.remove('dragging');
+                e.currentTarget.classList.remove('dragging');
             });
         });
 
@@ -92,15 +151,10 @@ const InteractiveEngine = {
             zone.addEventListener('drop', e => {
                 e.preventDefault();
                 zone.classList.remove('drag-over');
-                const value = e.dataTransfer.getData('text/plain');
+                const itemKey = e.dataTransfer.getData('text/plain');
                 const exId = e.dataTransfer.getData('exercise');
                 if (exId !== exerciseId) return;
-
-                // Find the dragged item
-                const draggedItem = document.querySelector(`.drag-item[data-exercise="${exerciseId}"][data-value="${value}"]`);
-                if (draggedItem) {
-                    zone.appendChild(draggedItem);
-                }
+                this.placeDragItem(exerciseId, itemKey, zone.dataset.target);
             });
         };
 
@@ -111,11 +165,38 @@ const InteractiveEngine = {
             source.addEventListener('dragover', e => e.preventDefault());
             source.addEventListener('drop', e => {
                 e.preventDefault();
-                const value = e.dataTransfer.getData('text/plain');
-                const draggedItem = document.querySelector(`.drag-item[data-exercise="${exerciseId}"][data-value="${value}"]`);
-                if (draggedItem) source.appendChild(draggedItem);
+                const exId = e.dataTransfer.getData('exercise');
+                if (exId !== exerciseId) return;
+                this.placeDragItem(exerciseId, e.dataTransfer.getData('text/plain'), '');
             });
         }
+    },
+
+    moveDragItem(exerciseId, itemKey, targetName) {
+        this.placeDragItem(exerciseId, itemKey, targetName);
+    },
+
+    placeDragItem(exerciseId, itemKey, targetName) {
+        const escapedId = this.escapeSelector(exerciseId);
+        const item = Array.from(document.querySelectorAll(`.drag-item[data-exercise="${escapedId}"]`))
+            .find(candidate => candidate.dataset.itemKey === String(itemKey));
+        if (!item) return;
+
+        const destination = targetName
+            ? Array.from(document.querySelectorAll(`.drop-zone[data-exercise="${escapedId}"]`)).find(zone => zone.dataset.target === targetName)
+            : document.getElementById(`source-${exerciseId}`);
+        const row = item.closest('.drag-item-row');
+        if (!destination || !row) return;
+
+        destination.appendChild(row);
+        const select = row.querySelector('.drag-move-select');
+        if (select) select.value = targetName;
+        this.announceDragMove(exerciseId, `${item.dataset.value} moved to ${targetName || 'Items not yet placed'}.`);
+    },
+
+    announceDragMove(exerciseId, message) {
+        const status = document.getElementById(`drag-status-${exerciseId}`);
+        if (status) status.textContent = message;
     },
 
     checkDragDrop(exerciseId) {
@@ -132,7 +213,8 @@ const InteractiveEngine = {
 
         let correct = 0;
         let total = 0;
-        const zones = document.querySelectorAll(`.drop-zone[data-exercise="${exerciseId}"]`);
+        const escapedId = this.escapeSelector(exerciseId);
+        const zones = document.querySelectorAll(`.drop-zone[data-exercise="${escapedId}"]`);
         
         zones.forEach(zone => {
             const targetName = zone.dataset.target;
@@ -153,7 +235,7 @@ const InteractiveEngine = {
         });
 
         // Count items still in source
-        const sourceItems = document.querySelectorAll(`#source-${exerciseId} .drag-item`);
+        const sourceItems = document.getElementById(`source-${exerciseId}`).querySelectorAll('.drag-item');
         total += sourceItems.length;
 
         const totalExpected = Object.values(exercise.targets).flat().length;
@@ -172,45 +254,52 @@ const InteractiveEngine = {
 
     resetDragDrop(exerciseId) {
         const source = document.getElementById(`source-${exerciseId}`);
-        const items = document.querySelectorAll(`.drag-item[data-exercise="${exerciseId}"]`);
+        const escapedId = this.escapeSelector(exerciseId);
+        const items = document.querySelectorAll(`.drag-item[data-exercise="${escapedId}"]`);
         items.forEach(item => {
             item.style.borderColor = '';
             item.style.background = '';
-            source.appendChild(item);
+            const row = item.closest('.drag-item-row');
+            if (row) {
+                source.appendChild(row);
+                const select = row.querySelector('.drag-move-select');
+                if (select) select.value = '';
+            }
         });
         const validation = document.getElementById(`validation-${exerciseId}`);
         if (validation) {
             validation.className = 'lab-validation';
             validation.textContent = '';
         }
+        this.announceDragMove(exerciseId, 'All items reset to Items not yet placed.');
     },
 
     // ─── SUBNET CALCULATOR ──────────────────────────
     renderSubnetCalculator(exercise) {
+        const exerciseId = this.escapeAttr(exercise.id);
         return `
-        <div class="interactive-exercise" id="exercise-${exercise.id}">
-            <h3>🧮 ${exercise.title}</h3>
-            <p class="exercise-description">${exercise.description}</p>
+        <div class="interactive-exercise" id="exercise-${exerciseId}">
+            <h3>🧮 ${this.escapeHtml(exercise.title)}</h3>
+            <p class="exercise-description">${this.escapeHtml(exercise.description)}</p>
             <div class="subnet-calculator">
                 <div class="calc-input-group">
-                    <label>IP Address</label>
-                    <input type="text" id="calc-ip-${exercise.id}" value="10.0.0.0" 
-                           oninput="InteractiveEngine.calculateSubnet('${exercise.id}')">
+                    <label for="calc-ip-${exerciseId}">IP Address</label>
+                          <input type="text" id="calc-ip-${exerciseId}" value="10.0.0.0"
+                              data-interactive-input="calculate-subnet" data-exercise-id="${exerciseId}">
                 </div>
                 <div class="calc-input-group">
-                    <label>CIDR Prefix Length</label>
-                    <select id="calc-cidr-${exercise.id}" 
-                            onchange="InteractiveEngine.calculateSubnet('${exercise.id}')">
+                    <label for="calc-cidr-${exerciseId}">CIDR Prefix Length</label>
+                        <select id="calc-cidr-${exerciseId}" data-interactive-change="calculate-subnet" data-exercise-id="${exerciseId}">
                         ${Array.from({length: 25}, (_, i) => i + 8).map(n => 
                             `<option value="${n}" ${n === 24 ? 'selected' : ''}>/${n}</option>`
                         ).join('')}
                     </select>
                 </div>
-                <div class="calc-result" id="calc-result-${exercise.id}">
+                <div class="calc-result" id="calc-result-${exerciseId}" role="status" aria-live="polite">
                     Click "Calculate" or change values to see results.
                 </div>
                 <div style="grid-column: 1 / -1">
-                    <button class="btn-primary" onclick="InteractiveEngine.calculateSubnet('${exercise.id}')">Calculate</button>
+                    <button type="button" class="btn-primary" data-interactive-action="calculate-subnet" data-exercise-id="${exerciseId}">Calculate</button>
                 </div>
             </div>
         </div>
@@ -270,25 +359,28 @@ Azure Reserved:
 
     // ─── FLASHCARDS ──────────────────────────────────
     renderFlashcards(exercise) {
+        const exerciseId = this.escapeAttr(exercise.id);
+        const initialLabel = this.getFlashcardLabel(exercise, 0, false);
         return `
-        <div class="interactive-exercise" id="exercise-${exercise.id}">
-            <h3>🃏 ${exercise.title}</h3>
-            <p class="exercise-description">Click a card to flip it. Use the arrows to navigate. ${exercise.cards.length} cards total.</p>
+        <div class="interactive-exercise" id="exercise-${exerciseId}">
+            <h3>🃏 ${this.escapeHtml(exercise.title)}</h3>
+            <p class="exercise-description" id="fc-instructions-${exerciseId}">Activate the card to flip it. Use Previous and Next to navigate. ${exercise.cards.length} cards total.</p>
             <div class="flashcard-container">
-                <div class="flashcard" id="flashcard-${exercise.id}" onclick="InteractiveEngine.flipCard('${exercise.id}')">
-                    <div class="flashcard-front">
-                        <span id="fc-front-${exercise.id}">${exercise.cards[0].front}</span>
-                    </div>
-                    <div class="flashcard-back">
-                        <span id="fc-back-${exercise.id}">${exercise.cards[0].back}</span>
-                    </div>
-                </div>
+                <button type="button" class="flashcard" id="flashcard-${exerciseId}" data-interactive-action="flip-card" data-exercise-id="${exerciseId}" aria-describedby="fc-instructions-${exerciseId}" aria-pressed="false" aria-label="${this.escapeAttr(initialLabel)}">
+                    <span class="flashcard-front" aria-hidden="false">
+                        <span id="fc-front-${exerciseId}">${this.escapeHtml(exercise.cards[0].front)}</span>
+                    </span>
+                    <span class="flashcard-back" aria-hidden="true">
+                        <span id="fc-back-${exerciseId}">${this.escapeHtml(exercise.cards[0].back)}</span>
+                    </span>
+                </button>
             </div>
             <div class="flashcard-nav">
-                <button class="btn-secondary" onclick="InteractiveEngine.prevCard('${exercise.id}')" style="padding:6px 14px">← Prev</button>
-                <span id="fc-counter-${exercise.id}" style="line-height:38px;font-size:13px;color:var(--text-secondary)">1 / ${exercise.cards.length}</span>
-                <button class="btn-secondary" onclick="InteractiveEngine.nextCard('${exercise.id}')" style="padding:6px 14px">Next →</button>
+                <button type="button" class="btn-secondary" aria-label="Previous flashcard" data-interactive-action="prev-card" data-exercise-id="${exerciseId}" style="padding:6px 14px">← Prev</button>
+                <span id="fc-counter-${exerciseId}" aria-live="polite" style="line-height:38px;font-size:13px;color:var(--text-secondary)">1 / ${exercise.cards.length}</span>
+                <button type="button" class="btn-secondary" aria-label="Next flashcard" data-interactive-action="next-card" data-exercise-id="${exerciseId}" style="padding:6px 14px">Next →</button>
             </div>
+            <div class="sr-only" id="fc-status-${exerciseId}" role="status" aria-live="polite" aria-atomic="true"></div>
         </div>
         `;
     },
@@ -297,7 +389,33 @@ Azure Reserved:
 
     flipCard(exerciseId) {
         const card = document.getElementById(`flashcard-${exerciseId}`);
-        card.classList.toggle('flipped');
+        const exercise = this.getFlashcardExercise(exerciseId);
+        if (!card || !exercise) return;
+        const isBack = card.classList.toggle('flipped');
+        this.updateFlashcardAccessibility(exerciseId, exercise, this.flashcardIndex[exerciseId] || 0, isBack, true);
+    },
+
+    getFlashcardLabel(exercise, index, isBack) {
+        const side = isBack ? 'back' : 'front';
+        const content = isBack ? exercise.cards[index].back : exercise.cards[index].front;
+        const action = isBack ? 'show the front' : 'show the back';
+        return `Card ${index + 1} of ${exercise.cards.length}, ${side}: ${content}. Activate to ${action}.`;
+    },
+
+    updateFlashcardAccessibility(exerciseId, exercise, index, isBack, announce) {
+        const card = document.getElementById(`flashcard-${exerciseId}`);
+        if (!card) return;
+        const label = this.getFlashcardLabel(exercise, index, isBack);
+        card.setAttribute('aria-pressed', String(isBack));
+        card.setAttribute('aria-label', label);
+        const front = card.querySelector('.flashcard-front');
+        const back = card.querySelector('.flashcard-back');
+        if (front) front.setAttribute('aria-hidden', String(isBack));
+        if (back) back.setAttribute('aria-hidden', String(!isBack));
+        if (announce) {
+            const status = document.getElementById(`fc-status-${exerciseId}`);
+            if (status) status.textContent = label;
+        }
     },
 
     getFlashcardExercise(exerciseId) {
@@ -336,6 +454,7 @@ Azure Reserved:
             document.getElementById(`fc-front-${exerciseId}`).textContent = exercise.cards[idx].front;
             document.getElementById(`fc-back-${exerciseId}`).textContent = exercise.cards[idx].back;
             document.getElementById(`fc-counter-${exerciseId}`).textContent = `${idx + 1} / ${exercise.cards.length}`;
+            this.updateFlashcardAccessibility(exerciseId, exercise, idx, false, true);
         }, 100);
     },
 

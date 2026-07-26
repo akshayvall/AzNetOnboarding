@@ -7,6 +7,18 @@ const DiagramEngine = {
 
     activeAnimations: [],
 
+    escapeHtml(value) {
+        return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    },
+
+    inlineArg(value) {
+        return this.escapeHtml(JSON.stringify(String(value)));
+    },
+
+    domId(value) {
+        return String(value).replace(/[^A-Za-z0-9_-]/g, '-');
+    },
+
     // ── Azure Service Icon SVG Symbols ──────────
     // Each icon is a 48x48 viewBox with official Azure colors
     icons: {
@@ -205,12 +217,28 @@ const DiagramEngine = {
     // ── Render / Control (same API as before) ──
     render(diagrams) {
         const container = document.getElementById('tab-diagrams');
+        this.bindEvents(container);
         if (!diagrams || diagrams.length === 0) {
             container.innerHTML = '<p class="no-content">No visual diagrams for this module yet.</p>';
             return;
         }
-        container.innerHTML = `<div class="diagrams-wrapper">${diagrams.map(d => this.renderDiagram(d)).join('')}</div>`;
-        requestAnimationFrame(() => diagrams.forEach(d => this.initDiagram(d)));
+        container.innerHTML = `<div class="diagrams-wrapper">${diagrams.map((diagram, index) => this.renderDiagram(diagram, index)).join('')}</div>`;
+        diagrams.forEach((diagram, index) => this.initDiagram(diagram, index));
+    },
+
+    bindEvents(container) {
+        if (container.dataset.diagramEventsBound) return;
+        container.dataset.diagramEventsBound = 'true';
+        container.addEventListener('click', event => {
+            const control = event.target.closest('[data-diagram-action]');
+            if (!control) return;
+            const diagramId = control.dataset.diagramId;
+            switch (control.dataset.diagramAction) {
+                case 'step': this.stepThrough(diagramId); break;
+                case 'play': this.play(diagramId); break;
+                case 'reset': this.reset(diagramId); break;
+            }
+        });
     },
 
     cleanup() {
@@ -218,25 +246,34 @@ const DiagramEngine = {
         this.activeAnimations = [];
     },
 
-    renderDiagram(diagram) {
+    renderDiagram(diagram, index) {
+        const diagramId = this.escapeHtml(diagram.id);
+        const accessibilityId = `${this.domId(diagram.id)}-${index}`;
+        const title = this.escapeHtml(diagram.title);
+        const description = diagram.description ? this.escapeHtml(diagram.description) : 'Interactive networking diagram.';
+        const textEquivalentId = `diagram-text-${accessibilityId}`;
         return `
-        <div class="visual-diagram" id="diagram-${diagram.id}">
+        <div class="visual-diagram" id="diagram-${diagramId}">
             <div class="diagram-title-bar">
-                <h3>${diagram.title}</h3>
+                <h3>${title}</h3>
                 <div class="diagram-controls">
-                    ${diagram.steps ? `<button class="diag-btn diag-btn-step" onclick="DiagramEngine.stepThrough('${diagram.id}')">▶ Step</button>` : ''}
-                    <button class="diag-btn diag-btn-play" onclick="DiagramEngine.play('${diagram.id}')">▶ Play</button>
-                    <button class="diag-btn diag-btn-reset" onclick="DiagramEngine.reset('${diagram.id}')">↺ Reset</button>
+                    ${diagram.steps ? `<button type="button" class="diag-btn diag-btn-step" aria-label="Show next step of ${this.escapeHtml(diagram.title)}" data-diagram-action="step" data-diagram-id="${diagramId}">▶ Step</button>` : ''}
+                    <button type="button" class="diag-btn diag-btn-play" aria-label="Show all steps of ${this.escapeHtml(diagram.title)}" data-diagram-action="play" data-diagram-id="${diagramId}">Show all</button>
+                    <button type="button" class="diag-btn diag-btn-reset" aria-label="Reset ${this.escapeHtml(diagram.title)}" data-diagram-action="reset" data-diagram-id="${diagramId}">↺ Reset</button>
                 </div>
             </div>
-            ${diagram.description ? `<p class="diagram-description">${diagram.description}</p>` : ''}
-            <div class="diagram-canvas" id="canvas-${diagram.id}"></div>
+            ${diagram.description ? `<p class="diagram-description">${description}</p>` : ''}
+            <div class="diagram-canvas" id="canvas-${diagramId}" data-accessibility-id="${accessibilityId}" aria-describedby="${textEquivalentId}"></div>
+            <div class="sr-only diagram-text-equivalent" id="${textEquivalentId}">
+                <p>${description}</p>
+                ${diagram.steps ? `<ol>${diagram.steps.map(step => `<li>${this.escapeHtml(step)}</li>`).join('')}</ol>` : ''}
+            </div>
             ${diagram.steps ? `
-            <div class="diagram-step-info" id="stepinfo-${diagram.id}">
-                <div class="step-counter">Step <span id="stepcnt-${diagram.id}">0</span> / ${diagram.steps.length}</div>
-                <div class="step-text" id="steptxt-${diagram.id}">Click "Step" to begin</div>
+            <div class="diagram-step-info" id="stepinfo-${diagramId}" role="status" aria-live="polite">
+                <div class="step-counter">Step <span id="stepcnt-${diagramId}">0</span> / ${diagram.steps.length}</div>
+                <div class="step-text" id="steptxt-${diagramId}">Click "Step" to begin</div>
             </div>` : ''}
-            ${diagram.legend ? `<div class="diagram-legend">${diagram.legend.map(l => `<span class="legend-item"><span class="legend-dot" style="background:${l.color}"></span>${l.label}</span>`).join('')}</div>` : ''}
+            ${diagram.legend ? `<div class="diagram-legend">${diagram.legend.map(l => `<span class="legend-item"><span class="legend-dot" style="background:${this.escapeHtml(l.color)}"></span>${this.escapeHtml(l.label)}</span>`).join('')}</div>` : ''}
         </div>`;
     },
 
@@ -246,7 +283,29 @@ const DiagramEngine = {
         canvas.dataset.step = '0';
         canvas.dataset.playing = 'false';
         const builder = this.builders[diagram.type] || this.builders._generic;
-        if (builder) canvas.innerHTML = builder.call(this, diagram);
+        if (builder) {
+            canvas.innerHTML = builder.call(this, diagram);
+            this.makeSvgAccessible(canvas, diagram);
+        }
+    },
+
+    makeSvgAccessible(canvas, diagram) {
+        const svg = canvas.querySelector('svg');
+        if (!svg) return;
+
+        const accessibilityId = canvas.dataset.accessibilityId;
+        const titleId = `diagram-svg-title-${accessibilityId}`;
+        const descriptionId = `diagram-svg-desc-${accessibilityId}`;
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        const description = document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+        title.id = titleId;
+        title.textContent = diagram.title;
+        description.id = descriptionId;
+        description.textContent = [diagram.description, ...(diagram.steps || [])].filter(Boolean).join(' ');
+        svg.prepend(description);
+        svg.prepend(title);
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-labelledby', `${titleId} ${descriptionId}`);
     },
 
     play(diagramId) {
@@ -256,7 +315,17 @@ const DiagramEngine = {
         canvas.dataset.step = '0';
         canvas.classList.add('animating');
         const svg = canvas.querySelector('svg');
-        if (svg) { svg.classList.remove('animate-all'); void svg.offsetWidth; svg.classList.add('animate-all'); }
+        if (svg) {
+            svg.querySelectorAll('.step-highlight').forEach(element => element.classList.add('active'));
+            svg.classList.remove('animate-all');
+            void svg.offsetWidth;
+            svg.classList.add('animate-all');
+        }
+        const stepTxt = document.getElementById(`steptxt-${diagramId}`);
+        const stepCnt = document.getElementById(`stepcnt-${diagramId}`);
+        const diagramData = this.getDiagramData(diagramId);
+        if (stepTxt) stepTxt.textContent = 'All diagram steps are shown.';
+        if (stepCnt && diagramData && diagramData.steps) stepCnt.textContent = diagramData.steps.length;
     },
 
     reset(diagramId) {

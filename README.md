@@ -65,7 +65,7 @@ Deep-dive on Front Door, security, and real-world architecture scenarios.
 | 4 | Advanced Network Architecture | Hub-spoke, Azure Firewall, Network Virtual Appliances |
 | 5 | Real-World Networking Scenarios | Troubleshooting drills and production design scenarios |
 | 6 | **Azure Firewall** | Application/network/NAT rules, Firewall Policy, threat intel |
-| 7 | **Network Watcher** | Connection Monitor, NSG flow logs, IP flow verify, packet capture |
+| 7 | **Network Watcher** | Connection Monitor, VNet flow logs, IP Flow Verify, packet capture |
 | 8 | **Capstone: Hub-Spoke** | End-to-end design: Firewall + Bastion + VPN + peering + UDRs |
 
 ---
@@ -106,7 +106,9 @@ Plus hands-on labs that inspect real Front Door response headers from Cloud Shel
 - **Hands-on labs** — runnable `az cli` / `nslookup` / `tcpping` / `traceroute` steps in Azure Cloud Shell
 - **Progress tracking** — per-module, per-level, overall %, day streak
 - **Export / Import** progress as JSON
-- **Fully offline** — no external CDNs, no trackers, strict CSP
+- **Installable and offline after first load** — service-worker-cached app shell, no external CDNs or trackers, strict script CSP
+- **Honest mastery states** — Learned → Practiced → Demonstrated → Durable, with 80% retrieval checks, lab evidence, transfer rubrics, and spaced review
+- **Diagnostic learning route** — ten questions recommend the earliest networking competency worth practicing
 
 ---
 
@@ -142,6 +144,8 @@ css/
 js/
   app.js                # Router, view management, progress wiring
   progress.js           # localStorage-backed progress tracking
+  mastery-content.js    # Outcomes, diagnostics, transfer challenges, rubrics
+  mastery-engine.js     # Mastery dashboard, evidence flow, review queue
   quiz-engine.js        # Quiz rendering & scoring
   lab-engine.js         # Step-by-step lab runner
   diagrams.js           # Animated SVG/Canvas diagrams
@@ -150,8 +154,18 @@ js/
   modules-200.js        # L200 content (6 core modules)
   modules-300.js        # L300 content (5 core modules)
   modules-extras.js     # +3 L200 + +3 L300 deep-dive modules
+manifest.webmanifest    # Install metadata
+sw.js                   # Offline app-shell cache
+tests/                  # Node test contracts for curriculum, mastery, platform
 .github/workflows/
-  pages.yml             # GitHub Pages auto-deploy
+  pages.yml             # Validate, then deploy to GitHub Pages
+```
+
+### Validation
+
+```bash
+node --test tests/*.test.js
+for file in js/*.js sw.js; do node --check "$file"; done
 ```
 
 ---
