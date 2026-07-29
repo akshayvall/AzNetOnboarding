@@ -60,12 +60,14 @@ test('workflow prototype exposes guided mode, section resume, compact evidence, 
     assert.match(app, /frontdoor-advanced/);
     assert.match(app, /lastSectionByModule/);
     assert.match(app, /renderSectionOutline/);
+    assert.match(app, /hashchange/);
+    assert.match(app, /syncHashRoute/);
     assert.match(mastery, /class="evidence-disclosure"/);
     assert.match(diagrams, /renderPreview\(/);
 });
 
 test('runtime assets and offline cache share the redesign release', () => {
-    const release = '2026-07-ui-redesign';
+    const release = '2026-07-ui-redesign-2';
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const serviceWorker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
     const assets = Array.from(html.matchAll(/(?:src|href)="((?:css|js)\/[^"?]+)(?:\?v=[^"]+)?"/g), match => match[1]);

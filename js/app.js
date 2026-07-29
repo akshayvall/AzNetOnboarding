@@ -157,6 +157,7 @@ const app = {
             const control = event.target.closest('[data-app-action]');
             if (control) this.handleAppAction(control);
         });
+        window.addEventListener('hashchange', () => this.syncHashRoute());
 
         document.getElementById('resetProgress').addEventListener('click', () => {
             if (confirm('Reset ALL progress? This cannot be undone.')) {
@@ -501,6 +502,17 @@ const app = {
     pickSearch(id) {
         this.closeSearch();
         this.loadModule(id);
+    },
+
+    syncHashRoute() {
+        const moduleId = window.location.hash.slice(1);
+        const module = moduleId ? MODULES.find(item => item.id === moduleId) : null;
+        const moduleViewActive = document.getElementById('moduleView').classList.contains('active');
+        if (module) {
+            if (!moduleViewActive || this.currentModule?.id !== module.id) this.loadModule(module.id);
+            return;
+        }
+        if (moduleViewActive) this.showDashboard();
     },
 
     // ─── VIEWS ──────────────────────────────────

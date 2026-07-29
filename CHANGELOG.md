@@ -35,7 +35,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Fixed Network Watcher step parity and Step wraparound after the final visual state.
 - Replaced the WAF DDoS-flood example with an application-layer rate-threshold scenario.
 - Progress imports now retain schema-v2 mastery evidence, diagnostic routing, and per-step lab state.
-- Removed the fixed-offset mobile drawer overlap, restored focus after dismissal, and preserved bookmarked module hashes during startup.
+- Removed the fixed-offset mobile drawer overlap, restored focus after dismissal, preserved bookmarked module hashes during startup, and synchronized browser Back and Forward navigation.
 
 ### Changed
 - Repositioned the platform from an "AZ-104 exam–aligned" course to a **real-world Azure networking skills** platform.
