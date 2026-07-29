@@ -11,6 +11,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Observable outcomes, prerequisites, independent transfer challenges, and four-part rubrics for all 21 modules.
 - Persistent per-step networking labs, installable PWA assets, offline navigation after first load, and a zero-dependency Node test suite.
 - GitHub Pages validation gate for all tests and JavaScript syntax before deployment.
+- Exhaustive diagram contracts and `docs/diagram-audit-2026-07.md`, covering all 22 diagram instances and current Microsoft Learn sources.
+- Deterministic Today workspace, separate `networking-academy-ui-state:v1` navigation state, and exact-section resume.
+- Accessible five-item mobile navigation with a focus-managed secondary drawer.
+- Edge Operations Fieldbook identity and a guided Front Door Advanced vertical slice with compact evidence and an inline packet-path visual.
 
 ### Changed
 - Quiz passing now requires 80% and the critical concept question; module progress is based on Practiced evidence rather than a free completion checkbox.
@@ -19,9 +23,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Basic Load Balancer and hardcoded Azure prices are now historical or source-verification guidance rather than current design advice.
 - Keyboard, screen-reader, reduced-motion, diagram, lab, and 320px responsive behavior were improved.
 - CSP now blocks inline scripts; runtime controls use delegated event handlers.
+- Mobile diagrams preserve readable text in a keyboard-focusable local scroll region instead of shrinking the SVG to fit.
+- Region/zone teaching now distinguishes paired and nonpaired architectures, service-specific support, and explicit workload recovery responsibility.
+- Front Door teaching now separates WAF block/rate-limit decisions from valid Rule Set transformations and route/cache overrides.
+- VPN and ExpressRoute visuals avoid presenting one encryption policy, bandwidth range, or SLA as universal.
+- Diagram and curriculum assets use one release token with a new offline cache generation.
+- Dashboard delivery now prioritizes one next action, due work, and three path milestones instead of a marketing hero and empty summary cards.
 
 ### Fixed
+- Removed all measured diagram label collisions and clipping risks across desktop, tablet, and mobile.
+- Fixed Network Watcher step parity and Step wraparound after the final visual state.
+- Replaced the WAF DDoS-flood example with an application-layer rate-threshold scenario.
 - Progress imports now retain schema-v2 mastery evidence, diagnostic routing, and per-step lab state.
+- Removed the fixed-offset mobile drawer overlap, restored focus after dismissal, and preserved bookmarked module hashes during startup.
 
 ### Changed
 - Repositioned the platform from an "AZ-104 exam–aligned" course to a **real-world Azure networking skills** platform.

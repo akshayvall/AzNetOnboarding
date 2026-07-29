@@ -13,10 +13,15 @@ const MODULES = [
     ...MODULES_300,
     ..._EXTRAS.filter(m => m.level === 300),
 ];
+const WORKFLOW_PROTOTYPE_ID = 'frontdoor-advanced';
+const _sectionCache = {};
 
 const app = {
     currentModule: null,
     currentTab: 'learn',
+    mobileNavOpener: null,
+    pendingSection: null,
+    sectionObserver: null,
 
     init() {
         this.buildNavigation();
@@ -24,14 +29,97 @@ const app = {
         this.bindEvents();
         this.registerServiceWorker();
         MasteryEngine.init(MODULES);
-        this.showDashboard();
-
-        // Check if returning to a specific module
         const hash = window.location.hash.slice(1);
-        if (hash) {
-            const mod = MODULES.find(m => m.id === hash);
-            if (mod) this.loadModule(mod.id);
+        const module = hash ? MODULES.find(item => item.id === hash) : null;
+        if (module) this.loadModule(module.id);
+        else this.showDashboard();
+    },
+
+    slugify(text) {
+        return text.toLowerCase().trim()
+            .replace(/&[^;]+;/g, '')
+            .replace(/<[^>]+>/g, '')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    },
+
+    parseSections(module) {
+        if (_sectionCache[module.id]) return _sectionCache[module.id];
+        const sections = [];
+        const headingPattern = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
+        let match;
+        while ((match = headingPattern.exec(module.learn || '')) !== null) {
+            const title = match[1].replace(/<[^>]+>/g, '').trim();
+            if (title) sections.push({ slug: this.slugify(title), title });
         }
+        _sectionCache[module.id] = sections;
+        return sections;
+    },
+
+    injectSectionIds(module) {
+        const sections = this.parseSections(module);
+        document.querySelectorAll('#tab-learn h2').forEach(heading => {
+            const slug = this.slugify(heading.textContent);
+            if (sections.some(section => section.slug === slug)) heading.id = `section-${slug}`;
+        });
+    },
+
+    navigateToSection(moduleId, sectionId) {
+        if (!moduleId || !sectionId) return;
+        this.pendingSection = sectionId;
+        if (this.sectionObserver) this.sectionObserver.disconnect();
+        if (this.currentModule?.id === moduleId) {
+            this.switchTab('learn');
+            this.scrollToSection(sectionId);
+            this.observeAfterScroll(moduleId);
+            return;
+        }
+        this.loadModule(moduleId);
+    },
+
+    scrollToSection(sectionId) {
+        const target = document.getElementById(`section-${sectionId}`);
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (this.currentModule) UIStateManager.saveSection(this.currentModule.id, sectionId);
+        this.updateOutlinePosition(sectionId);
+        this.pendingSection = null;
+    },
+
+    observeSections(moduleId) {
+        if (this.sectionObserver) this.sectionObserver.disconnect();
+        this.sectionObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting || !this.currentModule) return;
+                const sectionId = entry.target.id.replace('section-', '');
+                UIStateManager.saveSection(moduleId, sectionId);
+                this.updateOutlinePosition(sectionId);
+            });
+        }, { root: document.getElementById('content'), rootMargin: '0px 0px -60% 0px', threshold: 0.1 });
+        document.querySelectorAll('#tab-learn h2[id^="section-"]').forEach(heading => this.sectionObserver.observe(heading));
+    },
+
+    observeAfterScroll(moduleId) {
+        const content = document.getElementById('content');
+        let started = false;
+        const start = () => {
+            if (started) return;
+            started = true;
+            this.observeSections(moduleId);
+        };
+        content.addEventListener('scrollend', start, { once: true });
+        setTimeout(start, 800);
+    },
+
+    updateOutlinePosition(sectionId) {
+        document.querySelectorAll('#sectionOutlineList button').forEach(button => {
+            const active = button.dataset.sectionId === sectionId;
+            button.classList.toggle('active', active);
+            if (active) button.setAttribute('aria-current', 'location');
+            else button.removeAttribute('aria-current');
+        });
     },
 
     // ─── NAVIGATION ──────────────────────────────
@@ -113,6 +201,9 @@ const app = {
                 this.openSearch();
             } else if (e.key === 'Escape') {
                 this.closeSearch();
+                this.closeMobileNav();
+            } else if (e.key === 'Tab') {
+                this.trapMobileNavFocus(e);
             }
         });
         const searchInput = document.getElementById('searchInput');
@@ -124,12 +215,10 @@ const app = {
         // Mobile nav toggle
         const toggle = document.getElementById('mobileNavToggle');
         if (toggle) {
-            toggle.addEventListener('click', () => {
-                const sb = document.getElementById('sidebar');
-                const open = sb.classList.toggle('mobile-open');
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            });
+            toggle.addEventListener('click', () => this.toggleMobileNav());
         }
+        window.addEventListener('resize', () => this.syncMobileNav());
+        this.syncMobileNav();
     },
 
     handleAppAction(control) {
@@ -161,6 +250,21 @@ const app = {
             case 'close-search':
                 this.closeSearch();
                 break;
+            case 'set-module-mode':
+                this.setModuleMode(control.dataset.moduleMode);
+                break;
+            case 'open-evidence':
+                this.openEvidence(control.dataset.evidenceTarget);
+                break;
+            case 'navigate-section':
+                this.navigateToSection(this.currentModule?.id, control.dataset.sectionId);
+                break;
+            case 'close-mobile-nav':
+                this.closeMobileNav();
+                break;
+            case 'navigate-destination':
+                this.navigateDestination(control.dataset.destination);
+                break;
             case 'print-cheat-sheet':
                 this.printCheatSheet();
                 break;
@@ -172,6 +276,159 @@ const app = {
                 break;
             }
         }
+    },
+
+    isMobileNav() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    },
+
+    openMobileNav() {
+        if (!this.isMobileNav()) return;
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('navBackdrop');
+        const toggle = document.getElementById('mobileNavToggle');
+        this.mobileNavOpener = document.activeElement;
+        sidebar.removeAttribute('aria-hidden');
+        sidebar.inert = false;
+        sidebar.classList.add('mobile-open');
+        backdrop.hidden = false;
+        document.body.classList.add('nav-drawer-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        const firstControl = sidebar.querySelector('button, a, input');
+        if (firstControl) firstControl.focus({ preventScroll: true });
+    },
+
+    closeMobileNav(restoreFocus = true) {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar.classList.contains('mobile-open')) return;
+        const backdrop = document.getElementById('navBackdrop');
+        const toggle = document.getElementById('mobileNavToggle');
+        sidebar.classList.remove('mobile-open');
+        backdrop.hidden = true;
+        document.body.classList.remove('nav-drawer-open');
+        toggle.setAttribute('aria-expanded', 'false');
+        if (restoreFocus && this.mobileNavOpener && this.mobileNavOpener.isConnected) this.mobileNavOpener.focus();
+        else if (restoreFocus) toggle.focus();
+        if (this.isMobileNav()) {
+            sidebar.setAttribute('aria-hidden', 'true');
+            sidebar.inert = true;
+        }
+        this.mobileNavOpener = null;
+    },
+
+    toggleMobileNav() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar.classList.contains('mobile-open')) this.closeMobileNav();
+        else this.openMobileNav();
+    },
+
+    trapMobileNavFocus(event) {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar.classList.contains('mobile-open')) return;
+        const controls = Array.from(sidebar.querySelectorAll('button:not([disabled]), a[href], input:not([disabled])'));
+        if (!controls.length) return;
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    },
+
+    syncMobileNav() {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('navBackdrop');
+        if (this.isMobileNav()) {
+            if (!sidebar.classList.contains('mobile-open')) {
+                sidebar.setAttribute('aria-hidden', 'true');
+                sidebar.inert = true;
+            }
+            return;
+        }
+        sidebar.classList.remove('mobile-open');
+        sidebar.removeAttribute('aria-hidden');
+        sidebar.inert = false;
+        backdrop.hidden = true;
+        document.body.classList.remove('nav-drawer-open');
+        document.getElementById('mobileNavToggle').setAttribute('aria-expanded', 'false');
+    },
+
+    navigateDestination(destination) {
+        UIStateManager.setDestination(destination);
+        document.querySelectorAll('.bottom-nav-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.destination === destination);
+        });
+        if (destination === 'today') {
+            this.closeMobileNav(false);
+            this.showDashboard();
+            return;
+        }
+        this.openMobileNav();
+    },
+
+    isWorkflowPrototype(moduleId) {
+        return moduleId === WORKFLOW_PROTOTYPE_ID;
+    },
+
+    setModuleMode(mode) {
+        if (!this.currentModule || !this.isWorkflowPrototype(this.currentModule.id)) return;
+        const normalizedMode = mode === 'browse' ? 'browse' : 'guided';
+        const moduleView = document.getElementById('moduleView');
+        moduleView.classList.toggle('guided-mode', normalizedMode === 'guided');
+        moduleView.classList.toggle('browse-mode', normalizedMode === 'browse');
+        document.querySelectorAll('[data-module-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.moduleMode === normalizedMode)));
+    },
+
+    openEvidence(target) {
+        const disclosure = document.querySelector('#masteryPanel .evidence-disclosure');
+        if (!disclosure) return;
+        disclosure.open = true;
+        disclosure.dataset.focusTarget = target || 'evidence';
+        disclosure.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        disclosure.querySelector('summary')?.focus();
+    },
+
+    renderSectionOutline(module) {
+        const outline = document.getElementById('sectionOutline');
+        const list = document.getElementById('sectionOutlineList');
+        const sections = this.isWorkflowPrototype(module.id) ? this.parseSections(module) : [];
+        outline.hidden = sections.length === 0;
+        if (!sections.length) {
+            list.innerHTML = '';
+            return;
+        }
+        list.innerHTML = sections.map(section => `<li><button type="button" data-app-action="navigate-section" data-section-id="${this.escapeAttr(section.slug)}">${this.escapeHtml(section.title)}</button></li>`).join('');
+        outline.open = !window.matchMedia('(max-width: 1023px)').matches;
+    },
+
+    renderInlineCoreVisual(module) {
+        document.getElementById('inlineCoreVisual')?.remove();
+        if (!this.isWorkflowPrototype(module.id) || !module.diagrams?.length || typeof DiagramEngine.renderPreview !== 'function') return;
+        const firstSection = document.querySelector('#tab-learn .learn-section');
+        if (!firstSection) return;
+        const preview = document.createElement('section');
+        preview.id = 'inlineCoreVisual';
+        preview.className = 'inline-core-visual';
+        preview.setAttribute('aria-label', 'Core visual');
+        firstSection.insertAdjacentElement('afterend', preview);
+        DiagramEngine.renderPreview(module.diagrams[0], preview);
+    },
+
+    configureModuleExperience(module) {
+        const enabled = this.isWorkflowPrototype(module.id);
+        const moduleView = document.getElementById('moduleView');
+        document.getElementById('moduleModeBar').hidden = !enabled;
+        moduleView.classList.toggle('workflow-prototype', enabled);
+        moduleView.classList.remove('guided-mode', 'browse-mode');
+        this.renderSectionOutline(module);
+        if (!enabled) return;
+        const uiState = UIStateManager.get(MODULES.map(item => item.id));
+        if (!this.pendingSection && uiState.lastSectionByModule[module.id]) this.pendingSection = uiState.lastSectionByModule[module.id];
+        this.setModuleMode('guided');
+        this.renderInlineCoreVisual(module);
     },
 
     registerServiceWorker() {
@@ -248,6 +505,7 @@ const app = {
 
     // ─── VIEWS ──────────────────────────────────
     showDashboard() {
+        UIStateManager.setDestination('today');
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('moduleView').classList.remove('active');
         
@@ -300,6 +558,7 @@ const app = {
             </div>`;
         document.getElementById('tab-learn').innerHTML = learnHtml;
         this.initCopyButtons();
+        this.injectSectionIds(mod);
 
         // Initialize diagrams
         if (mod.diagrams) {
@@ -325,6 +584,8 @@ const app = {
         if (mod.lab) {
             LabEngine.init(mod.id, mod.lab);
         }
+
+        this.configureModuleExperience(mod);
 
         // Update nav active state
         document.querySelectorAll('#sidebar li').forEach(li => {
@@ -356,13 +617,22 @@ const app = {
         // Save last visited
         ProgressManager.setLastVisited(moduleId);
 
-        // Scroll to top
-        document.getElementById('content').scrollTop = 0;
+        if (this.pendingSection) {
+            const sectionId = this.pendingSection;
+            setTimeout(() => {
+                this.scrollToSection(sectionId);
+                this.observeAfterScroll(moduleId);
+            }, 120);
+        } else {
+            document.getElementById('content').scrollTop = 0;
+            this.observeSections(moduleId);
+        }
 
     },
 
     switchTab(tabName) {
         this.currentTab = tabName;
+        if (this.currentModule) UIStateManager.touchModule(this.currentModule.id, tabName);
         
         // Update tab buttons
         document.querySelectorAll('.module-tabs .tab').forEach(tab => {
@@ -372,6 +642,12 @@ const app = {
         // Update tab content
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.toggle('active', content.id === `tab-${tabName}`);
+        });
+        document.querySelectorAll('.guided-stepper [data-tab]').forEach(button => {
+            const active = button.dataset.tab === tabName;
+            button.classList.toggle('active', active);
+            if (active) button.setAttribute('aria-current', 'step');
+            else button.removeAttribute('aria-current');
         });
     },
 

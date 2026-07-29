@@ -26,7 +26,7 @@ const MasteryEngine = {
                 if (action === 'open-diagnostic') this.openDiagnostic();
                 if (action === 'close-diagnostic') this.closeDiagnostic();
                 if (action === 'submit-diagnostic') this.submitDiagnostic();
-                if (action === 'go-module') this.goToModule(control.dataset.moduleId);
+                if (action === 'go-module') this.goToModule(control.dataset.moduleId, control.dataset.tab, control.dataset.sectionId);
                 if (action === 'submit-transfer') this.submitTransfer(control.dataset.moduleId);
             });
         }
@@ -96,43 +96,54 @@ const MasteryEngine = {
         if (!container) return;
         const progress = ProgressManager.getProgress();
         const realModules = this.getRealModules(modules, ACADEMY_MASTERY);
-        const dueIds = ProgressManager.getDueReviews();
         const counts = this.getStateCounts(modules);
-        const diagnostic = progress.diagnostic;
-        const recommended = diagnostic ? modules.find(module => module.id === diagnostic.recommendedModuleId) : null;
-        const dueModules = dueIds.map(id => modules.find(module => module.id === id)).filter(Boolean);
+        const statuses = Object.fromEntries(realModules.map(module => [module.id, this.getStatus(module)]));
+        const metadata = Object.fromEntries(realModules.map(module => [module.id, this.getMetadata(module.id) || { prerequisites: [] }]));
+        const today = TodayEngine.select({
+            modules,
+            metadata,
+            statuses,
+            progress,
+            uiState: UIStateManager.get(modules.map(module => module.id)),
+            activityIds: ACADEMY_MASTERY.activityIds
+        });
+        const practiced = counts.practiced + counts.demonstrated + counts.durable;
+        const demonstrated = counts.demonstrated + counts.durable;
 
         container.innerHTML = `
-            <div class="mastery-dashboard-head">
-                <div>
-                    <p class="mastery-eyebrow">Your learning route</p>
-                    <h2>Build evidence, not checkmarks</h2>
-                </div>
-                <button type="button" class="btn-primary" data-mastery-action="open-diagnostic">${diagnostic ? 'Retake diagnostic' : 'Take diagnostic'}</button>
-            </div>
-            <div class="mastery-summary-grid" aria-label="Mastery summary">
-                <div><strong>${realModules.length}</strong><span>real modules</span></div>
-                <div><strong>${counts.practiced + counts.demonstrated + counts.durable}</strong><span>practiced</span></div>
-                <div><strong>${counts.demonstrated + counts.durable}</strong><span>demonstrated</span></div>
-                <div><strong>${dueModules.length}</strong><span>reviews due</span></div>
-            </div>
-            <div class="mastery-route-grid">
-                <section class="mastery-route-card" aria-labelledby="diagnostic-route-title">
-                    <h3 id="diagnostic-route-title">Recommended start</h3>
-                    ${recommended ? `
-                        <p><strong>${this.escapeHtml(recommended.title)}</strong></p>
-                        <p>Your diagnostic score was ${diagnostic.score}/${diagnostic.total}. Start at the first missed competency, then move forward.</p>
-                        <button type="button" class="btn-secondary" data-mastery-action="go-module" data-module-id="${this.escapeHtml(recommended.id)}">Open recommendation</button>
-                    ` : '<p>Take the ten-question diagnostic to find the earliest competency worth practicing.</p>'}
+            <div class="today-grid">
+                <section class="today-primary" aria-labelledby="today-title">
+                    <p class="mastery-eyebrow">Today</p>
+                    <h2 id="today-title">${this.escapeHtml(today.primary.title)}</h2>
+                    <p>${this.escapeHtml(today.primary.description)}${today.primary.estimatedTime ? ` · ${this.escapeHtml(today.primary.estimatedTime)}` : ''}</p>
+                    ${this.renderTodayAction(today.primary, 'btn-primary')}
                 </section>
-                <section class="mastery-route-card" aria-labelledby="review-queue-title">
-                    <h3 id="review-queue-title">Review queue</h3>
-                    ${dueModules.length ? dueModules.map(module => `
-                        <button type="button" class="review-queue-item" data-mastery-action="go-module" data-module-id="${this.escapeHtml(module.id)}">
-                            <span>${this.escapeHtml(module.title)}</span><span>Review now</span>
-                        </button>`).join('') : '<p>No reviews are due. Demonstrated modules enter the 1, 3, 7, 21, and 60-day review cycle.</p>'}
+                <section class="today-secondary" aria-labelledby="also-due-title">
+                    <p class="mastery-eyebrow">Also due</p>
+                    <h3 id="also-due-title">${today.alsoDue.length ? `${today.alsoDue.length} item${today.alsoDue.length === 1 ? '' : 's'}` : 'Nothing else today'}</h3>
+                    ${today.alsoDue.length ? today.alsoDue.map(action => this.renderTodayAction(action, 'today-due-item')).join('') : '<p>Your next scheduled evidence will appear here.</p>'}
                 </section>
-            </div>`;
+            </div>
+            <ol class="today-path" aria-label="Next three milestones">
+                ${today.milestones.map((milestone, index) => `<li><span>${index + 1}</span><div><strong>${this.escapeHtml(milestone.title)}</strong><small>${this.escapeHtml(this.STATE_LABELS[milestone.state] || 'Not started')}</small></div></li>`).join('')}
+            </ol>
+            <div class="today-evidence" aria-label="Evidence snapshot">
+                <span><strong>${practiced}</strong> practiced</span>
+                <span><strong>${demonstrated}</strong> demonstrated</span>
+                <span><strong>${counts.durable}</strong> durable</span>
+                <button type="button" data-mastery-action="open-diagnostic">${progress.diagnostic ? 'Retake diagnostic' : 'Why this start?'}</button>
+            </div>
+            `;
+    },
+
+    renderTodayAction(action, className) {
+        if (action.kind === 'diagnostic') {
+            return `<button type="button" class="${className}" data-mastery-action="open-diagnostic">${this.escapeHtml(action.actionLabel)}</button>`;
+        }
+        if (!action.moduleId) {
+            return `<button type="button" class="${className}" data-app-action="navigate-destination" data-destination="learn">${this.escapeHtml(action.actionLabel)}</button>`;
+        }
+        return `<button type="button" class="${className}" data-mastery-action="go-module" data-module-id="${this.escapeHtml(action.moduleId)}" data-tab="${this.escapeHtml(action.tab || 'learn')}" ${action.sectionId ? `data-section-id="${this.escapeHtml(action.sectionId)}"` : ''}><span>${this.escapeHtml(action.title)}</span><strong>${this.escapeHtml(action.actionLabel)}</strong></button>`;
     },
 
     renderModulePanel(module) {
@@ -155,6 +166,7 @@ const MasteryEngine = {
         const transfer = metadata.transfer;
         const savedScores = entry.transfer && Array.isArray(entry.transfer.scores) ? entry.transfer.scores : [];
         const savedReflection = entry.transfer ? entry.transfer.reflection : '';
+        const completeCount = requirementRows.filter(([, complete]) => complete).length;
         container.innerHTML = `
             <div class="mastery-panel-head">
                 <div>
@@ -163,33 +175,42 @@ const MasteryEngine = {
                 </div>
                 <span class="mastery-state mastery-state-${status.state}">${this.escapeHtml(this.STATE_LABELS[status.state])}</span>
             </div>
-            ${metadata.prerequisites.length ? `<p class="mastery-prereqs"><strong>Prerequisites:</strong> ${metadata.prerequisites.map(id => this.escapeHtml(this.modules.find(item => item.id === id)?.title || id)).join(' · ')}</p>` : ''}
-            <div class="mastery-evidence-grid">
-                ${requirementRows.map(([label, complete, description]) => `
-                    <div class="mastery-evidence ${complete ? 'is-complete' : ''}">
-                        <span aria-hidden="true">${complete ? '✓' : '○'}</span>
-                        <div><strong>${label}</strong><small>${this.escapeHtml(description)}</small></div>
-                    </div>`).join('')}
-            </div>
-            <details class="transfer-challenge" ${status.state === 'practiced' ? 'open' : ''}>
-                <summary>Independent transfer challenge</summary>
-                <p>${this.escapeHtml(transfer.prompt)}</p>
-                <p><strong>Artifact:</strong> <code>${this.escapeHtml(transfer.artifact)}</code></p>
-                <div class="transfer-rubric">
-                    ${transfer.rubric.map((criterion, index) => `
-                        <label>
-                            <span><strong>${this.escapeHtml(criterion.label)}</strong><small>${this.escapeHtml(criterion.description)}</small></span>
-                            <select id="transfer-score-${index}" aria-label="Score ${this.escapeHtml(criterion.label)} from zero to four">
-                                <option value="">Score</option>
-                                ${[0, 1, 2, 3, 4].map(score => `<option value="${score}" ${savedScores[index] === score ? 'selected' : ''}>${score}/4</option>`).join('')}
-                            </select>
-                        </label>`).join('')}
-                </div>
-                <label class="transfer-reflection-label" for="transfer-reflection">Evidence and explanation</label>
-                <textarea id="transfer-reflection" rows="5" maxlength="4000" placeholder="Link or name the artifact, summarize the test evidence, and explain the main tradeoff.">${this.escapeHtml(savedReflection)}</textarea>
-                <div class="transfer-actions">
-                    <button type="button" class="btn-primary" data-mastery-action="submit-transfer" data-module-id="${this.escapeHtml(module.id)}">Evaluate evidence</button>
-                    <span id="transfer-feedback" role="status" aria-live="polite"></span>
+            <details class="evidence-disclosure">
+                <summary><span>Evidence</span><strong>${completeCount}/4 complete</strong></summary>
+                <div class="evidence-disclosure-body">
+                    ${metadata.prerequisites.length ? `<p class="mastery-prereqs"><strong>Prerequisites:</strong> ${metadata.prerequisites.map(id => this.escapeHtml(this.modules.find(item => item.id === id)?.title || id)).join(' · ')}</p>` : ''}
+                    <div class="mastery-evidence-grid">
+                        ${requirementRows.map(([label, complete, description]) => `
+                            <div class="mastery-evidence ${complete ? 'is-complete' : ''}">
+                                <span aria-hidden="true">${complete ? '✓' : '○'}</span>
+                                <div><strong>${label}</strong><small>${this.escapeHtml(description)}</small></div>
+                            </div>`).join('')}
+                    </div>
+                    <section id="transfer-evidence" class="transfer-challenge">
+                        <h3>Independent transfer challenge</h3>
+                        <p>${this.escapeHtml(transfer.prompt)}</p>
+                        <p><strong>Artifact:</strong> <code>${this.escapeHtml(transfer.artifact)}</code></p>
+                        <div class="transfer-rubric">
+                            ${transfer.rubric.map((criterion, index) => `
+                                <label>
+                                    <span><strong>${this.escapeHtml(criterion.label)}</strong><small>${this.escapeHtml(criterion.description)}</small></span>
+                                    <select id="transfer-score-${index}" aria-label="Score ${this.escapeHtml(criterion.label)} from zero to four">
+                                        <option value="">Score</option>
+                                        ${[0, 1, 2, 3, 4].map(score => `<option value="${score}" ${savedScores[index] === score ? 'selected' : ''}>${score}/4</option>`).join('')}
+                                    </select>
+                                </label>`).join('')}
+                        </div>
+                        <label class="transfer-reflection-label" for="transfer-reflection">Evidence and explanation</label>
+                        <textarea id="transfer-reflection" rows="5" maxlength="4000" placeholder="Link or name the artifact, summarize the test evidence, and explain the main tradeoff.">${this.escapeHtml(savedReflection)}</textarea>
+                        <div class="transfer-actions">
+                            <button type="button" class="btn-primary" data-mastery-action="submit-transfer" data-module-id="${this.escapeHtml(module.id)}">Evaluate evidence</button>
+                            <span id="transfer-feedback" role="status" aria-live="polite"></span>
+                        </div>
+                    </section>
+                    <section id="review-evidence" class="review-evidence">
+                        <h3>Review schedule</h3>
+                        <p>${entry.review.nextDue ? `Next review: ${this.escapeHtml(new Date(entry.review.nextDue).toLocaleDateString())}.` : 'The first review is scheduled after transfer evidence passes.'} ${entry.review.successfulReviews}/4 durable reviews passed.</p>
+                    </section>
                 </div>
             </details>`;
     },
@@ -253,12 +274,13 @@ const MasteryEngine = {
         if (typeof app !== 'undefined') app.showToast(`Recommended start: ${module ? module.title : result.recommendedModuleId}`, 'success');
     },
 
-    goToModule(moduleId) {
+    goToModule(moduleId, tabName) {
         this.closeDiagnostic();
         if (typeof app !== 'undefined') {
             app.loadModule(moduleId);
             const module = this.modules.find(item => item.id === moduleId);
-            if (module && ProgressManager.isReviewDue(moduleId)) app.switchTab('quiz');
+            if (tabName) app.switchTab(tabName);
+            else if (module && ProgressManager.isReviewDue(moduleId)) app.switchTab('quiz');
         }
     }
 };

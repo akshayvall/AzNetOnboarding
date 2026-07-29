@@ -109,6 +109,9 @@ Plus hands-on labs that inspect real Front Door response headers from Cloud Shel
 - **Installable and offline after first load** — service-worker-cached app shell, no external CDNs or trackers, strict script CSP
 - **Honest mastery states** — Learned → Practiced → Demonstrated → Durable, with 80% retrieval checks, lab evidence, transfer rubrics, and spaced review
 - **Diagnostic learning route** — ten questions recommend the earliest networking competency worth practicing
+- **Today workspace** — one deterministic next action, due evidence, and the next three milestones
+- **Mobile study shell** — five-item bottom navigation plus an accessible, focus-managed module drawer
+- **Guided Front Door prototype** — guided/browse modes, exact-section resume, compact evidence, and an inline packet-path visual
 
 ---
 
@@ -144,6 +147,8 @@ css/
 js/
   app.js                # Router, view management, progress wiring
   progress.js           # localStorage-backed progress tracking
+  ui-state.js           # separate versioned navigation and resume state
+  today-engine.js       # deterministic daily action selection
   mastery-content.js    # Outcomes, diagnostics, transfer challenges, rubrics
   mastery-engine.js     # Mastery dashboard, evidence flow, review queue
   quiz-engine.js        # Quiz rendering & scoring
@@ -167,6 +172,10 @@ tests/                  # Node test contracts for curriculum, mastery, platform
 node --test tests/*.test.js
 for file in js/*.js sw.js; do node --check "$file"; done
 ```
+
+The diagram contract verifies all 22 diagram instances for builder coverage, unique IDs, step parity, bounded SVG output, known geometry regressions, keyboard access, mobile readability, Step wraparound, current Azure framing, and release-cache coherence. See [docs/diagram-audit-2026-07.md](docs/diagram-audit-2026-07.md).
+
+The July 2026 browser matrix additionally rendered every diagram at desktop, tablet, and mobile widths with reduced motion enabled.
 
 ---
 

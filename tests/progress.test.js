@@ -105,7 +105,8 @@ test('a due review appears only after demonstrated mastery', () => {
     manager.completeLab('module-a');
     manager.saveTransferResult('module-a', 4, 4, 'Independent task with test evidence and a design explanation.');
 
-    const due = manager.getDueReviews('2026-07-28T00:00:00.000Z');
+    const nextDue = manager.getProgress().moduleMastery['module-a'].review.nextDue;
+    const due = manager.getDueReviews(nextDue);
 
     assert.deepEqual(Array.from(due), ['module-a']);
 });

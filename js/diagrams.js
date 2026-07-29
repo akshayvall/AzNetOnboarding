@@ -226,6 +226,39 @@ const DiagramEngine = {
         diagrams.forEach((diagram, index) => this.initDiagram(diagram, index));
     },
 
+    renderPreview(diagram, container) {
+        if (!diagram || !container) return;
+        const diagramId = this.domId(diagram.id);
+        const title = String(diagram.title || 'Core visual');
+        const description = String(diagram.description || `Visual explanation of ${title}.`);
+        const textId = `preview-text-${diagramId}`;
+        container.innerHTML = `
+            <div class="inline-visual-heading">
+                <p class="mastery-eyebrow">Core visual</p>
+                <h2>${this.escapeHtml(title)}</h2>
+                <p>${this.escapeHtml(description)}</p>
+            </div>
+            <div id="${textId}" class="sr-only">${this.escapeHtml(description)} ${Array.isArray(diagram.steps) ? diagram.steps.map((step, index) => `Step ${index + 1}: ${this.escapeHtml(step)}.`).join(' ') : ''}</div>
+            <div class="diagram-canvas inline-diagram-canvas" tabindex="0" aria-label="Core visual: ${this.escapeHtml(title)}" aria-describedby="${textId}"></div>
+            <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="diagrams">Open the complete visual walkthrough</button>`;
+        const canvas = container.querySelector('.inline-diagram-canvas');
+        const builder = this.builders[diagram.type] || this.builders._generic;
+        canvas.innerHTML = builder.call(this, diagram);
+        const svg = canvas.querySelector('svg');
+        if (!svg) return;
+        const namespace = 'http://www.w3.org/2000/svg';
+        const svgTitle = document.createElementNS(namespace, 'title');
+        const svgDescription = document.createElementNS(namespace, 'desc');
+        svgTitle.id = `preview-svg-title-${diagramId}`;
+        svgDescription.id = `preview-svg-desc-${diagramId}`;
+        svgTitle.textContent = title;
+        svgDescription.textContent = description;
+        svg.insertBefore(svgDescription, svg.firstChild);
+        svg.insertBefore(svgTitle, svgDescription);
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-labelledby', `${svgTitle.id} ${svgDescription.id}`);
+    },
+
     bindEvents(container) {
         if (container.dataset.diagramEventsBound) return;
         container.dataset.diagramEventsBound = 'true';
@@ -263,7 +296,7 @@ const DiagramEngine = {
                 </div>
             </div>
             ${diagram.description ? `<p class="diagram-description">${description}</p>` : ''}
-            <div class="diagram-canvas" id="canvas-${diagramId}" data-accessibility-id="${accessibilityId}" aria-describedby="${textEquivalentId}"></div>
+            <div class="diagram-canvas" id="canvas-${diagramId}" data-accessibility-id="${accessibilityId}" tabindex="0" aria-label="Scrollable diagram: ${title}" aria-describedby="${textEquivalentId}"></div>
             <div class="sr-only diagram-text-equivalent" id="${textEquivalentId}">
                 <p>${description}</p>
                 ${diagram.steps ? `<ol>${diagram.steps.map(step => `<li>${this.escapeHtml(step)}</li>`).join('')}</ol>` : ''}
@@ -353,7 +386,7 @@ const DiagramEngine = {
         if (!svg) return;
         const allSteps = svg.querySelectorAll('[data-step]');
         const maxStep = Math.max(...Array.from(allSteps).map(el => parseInt(el.dataset.step)));
-        if (step > maxStep) { this.reset(diagramId); return; }
+        if (step >= maxStep) { this.reset(diagramId); return; }
         step++;
         canvas.dataset.step = step;
         allSteps.forEach(el => { if (parseInt(el.dataset.step) === step) el.classList.add('active'); });
@@ -705,12 +738,12 @@ const DiagramEngine = {
                 <g data-step="2" class="step-highlight">
                     ${I.subnet(20, 100, 330, 115, 'Azure Load Balancer (L4)', '#0078D4')}
                     ${I.loadbalancer(190, 155, 'Standard LB')}
-                    <text x="190" y="190" text-anchor="middle" fill="#888" font-size="9" font-family="Segoe UI,sans-serif">TCP/UDP — 5-tuple hash</text>
+                    <text x="190" y="215" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI,sans-serif">TCP/UDP — 5-tuple hash</text>
                 </g>
                 <g data-step="3" class="step-highlight">
                     ${I.subnet(400, 100, 360, 115, 'Application Gateway (L7)', '#107C10')}
                     ${I.appgateway(580, 155, 'App Gateway')}
-                    <text x="580" y="190" text-anchor="middle" fill="#888" font-size="9" font-family="Segoe UI,sans-serif">HTTP — URL path routing</text>
+                    <text x="580" y="215" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI,sans-serif">HTTP — URL path routing</text>
                 </g>
                 <g data-step="4" class="step-highlight">
                     ${I.vm(100, 300, 'VM-1')}
@@ -755,7 +788,7 @@ const DiagramEngine = {
                 <g data-step="2" class="step-highlight">
                     <rect x="260" y="95" width="260" height="80" rx="40" fill="url(#tg)" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="8"/>
                     <text x="390" y="130" text-anchor="middle" fill="#0078D4" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">IPsec/IKE Encrypted Tunnel</text>
-                    <text x="390" y="148" text-anchor="middle" fill="#888" font-size="9" font-family="Segoe UI,sans-serif">AES-256  |  Over Public Internet</text>
+                    <text x="390" y="148" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI,sans-serif">Negotiated IPsec policy  |  Public internet transport</text>
                     <circle r="5" fill="#FFB900"><animateMotion dur="2.5s" repeatCount="indefinite" path="M270,135 L510,135"/></circle>
                 </g>
                 <g data-step="3" class="step-highlight">
@@ -784,7 +817,7 @@ const DiagramEngine = {
                     <rect x="15" y="140" width="170" height="48" rx="6" fill="#D1343810" stroke="#D13438" stroke-width="1"/>
                     <text x="100" y="170" text-anchor="middle" fill="#D13438" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">&lt;script&gt;alert()&lt;/script&gt;</text>
                     <rect x="15" y="200" width="170" height="48" rx="6" fill="#D1343810" stroke="#D13438" stroke-width="1"/>
-                    <text x="100" y="230" text-anchor="middle" fill="#D13438" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">1M req/s flood</text>
+                    <text x="100" y="230" text-anchor="middle" fill="#D13438" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">API burst over limit</text>
                 </g>
                 <g data-step="2" class="step-highlight flow-arrow">
                     <line x1="185" y1="44" x2="250" y2="135" stroke="#107C10" stroke-width="1.5" marker-end="url(#ah-107C10)" class="anim-line"/>
@@ -796,7 +829,7 @@ const DiagramEngine = {
                     <rect x="255" y="30" width="230" height="270" rx="10" fill="#E8443A08" stroke="#D13438" stroke-width="2"/>
                     ${I.waf(370, 65, '')}
                     <text x="370" y="48" text-anchor="middle" fill="#D13438" font-size="13" font-weight="700" font-family="Segoe UI,sans-serif">WAF</text>
-                    <text x="370" y="105" text-anchor="middle" fill="#888" font-size="9" font-family="Segoe UI,sans-serif">OWASP 3.2 Rules</text>
+                    <text x="370" y="105" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI,sans-serif">Managed rule sets</text>
                     <rect x="275" y="115" width="190" height="22" rx="3" fill="#fff" stroke="#D13438" stroke-width="1"/>
                     <text x="370" y="130" text-anchor="middle" fill="#D13438" font-size="9" font-family="Segoe UI,sans-serif">SQL Injection Detection</text>
                     <rect x="275" y="143" width="190" height="22" rx="3" fill="#fff" stroke="#D13438" stroke-width="1"/>
@@ -824,7 +857,7 @@ const DiagramEngine = {
                 </g>
                 <g data-step="6" class="step-highlight">
                     <rect x="80" y="325" width="600" height="30" rx="6" fill="#0078D408" stroke="#0078D4" stroke-width="1"/>
-                    <text x="380" y="345" text-anchor="middle" fill="#333" font-size="11" font-family="Segoe UI,sans-serif">WAF Modes: Detection (log only) → Prevention (block+log) | Works with Front Door, App GW, CDN</text>
+                    <text x="380" y="345" text-anchor="middle" fill="#333" font-size="11" font-family="Segoe UI,sans-serif">WAF modes: Detection (log) → Prevention (block + log) | Front Door and Application Gateway</text>
                 </g>
             </svg>`;
         },
@@ -872,7 +905,7 @@ const DiagramEngine = {
                 <defs>${A}</defs>
                 <g data-step="1" class="step-highlight">
                     ${I.internet(70, 200, 'Incoming Request')}
-                    <text x="70" y="250" text-anchor="middle" fill="#888" font-size="9" font-family="Segoe UI,sans-serif">GET /api/v2/users</text>
+                    <text x="70" y="270" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI,sans-serif">GET /api/v2/users</text>
                 </g>
                 <g data-step="2" class="step-highlight">
                     <rect x="180" y="20" width="410" height="400" rx="10" fill="#0078D406" stroke="#0078D4" stroke-width="1.5"/>
@@ -882,10 +915,10 @@ const DiagramEngine = {
                     <line x1="108" y1="200" x2="178" y2="200" stroke="#333" stroke-width="1.5" marker-end="url(#ah-333)" class="anim-line"/>
                 </g>
                 ${[
-                    { y: 60, color: '#0078D4', label: 'Rule Set 1: Request Modifications', rules: ['IF path /api/* → Add header', 'IF device=Mobile → Route mobile pool'] },
-                    { y: 160, color: '#D13438', label: 'Rule Set 2: Security', rules: ['IF geo=blocked → Return 403', 'IF rate>100/min → Return 429'] },
-                    { y: 260, color: '#FF8C00', label: 'Rule Set 3: URL Rewrites', rules: ['IF /old-api/* → Redirect /api/v2/*'] },
-                    { y: 330, color: '#107C10', label: 'Rule Set 4: Cache Overrides', rules: ['IF ext=.js,.css → Cache 7 days'] },
+                    { y: 60, color: '#D13438', label: 'WAF policy (evaluated first)', rules: ['Managed/custom rules inspect requests', 'Block and rate-limit actions happen here'] },
+                    { y: 150, color: '#0078D4', label: 'Rule Set 1: Header actions', rules: ['IF path /api/* → Add request header', 'Remove identifying response headers'] },
+                    { y: 240, color: '#FF8C00', label: 'Rule Set 2: URL handling', rules: ['IF /old-api/* → Rewrite /api/v2/*', 'IF HTTP → Redirect to HTTPS'] },
+                    { y: 330, color: '#107C10', label: 'Rule Set 3: Route/cache override', rules: ['Select origin group or forwarding protocol', 'Honor or override cache configuration'] },
                 ].map((rs, i) => `<g data-step="${i + 3}" class="step-highlight">
                     <rect x="200" y="${rs.y}" width="370" height="${rs.rules.length * 28 + 28}" rx="6" fill="#fff" stroke="${rs.color}" stroke-width="1.5"/>
                     <text x="215" y="${rs.y + 18}" fill="${rs.color}" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">${rs.label}</text>
@@ -896,7 +929,7 @@ const DiagramEngine = {
                 </g>
                 <g data-step="7" class="step-highlight">
                     ${I.vm(700, 200, 'Origin')}
-                    <text x="700" y="250" text-anchor="middle" fill="#888" font-size="9" font-family="Segoe UI,sans-serif">Modified request</text>
+                    <text x="700" y="270" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI,sans-serif">Modified request</text>
                 </g>
             </svg>`;
         },
@@ -927,9 +960,10 @@ const DiagramEngine = {
                     ${I.cloud(590, 155, '')}  ${I.cloud(670, 155, '')}
                 </g>
                 <g data-step="4" class="step-highlight flow-arrow">
-                    <line x1="190" y1="130" x2="340" y2="110" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="6" marker-end="url(#ah-0078D4)" class="anim-line"/>
-                    <line x1="440" y1="110" x2="580" y2="130" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="6" marker-end="url(#ah-0078D4)" class="anim-line"/>
-                    <text x="390" y="78" text-anchor="middle" fill="#0078D4" font-size="9" font-weight="500" font-family="Segoe UI,sans-serif">Microsoft Backbone (165K+ miles)</text>
+                    <line x1="190" y1="130" x2="340" y2="110" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="6" class="anim-line"/>
+                    <line x1="440" y1="110" x2="580" y2="130" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="6" class="anim-line"/>
+                    <rect x="295" y="178" width="190" height="24" rx="12" fill="#e8f4fd" stroke="#0078D4" stroke-width="1"/>
+                    <text x="390" y="194" text-anchor="middle" fill="#005a9e" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">Microsoft global network</text>
                 </g>
                 <g data-step="5" class="step-highlight">
                     ${I.subnet(50, 225, 300, 80, 'Availability Zones (East US)', '#0078D4')}
@@ -938,11 +972,11 @@ const DiagramEngine = {
                     ${I.cloud(300, 270, 'Zone 3')}
                 </g>
                 <g data-step="6" class="step-highlight">
-                    ${I.subnet(420, 225, 320, 80, 'Region Pairs (Disaster Recovery)', '#107C10')}
+                    ${I.subnet(420, 225, 320, 80, 'Example region pair (service-specific)', '#107C10')}
                     ${I.cloud(490, 270, 'East US')}
                     <text x="570" y="275" text-anchor="middle" fill="#333" font-size="14" font-family="Segoe UI,sans-serif">↔</text>
                     ${I.cloud(640, 270, 'West US')}
-                    <text x="580" y="300" text-anchor="middle" fill="#888" font-size="9" font-family="Segoe UI,sans-serif">GRS auto-replication</text>
+                    <text x="580" y="300" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI,sans-serif">GRS can use the paired region</text>
                 </g>
             </svg>`;
         },
@@ -1000,7 +1034,7 @@ const DiagramEngine = {
                 </g>
                 <g data-step="3" class="step-highlight">
                     ${I.edge(240, 80, 'Edge POP')}
-                    <text x="240" y="128" text-anchor="middle" fill="#D13438" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">MISS ✗</text>
+                    <text x="320" y="90" text-anchor="middle" fill="#D13438" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">MISS ✗</text>
                 </g>
                 <g data-step="4" class="step-highlight flow-arrow">
                     <line x1="282" y1="80" x2="378" y2="80" stroke="#FF8C00" stroke-width="1.5" marker-end="url(#ah-FF8C00)" class="anim-line"/>
@@ -1020,7 +1054,7 @@ const DiagramEngine = {
                 </g>
                 <g data-step="8" class="step-highlight">
                     ${I.edge(240, 230, 'Edge POP')}
-                    <text x="240" y="278" text-anchor="middle" fill="#107C10" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif">HIT ✓</text>
+                    <text x="320" y="240" text-anchor="middle" fill="#107C10" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif">HIT ✓</text>
                 </g>
                 <g data-step="8" class="step-highlight flow-arrow">
                     <path d="M198,240 Q130,250 80,240" stroke="#107C10" stroke-width="2" fill="none" marker-end="url(#ah-107C10)" class="anim-line"/>
@@ -1072,7 +1106,7 @@ const DiagramEngine = {
                 </g>
                 <g data-step="5" class="step-highlight">
                     <rect x="40" y="270" width="700" height="28" rx="4" fill="#0078D406" stroke="#0078D4" stroke-width="1"/>
-                    <text x="390" y="289" text-anchor="middle" fill="#333" font-size="11" font-family="Segoe UI,sans-serif">ExpressRoute: Private circuit | 50 Mbps–100 Gbps | 99.95% SLA | NOT encrypted by default</text>
+                    <text x="390" y="289" text-anchor="middle" fill="#333" font-size="11" font-family="Segoe UI,sans-serif">ExpressRoute: private connectivity | redundant BGP sessions | encryption is a separate design choice</text>
                 </g>
             </svg>`;
         },
@@ -1203,7 +1237,7 @@ const DiagramEngine = {
                 ${I.subnet(340, 60, 230, 140, 'Hub VNet  10.100.0.0/16', '#7A3B93')}
                 <g data-step="3" class="step-highlight">
                     ${I.firewall(455, 130, 'Azure Firewall')}
-                    <text x="455" y="182" text-anchor="middle" fill="#7A3B93" font-size="10" font-family="Segoe UI,sans-serif">10.100.1.4</text>
+                    <text x="455" y="198" text-anchor="middle" fill="#7A3B93" font-size="10" font-family="Segoe UI,sans-serif">10.100.1.4</text>
                 </g>
                 <!-- Internet -->
                 ${I.internet(720, 130, 'Internet')}
@@ -1262,7 +1296,7 @@ const DiagramEngine = {
                 ${I.subnet(270, 220, 280, 180, 'Hub VNet  10.100.0.0/16 (AzureFirewallSubnet)', '#E8443A')}
                 <g data-step="3" class="step-highlight">
                     ${I.firewall(410, 310, 'Azure Firewall')}
-                    <text x="410" y="362" text-anchor="middle" fill="#E8443A" font-size="10" font-family="Segoe UI,sans-serif">10.100.1.4</text>
+                    <text x="410" y="380" text-anchor="middle" fill="#E8443A" font-size="10" font-family="Segoe UI,sans-serif">10.100.1.4</text>
                 </g>
                 <!-- Internet -->
                 ${I.internet(720, 310, 'Internet')}
@@ -1367,7 +1401,10 @@ const DiagramEngine = {
                     <text x="80" y="378" fill="#333" font-size="11" font-family="Consolas,monospace">Matching rule:  Custom_Block_Internet</text>
                     <text x="80" y="398" fill="#333" font-size="11" font-family="Consolas,monospace">Rule priority:  200  (Outbound, TCP, *→Internet:443, Deny)</text>
                     <text x="80" y="418" fill="#333" font-size="11" font-family="Consolas,monospace">Applied on:     nsg-web  (subnet snet-web)</text>
-                    <text x="80" y="445" fill="#d13438" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">→ Admin now knows the exact NSG rule to remove or override. No guessing.</text>
+                </g>
+                <g data-step="5" class="step-highlight">
+                    <line x1="80" y1="428" x2="740" y2="428" stroke="#d13438" stroke-width="1" opacity="0.35"/>
+                    <text x="80" y="449" fill="#d13438" font-size="11" font-weight="600" font-family="Segoe UI,sans-serif">Next action: review the matched rule, then test again after an approved change.</text>
                 </g>
             </svg>`;
         },
@@ -1444,7 +1481,7 @@ const DiagramEngine = {
                     <path d="M260,340 Q360,360 420,320" stroke="#E8443A" stroke-width="2" fill="none" marker-end="url(#ah-E8443A)" class="anim-line"/>
                     <line x1="490" y1="335" x2="690" y2="540" stroke="#E8443A" stroke-width="2" marker-end="url(#ah-E8443A)" class="anim-line"/>
                     <text x="330" y="365" fill="#E8443A" font-size="9" font-weight="600" font-family="Segoe UI,sans-serif">UDR 0.0.0.0/0 → FW</text>
-                    <text x="580" y="470" fill="#E8443A" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">FW SNAT → Internet</text>
+                    <text x="610" y="510" fill="#E8443A" font-size="10" font-weight="600" font-family="Segoe UI,sans-serif">FW SNAT → Internet</text>
                 </g>
                 <!-- VNet peering -->
                 <g data-step="3" class="step-highlight">

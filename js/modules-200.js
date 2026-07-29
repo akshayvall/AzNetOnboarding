@@ -1975,7 +1975,7 @@ az afd endpoint show \\
             description: 'Watch how a Site-to-Site VPN creates an encrypted tunnel between your on-premises network and Azure over the public internet.',
             steps: [
                 'On-premises datacenter with servers and a VPN device (firewall/router) with a public IP.',
-                'IPsec/IKE encrypted tunnel established over the public internet. All traffic is AES-256 encrypted.',
+                'IPsec/IKE establishes an encrypted tunnel over the public internet. The negotiated algorithms must satisfy your current gateway SKU and security policy requirements.',
                 'Azure VNet with a VPN Gateway in the GatewaySubnet receives the encrypted traffic.',
                 'Result: On-premises servers (192.168.x.x) can communicate with Azure VMs (10.0.x.x) as if on the same network.'
             ]
@@ -1991,7 +1991,7 @@ az afd endpoint show \\
                 'A connectivity provider (Equinix, AT&T, Megaport) establishes BGP peering at a meet-me location.',
                 'Microsoft Edge Enterprise (MSEE) routers at the peering location — always a redundant pair for HA.',
                 'From MSEE, traffic enters Azure\'s backbone — access VNets, Storage, SQL, and even M365.',
-                'Key facts: 50 Mbps to 100 Gbps bandwidth, 99.95% SLA, does NOT encrypt by default.'
+                'Key facts: private connectivity with redundant BGP sessions; bandwidth, gateway capability, SLA conditions, and encryption options depend on the selected design and current service documentation.'
             ],
             legend: [
                 { color: '#ff8c00', label: 'On-Premises' },

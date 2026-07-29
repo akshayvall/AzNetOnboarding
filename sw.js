@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'azure-networking-academy-';
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-07-ui-redesign`;
 const APP_BASE = new URL('./', self.location.href);
 const INDEX_URL = new URL('index.html', APP_BASE).href;
 const APP_SHELL = [
@@ -7,19 +7,21 @@ const APP_SHELL = [
     'index.html',
     'manifest.webmanifest',
     'icons/app-icon.svg',
-    'css/styles.css',
-    'js/progress.js',
-    'js/modules-100.js',
-    'js/modules-200.js',
-    'js/modules-300.js',
-    'js/modules-extras.js',
-    'js/mastery-content.js',
-    'js/quiz-engine.js',
-    'js/interactive.js',
-    'js/lab-engine.js',
-    'js/diagrams.js',
-    'js/mastery-engine.js',
-    'js/app.js'
+    'css/styles.css?v=2026-07-ui-redesign',
+    'js/progress.js?v=2026-07-ui-redesign',
+    'js/ui-state.js?v=2026-07-ui-redesign',
+    'js/today-engine.js?v=2026-07-ui-redesign',
+    'js/modules-100.js?v=2026-07-ui-redesign',
+    'js/modules-200.js?v=2026-07-ui-redesign',
+    'js/modules-300.js?v=2026-07-ui-redesign',
+    'js/modules-extras.js?v=2026-07-ui-redesign',
+    'js/mastery-content.js?v=2026-07-ui-redesign',
+    'js/quiz-engine.js?v=2026-07-ui-redesign',
+    'js/interactive.js?v=2026-07-ui-redesign',
+    'js/lab-engine.js?v=2026-07-ui-redesign',
+    'js/diagrams.js?v=2026-07-ui-redesign',
+    'js/mastery-engine.js?v=2026-07-ui-redesign',
+    'js/app.js?v=2026-07-ui-redesign'
 ].map(path => new URL(path, APP_BASE).href);
 
 self.addEventListener('install', event => {

@@ -113,11 +113,11 @@ Action: URL Rewrite → destination /
 # /api/v2/users → /v2/users at origin</div>
 
     <h3>Pattern 3: Geo-Based Routing</h3>
-    <div class="code-block"># Block traffic from specific countries
-Condition: Remote Address → Geo Match → [CN, RU]
-Action: Route Configuration Override → return 403
+    <div class="code-block"># Block traffic from selected countries in the WAF policy
+WAF custom rule: Remote Address → Geo Match → selected country codes
+WAF action: Block
 
-# Redirect EU users to EU origin
+# Route selected users with a Rule Set
 Condition: Remote Address → Geo Match → [DE, FR, NL, GB]
 Action: Route Configuration Override → origin-group: eu-origins</div>
 
@@ -264,21 +264,21 @@ Action: Modify Response Header → Overwrite
             type: 'frontdoor-rules-engine',
             title: 'Front Door Rules Engine Pipeline',
             icon: '🔧',
-            description: 'See how Front Door\'s Rules Engine processes requests through multiple rule sets — modifying headers, enforcing security, rewriting URLs, and controlling caching.',
+            description: 'Front Door evaluates WAF before route settings and associated Rule Sets. Rule Set conditions can then modify headers, rewrite or redirect URLs, and override origin or caching configuration.',
             steps: [
                 'An incoming HTTP request arrives at Front Door: GET /api/v2/users.',
-                'Request enters the Rules Engine pipeline — rule sets are evaluated in order.',
-                'Rule Set 1: Request Modifications — add custom headers, route mobile users to different pools.',
-                'Rule Set 2: Security Rules — geo-block restricted countries, enforce rate limits.',
-                'Rule Set 3: URL Rewrites — redirect old API paths to new versioned endpoints.',
-                'Rule Set 4: Cache Overrides — set custom TTLs for static assets like .js and .css.',
+                'At the edge, WAF is evaluated first; route settings and associated Rule Sets follow.',
+                'WAF managed and custom rules can block malicious requests or enforce rate limits.',
+                'Rule Set header actions add, overwrite, or delete allowed request and response headers.',
+                'Rule Set URL actions rewrite origin-bound paths or redirect clients to another URL.',
+                'Route configuration override can select an origin group, forwarding protocol, or cache configuration.',
                 'Modified request forwarded to the origin. All rule transformations applied.'
             ],
             legend: [
-                { color: '#0078d4', label: 'Request Modifications' },
-                { color: '#d13438', label: 'Security Rules' },
-                { color: '#ff8c00', label: 'URL Rewrites' },
-                { color: '#107c10', label: 'Cache Overrides' }
+                { color: '#d13438', label: 'WAF first' },
+                { color: '#0078d4', label: 'Header actions' },
+                { color: '#ff8c00', label: 'URL actions' },
+                { color: '#107c10', label: 'Route/cache override' }
             ]
         }
     ],
@@ -932,13 +932,13 @@ az network front-door waf-policy rule create \\
             type: 'waf-inspection',
             title: 'WAF Request Inspection — Blocking Attacks',
             icon: '🛡️',
-            description: 'Watch how the Web Application Firewall inspects every incoming request against OWASP rules and custom rules, blocking attacks while allowing legitimate traffic.',
+            description: 'Watch how the Web Application Firewall evaluates requests against managed rule sets and custom rules, blocking application-layer attacks and over-threshold requests while allowing legitimate traffic.',
             steps: [
-                'Four types of requests arrive: normal GET, SQL injection, XSS attack, and DDoS flood.',
+                'Four types of requests arrive: normal GET, SQL injection, XSS attack, and an API burst over a configured threshold.',
                 'All requests pass through the WAF inspection pipeline.',
-                'WAF evaluates each request against rule sets: SQL injection detection, XSS patterns, rate limiting, bot protection, geo-filtering, and custom rules.',
+                'WAF evaluates managed rule sets and custom rules for injection, XSS, rate limits, bot signals, geo conditions, and other application-layer patterns.',
                 'Legitimate GET /products request passes all checks — forwarded to the web application.',
-                'SQL injection, XSS, and DDoS requests are BLOCKED with 403 Forbidden. Logged to Azure Monitor/Sentinel.',
+                'Malicious and over-threshold requests are blocked or logged according to policy and recorded for investigation. Volumetric network-layer DDoS protection is a separate control.',
                 'WAF modes: Detection (log only, don\'t block) or Prevention (block and log). Always start in Detection!'
             ],
             legend: [

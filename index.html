@@ -8,15 +8,16 @@
     <meta name="theme-color" content="#0078d4">
     <title>Azure Networking Academy — L100 to L300</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=2026-07-ui-redesign">
     <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
 </head>
 <body>
     <a href="#content" class="skip-link">Skip to main content</a>
     <button id="mobileNavToggle" class="mobile-nav-toggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button>
+    <button id="navBackdrop" class="nav-backdrop" type="button" data-app-action="close-mobile-nav" aria-label="Close navigation" hidden></button>
     <div id="app">
         <!-- Sidebar Navigation -->
-        <nav id="sidebar">
+        <nav id="sidebar" aria-hidden="true" inert>
             <div class="sidebar-header">
                 <div class="logo">
                     <span class="logo-icon">🌐</span>
@@ -58,11 +59,10 @@
         <main id="content">
             <!-- Dashboard (shown by default) -->
             <div id="dashboard" class="view active">
-                <div class="dashboard-hero">
-                    <h1>Welcome to Azure Networking Academy</h1>
-                    <p>Master Azure Networking from fundamentals to advanced — from core concepts to production architecture.</p>
-                    <p class="last-updated" style="font-size:0.85rem; color:#8a8a8a; margin-top:0.5rem;">Content verified: July 26, 2026</p>
-                </div>
+                <header class="academy-identity networking-identity">
+                    <div><p class="identity-kicker">Edge Operations Fieldbook</p><h1>Azure Networking Academy</h1></div>
+                    <ol class="identity-rail packet-path" aria-label="Packet path"><li>Resolve</li><li>Edge</li><li>Route</li><li>Inspect</li><li>Origin</li><li>Observe</li></ol>
+                </header>
 
                 <section id="masteryDashboard" class="mastery-dashboard" aria-label="Learning route and mastery progress"></section>
 
@@ -107,25 +107,6 @@
                     </div>
                 </div>
 
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <span class="stat-number" id="statModules">0</span>
-                        <span class="stat-label">Modules Completed</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-number" id="statQuizzes">0</span>
-                        <span class="stat-label">Quizzes Passed</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-number" id="statLabs">0</span>
-                        <span class="stat-label">Labs Completed</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-number" id="statStreak">0</span>
-                        <span class="stat-label">Day Streak</span>
-                    </div>
-                </div>
-
                 <!-- Progress Tracker -->
                 <div id="progressTracker" class="progress-tracker-section">
                     <h2>📋 Module Progress Tracker</h2>
@@ -149,6 +130,22 @@
 
                 <section id="masteryPanel" class="mastery-panel" aria-label="Module outcome and mastery evidence" hidden></section>
 
+                <div id="moduleModeBar" class="module-mode-bar" hidden>
+                    <div class="module-mode-switch" role="group" aria-label="Module navigation mode">
+                        <button type="button" data-app-action="set-module-mode" data-module-mode="guided" aria-pressed="true">Guided</button>
+                        <button type="button" data-app-action="set-module-mode" data-module-mode="browse" aria-pressed="false">Browse</button>
+                    </div>
+                    <nav class="guided-stepper" aria-label="Guided module steps">
+                        <button type="button" data-app-action="switch-tab" data-tab="learn"><span>1</span>Understand</button>
+                        <button type="button" data-app-action="switch-tab" data-tab="diagrams"><span>2</span>Visualize</button>
+                        <button type="button" data-app-action="switch-tab" data-tab="interactive"><span>3</span>Practice</button>
+                        <button type="button" data-app-action="switch-tab" data-tab="quiz"><span>4</span>Check</button>
+                        <button type="button" data-app-action="switch-tab" data-tab="lab"><span>5</span>Build</button>
+                        <button type="button" data-app-action="open-evidence" data-evidence-target="transfer"><span>6</span>Transfer</button>
+                        <button type="button" data-app-action="open-evidence" data-evidence-target="review"><span>7</span>Review</button>
+                    </nav>
+                </div>
+
                 <div class="module-tabs">
                     <button class="tab active" data-tab="learn" data-app-action="switch-tab">📖 Learn</button>
                     <button class="tab" data-tab="diagrams" data-app-action="switch-tab">📊 Diagrams</button>
@@ -157,12 +154,18 @@
                     <button class="tab" data-tab="lab" data-app-action="switch-tab">🧪 Lab</button>
                 </div>
 
-                <div class="module-content">
-                    <div id="tab-learn" class="tab-content active"></div>
-                    <div id="tab-diagrams" class="tab-content"></div>
-                    <div id="tab-interactive" class="tab-content"></div>
-                    <div id="tab-quiz" class="tab-content"></div>
-                    <div id="tab-lab" class="tab-content"></div>
+                <div class="module-workspace">
+                    <details id="sectionOutline" class="section-outline" hidden>
+                        <summary>In this lesson</summary>
+                        <ol id="sectionOutlineList"></ol>
+                    </details>
+                    <div class="module-content">
+                        <div id="tab-learn" class="tab-content active"></div>
+                        <div id="tab-diagrams" class="tab-content"></div>
+                        <div id="tab-interactive" class="tab-content"></div>
+                        <div id="tab-quiz" class="tab-content"></div>
+                        <div id="tab-lab" class="tab-content"></div>
+                    </div>
                 </div>
 
                 <div class="module-navigation">
@@ -173,6 +176,14 @@
             </div>
         </main>
     </div>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+        <button type="button" class="bottom-nav-item active" data-app-action="navigate-destination" data-destination="today"><span aria-hidden="true">⌂</span><span>Today</span></button>
+        <button type="button" class="bottom-nav-item" data-app-action="navigate-destination" data-destination="learn"><span aria-hidden="true">≡</span><span>Learn</span></button>
+        <button type="button" class="bottom-nav-item" data-app-action="navigate-destination" data-destination="practice"><span aria-hidden="true">✓</span><span>Practice</span></button>
+        <button type="button" class="bottom-nav-item" data-app-action="navigate-destination" data-destination="build"><span aria-hidden="true">◇</span><span>Build</span></button>
+        <button type="button" class="bottom-nav-item" data-app-action="navigate-destination" data-destination="more"><span aria-hidden="true">•••</span><span>More</span></button>
+    </nav>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -202,17 +213,19 @@
     </dialog>
 
     <!-- Scripts -->
-    <script src="js/progress.js"></script>
-    <script src="js/modules-100.js"></script>
-    <script src="js/modules-200.js"></script>
-    <script src="js/modules-300.js"></script>
-    <script src="js/modules-extras.js"></script>
-    <script src="js/mastery-content.js"></script>
-    <script src="js/quiz-engine.js"></script>
-    <script src="js/interactive.js"></script>
-    <script src="js/lab-engine.js"></script>
-    <script src="js/diagrams.js"></script>
-    <script src="js/mastery-engine.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/progress.js?v=2026-07-ui-redesign"></script>
+    <script src="js/ui-state.js?v=2026-07-ui-redesign"></script>
+    <script src="js/today-engine.js?v=2026-07-ui-redesign"></script>
+    <script src="js/modules-100.js?v=2026-07-ui-redesign"></script>
+    <script src="js/modules-200.js?v=2026-07-ui-redesign"></script>
+    <script src="js/modules-300.js?v=2026-07-ui-redesign"></script>
+    <script src="js/modules-extras.js?v=2026-07-ui-redesign"></script>
+    <script src="js/mastery-content.js?v=2026-07-ui-redesign"></script>
+    <script src="js/quiz-engine.js?v=2026-07-ui-redesign"></script>
+    <script src="js/interactive.js?v=2026-07-ui-redesign"></script>
+    <script src="js/lab-engine.js?v=2026-07-ui-redesign"></script>
+    <script src="js/diagrams.js?v=2026-07-ui-redesign"></script>
+    <script src="js/mastery-engine.js?v=2026-07-ui-redesign"></script>
+    <script src="js/app.js?v=2026-07-ui-redesign"></script>
 </body>
 </html>

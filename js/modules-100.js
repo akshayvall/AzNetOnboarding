@@ -555,7 +555,7 @@ dig portal.azure.com CNAME</div>`,
     <h2>Azure Regions & Availability Zones</h2>
     
     <h3>Regions</h3>
-    <p>Azure has 60+ regions worldwide. A region is a set of datacenters connected by a low-latency network. Key regions:</p>
+    <p>Azure operates regions worldwide. A region is a geographic perimeter that contains datacenters, but service, SKU, capacity, zone, and compliance support vary. Use the current Azure region and service-availability documentation before choosing a deployment location. Examples:</p>
     <table class="content-table">
         <tr><th>Geography</th><th>Regions</th><th>Use Case</th></tr>
         <tr><td>US</td><td>East US, West US 2, Central US, etc.</td><td>Most commonly used for US customers</td></tr>
@@ -564,15 +564,15 @@ dig portal.azure.com CNAME</div>`,
     </table>
 
     <h3>Region Pairs</h3>
-    <p>Each Azure region is paired with another region 300+ miles away. Azure uses pairs for:</p>
+    <p>Some Azure regions are paired and many newer regions are nonpaired. A small number of services use region pairs for specific geo-replication or recovery behavior. Pair membership does not automatically deploy resources, replicate workload data, or provide failover. Azure uses pairs for capabilities such as:</p>
     <ul>
         <li>Planned maintenance (never both at once)</li>
-        <li>Disaster recovery replication</li>
+        <li>Service-specific geo-replication, such as GRS-enabled Storage</li>
         <li>Example: East US ↔ West US, North Europe ↔ West Europe</li>
     </ul>
 
     <h3>Availability Zones</h3>
-    <p>Within a region, Availability Zones (AZs) are physically separate datacenters with independent power, cooling, and networking. Most regions have 3 zones.</p>
+    <p>In supported regions, Availability Zones are logical groupings of one or more physically separate datacenters with independent power, cooling, and networking. Region, service, tier, and configuration support vary, and logical zone numbers can map differently across subscriptions.</p>
     
     <div class="diagram-container">
         <svg viewBox="0 0 550 220" xmlns="http://www.w3.org/2000/svg" style="max-width:550px;width:100%;font-family:'Segoe UI',sans-serif">
@@ -603,7 +603,7 @@ dig portal.azure.com CNAME</div>`,
           <circle cx="107" cy="182" r="3" fill="#7A3B93"/>
           <circle cx="274" cy="182" r="3" fill="#7A3B93"/>
           <circle cx="441" cy="182" r="3" fill="#7A3B93"/>
-          <text x="275" y="198" text-anchor="middle" font-size="11" fill="#7A3B93" font-style="italic">&lt;2ms latency interconnect</text>
+          <text x="275" y="198" text-anchor="middle" font-size="11" fill="#7A3B93" font-style="italic">Azure targets low-latency inter-zone networking (~2ms RTT)</text>
         </svg>
     </div>
 
@@ -617,7 +617,7 @@ dig portal.azure.com CNAME</div>`,
 
     <div class="concept-box">
         <h4>🔑 Key Concept: Azure Front Door is Global</h4>
-        <p>Azure Front Door is a <strong>non-regional, globally distributed</strong> service. It operates at Microsoft's edge network across 100+ locations worldwide. Unlike a VNet or Load Balancer, you don't pick a region for Front Door — it's everywhere.</p>
+        <p>Azure Front Door is a <strong>non-regional, globally distributed</strong> service. It operates on Microsoft's global edge network. Unlike a VNet or regional Load Balancer, you don't select an Azure region for the Front Door profile.</p>
     </div>
 </div>
 
@@ -654,14 +654,14 @@ dig portal.azure.com CNAME</div>`,
             type: 'azure-regions',
             title: 'Azure Global Infrastructure — Regions & Availability',
             icon: '🌍',
-            description: 'Explore Azure\'s 60+ regions worldwide, availability zones within regions, and region pairs for disaster recovery.',
+            description: 'Explore example Azure regions, availability zones in supported regions, and paired versus nonpaired region architectures. These building blocks enable resilience choices but do not make a workload resilient automatically.',
             steps: [
-                'US Regions: East US (Virginia) is the most popular. Multiple regions across the US for latency and compliance.',
-                'Europe Regions: West Europe (Netherlands) and North Europe (Ireland) are key EU regions.',
-                'Asia Regions: Southeast Asia (Singapore), Japan, and India provide APAC coverage.',
-                'Microsoft\'s global fiber backbone connects all regions — 165,000+ miles of undersea and land cables.',
-                'Availability Zones: 3+ physically separate datacenters within a region. Independent power, cooling, networking.',
-                'Region Pairs: Each region is paired for disaster recovery (e.g., East US ↔ West US). GRS storage auto-replicates.'
+                'East US is one example region. Region selection should follow latency, data residency, service support, capacity, and recovery requirements.',
+                'West Europe is a separate region. Deploying in another region requires explicit workload and data architecture.',
+                'Southeast Asia is another example. Service and availability-zone support must be checked per region.',
+                'Supported interregion services can carry traffic on Microsoft\'s global network; measure latency for the actual region pair and protocol.',
+                'Availability zones isolate datacenter failures in supported regions. Zonal and zone-redundant services divide failover responsibility differently.',
+                'Some regions are paired and others are nonpaired. Service-specific replication such as GRS can use a pair, but workload resilience and failover are not automatic.'
             ],
             legend: [
                 { color: '#0078d4', label: 'Americas' },
@@ -689,10 +689,10 @@ dig portal.azure.com CNAME</div>`,
             explanation: 'The resource group region only stores metadata about the resource group itself. Resources inside a resource group can be deployed to any Azure region.'
         },
         {
-            question: 'How many Availability Zones do most Azure regions have?',
-            options: ['1', '2', '3', '5'],
+            question: 'Which statement about Azure Availability Zones is correct?',
+            options: ['Every region and service supports exactly three zones', 'Zone numbers identify the same physical datacenter in every subscription', 'Support varies by region, service, tier, and configuration', 'A single zonal resource automatically survives a zone outage'],
             correct: 2,
-            explanation: 'Most Azure regions that support Availability Zones have 3 zones (Zone 1, Zone 2, Zone 3). Each zone is a physically separate datacenter with independent infrastructure.'
+            explanation: 'Availability-zone support is service-specific and region-specific. Some resources are zonal, others can be zone-redundant, and logical zone mappings can differ across subscriptions.'
         },
         {
             question: 'Azure Front Door is classified as what type of service?',
@@ -740,7 +740,7 @@ dig portal.azure.com CNAME</div>`,
             cards: [
                 { front: 'What is Azure AD Tenant?', back: 'Your organization\'s identity boundary in Azure. Contains users, groups, and service principals. One tenant can have many subscriptions.' },
                 { front: 'What is RBAC?', back: 'Role-Based Access Control. Provides fine-grained access management for Azure resources. Roles like Owner, Contributor, Reader can be assigned at any scope.' },
-                { front: 'What is a Region Pair?', back: 'Two Azure regions 300+ miles apart in the same geography. Used for disaster recovery. Example: East US ↔ West US.' },
+                { front: 'What is a Region Pair?', back: 'A service-specific relationship between two regions. Some services use pairs for geo-replication, but many newer regions are nonpaired and pair membership does not create automatic workload DR.' },
                 { front: 'What is ARM?', back: 'Azure Resource Manager — the deployment and management layer. All management actions go through ARM, which handles authentication, authorization, and routing to resource providers.' },
                 { front: 'What is a Resource Provider?', back: 'A service that supplies Azure resources. E.g., Microsoft.Network provides VNets and NSGs. Must be registered in your subscription to use its resources.' }
             ]
