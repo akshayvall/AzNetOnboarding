@@ -36,6 +36,7 @@ test('mobile shell provides an accessible zero-width drawer and five destination
     const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 
     assert.match(html, /id="navBackdrop"/);
+    assert.match(html, /id="mobileNavClose"/);
     assert.match(html, /class="bottom-nav"/);
     ['today', 'learn', 'practice', 'build', 'more'].forEach(destination => {
         assert.match(html, new RegExp(`data-destination="${destination}"`));
@@ -44,7 +45,11 @@ test('mobile shell provides an accessible zero-width drawer and five destination
     assert.doesNotMatch(css, /#sidebar\s*\{[^}]*left:\s*-\d+px/s);
     assert.match(app, /closeMobileNav/);
     assert.match(app, /navBackdrop/);
+    assert.match(app, /'nav-module'/);
+    assert.match(app, /class="nav-time"/);
     assert.match(app, /mobileNavToggle[^\n]*focus|toggle\.focus/s);
+    assert.match(css, /#sidebar \.module-link\s*\{[^}]*min-height:\s*48px/s);
+    assert.match(css, /#sidebar \.nav-time\s*\{\s*display:\s*none/s);
 });
 
 test('workflow prototype exposes guided mode, section resume, compact evidence, and an inline core visual', () => {
@@ -67,7 +72,7 @@ test('workflow prototype exposes guided mode, section resume, compact evidence, 
 });
 
 test('runtime assets and offline cache share the redesign release', () => {
-    const release = '2026-07-ui-redesign-2';
+    const release = '2026-07-ui-redesign-3';
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const serviceWorker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
     const assets = Array.from(html.matchAll(/(?:src|href)="((?:css|js)\/[^"?]+)(?:\?v=[^"]+)?"/g), match => match[1]);

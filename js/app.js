@@ -135,14 +135,17 @@ const app = {
                 const metadata = MasteryEngine.getMetadata(mod.id);
                 const mastery = metadata ? MasteryEngine.getStatus(mod) : null;
                 const classes = [
+                    'nav-module',
                     mastery && MasteryEngine.STATE_RANK[mastery.state] >= MasteryEngine.STATE_RANK.practiced
                         ? 'completed' : status.completed ? 'completed' : '',
                 ].filter(Boolean).join(' ');
-                const timeLabel = mod.estimatedTime ? `<span style="font-size:10px;color:#888;margin-left:auto;white-space:nowrap">⏱ ${mod.estimatedTime}</span>` : '';
+                const timeLabel = mod.estimatedTime ? `<span class="nav-time">⏱ ${this.escapeHtml(mod.estimatedTime)}</span>` : '';
                 
                 return `<li class="${classes}" data-module="${this.escapeAttr(mod.id)}">
                     <button type="button" class="module-link" data-app-action="load-module" data-module-id="${this.escapeAttr(mod.id)}">
-                        <span style="flex:1">${mod.icon} ${mod.title}</span>${timeLabel}
+                        <span class="module-icon" aria-hidden="true">${mod.icon}</span>
+                        <span class="module-title">${this.escapeHtml(mod.title)}</span>
+                        ${timeLabel}
                     </button>
                 </li>`;
             }).join('');
