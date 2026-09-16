@@ -1,27 +1,30 @@
 const CACHE_PREFIX = 'azure-networking-academy-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-07-ui-redesign-3`;
-const APP_BASE = new URL('./', self.location.href);
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-learning-1`;
+const APP_BASE = new URL(self.registration.scope);
 const INDEX_URL = new URL('index.html', APP_BASE).href;
 const APP_SHELL = [
     './',
     'index.html',
     'manifest.webmanifest',
     'icons/app-icon.svg',
-    'css/styles.css?v=2026-07-ui-redesign-3',
-    'js/progress.js?v=2026-07-ui-redesign-3',
-    'js/ui-state.js?v=2026-07-ui-redesign-3',
-    'js/today-engine.js?v=2026-07-ui-redesign-3',
-    'js/modules-100.js?v=2026-07-ui-redesign-3',
-    'js/modules-200.js?v=2026-07-ui-redesign-3',
-    'js/modules-300.js?v=2026-07-ui-redesign-3',
-    'js/modules-extras.js?v=2026-07-ui-redesign-3',
-    'js/mastery-content.js?v=2026-07-ui-redesign-3',
-    'js/quiz-engine.js?v=2026-07-ui-redesign-3',
-    'js/interactive.js?v=2026-07-ui-redesign-3',
-    'js/lab-engine.js?v=2026-07-ui-redesign-3',
-    'js/diagrams.js?v=2026-07-ui-redesign-3',
-    'js/mastery-engine.js?v=2026-07-ui-redesign-3',
-    'js/app.js?v=2026-07-ui-redesign-3'
+    'css/styles.css?v=2026-09-learning-1',
+    'css/learning.css?v=2026-09-learning-1',
+    'js/progress.js?v=2026-09-learning-1',
+    'js/ui-state.js?v=2026-09-learning-1',
+    'js/today-engine.js?v=2026-09-learning-1',
+    'js/modules-100.js?v=2026-09-learning-1',
+    'js/modules-200.js?v=2026-09-learning-1',
+    'js/modules-300.js?v=2026-09-learning-1',
+    'js/modules-extras.js?v=2026-09-learning-1',
+    'js/mastery-content.js?v=2026-09-learning-1',
+    'js/learning-content.js?v=2026-09-learning-1',
+    'js/quiz-engine.js?v=2026-09-learning-1',
+    'js/interactive.js?v=2026-09-learning-1',
+    'js/lab-engine.js?v=2026-09-learning-1',
+    'js/diagrams.js?v=2026-09-learning-1',
+    'js/mastery-engine.js?v=2026-09-learning-1',
+    'js/learning-engine.js?v=2026-09-learning-1',
+    'js/app.js?v=2026-09-learning-1'
 ].map(path => new URL(path, APP_BASE).href);
 
 self.addEventListener('install', event => {
@@ -47,25 +50,24 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const request = event.request;
     const requestUrl = new URL(request.url);
-    if (request.method !== 'GET' || requestUrl.origin !== self.location.origin) return;
+    if (request.method !== 'GET' || requestUrl.origin !== APP_BASE.origin || !requestUrl.pathname.startsWith(APP_BASE.pathname)) return;
 
     if (request.mode === 'navigate') {
         event.respondWith(
-            fetch(request).catch(() => caches.match(INDEX_URL))
+            caches.open(CACHE_NAME)
+                .then(cache => cache.match(INDEX_URL))
+                .then(cachedIndex => cachedIndex || fetch(request))
         );
         return;
     }
 
     event.respondWith(
-        caches.match(request).then(cachedResponse => {
+        caches.open(CACHE_NAME).then(async cache => {
+            const cachedResponse = await cache.match(request);
             if (cachedResponse) return cachedResponse;
-            return fetch(request).then(networkResponse => {
-                if (networkResponse.ok) {
-                    const responseCopy = networkResponse.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(request, responseCopy));
-                }
-                return networkResponse;
-            });
+            const networkResponse = await fetch(request);
+            if (networkResponse.ok) event.waitUntil(cache.put(request, networkResponse.clone()));
+            return networkResponse;
         })
     );
 });

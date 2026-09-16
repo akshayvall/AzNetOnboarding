@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### September learning release
+- Added distinct learning destinations, AFD/broad-networking routes, session choices, all-module guided coaching, predictions, changed tasks, illustrative evidence, and subscription-free case practice.
+- Fixed recoverable save/import failures, corrupt-storage protection, drafts, quiz focus and critical policy, rubric validation, and failed/duplicate review handling. Local practice and reviewer labels do not claim external execution or certification.
+- Corrected the spoke-transit architecture question and added module-specific cost, data, verification, failure, and cleanup guidance.
+- Added self-contained browser deployment gates and release `2026-09-learning-1` with scoped offline caches and coherent upgrades. All 188 Node tests and 19 browser tests passed again on September 16; publication was approved that day. Azure labs remain unexecuted.
+
 ### Added
 - Versioned mastery progress with Learned, Practiced, Demonstrated, and Durable states, preserving prior completion as legacy evidence pending revalidation.
 - Ten-question diagnostic and a dashboard review queue with 1, 3, 7, 21, and 60-day spaced review.

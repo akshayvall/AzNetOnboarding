@@ -8,7 +8,8 @@
     <meta name="theme-color" content="#0078d4">
     <title>Azure Networking Academy — L100 to L300</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="css/styles.css?v=2026-07-ui-redesign-3">
+    <link rel="stylesheet" href="css/styles.css?v=2026-09-learning-1">
+    <link rel="stylesheet" href="css/learning.css?v=2026-09-learning-1">
     <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -32,6 +33,14 @@
                     <div class="progress-bar" id="overallProgress"></div>
                 </div>
                 <span class="progress-text" id="overallProgressText">0% Complete</span>
+            </div>
+
+            <div class="workspace-nav" aria-label="Learning destinations">
+                <a href="#today" data-destination="today">Today</a>
+                <a href="#learn" data-destination="learn">Learn</a>
+                <a href="#practice" data-destination="practice">Practice</a>
+                <a href="#build" data-destination="build">Build</a>
+                <a href="#more" data-destination="more">Progress and settings</a>
             </div>
 
             <div class="nav-section">
@@ -58,6 +67,8 @@
 
         <!-- Main Content Area -->
         <main id="content">
+            <section id="storageNotice" class="storage-notice" role="alert" hidden></section>
+            <div id="destinationView" class="view learning-surface"></div>
             <!-- Dashboard (shown by default) -->
             <div id="dashboard" class="view active">
                 <header class="academy-identity networking-identity">
@@ -66,6 +77,7 @@
                 </header>
 
                 <section id="masteryDashboard" class="mastery-dashboard" aria-label="Learning route and mastery progress"></section>
+                <details class="study-preferences"><summary>Study preferences</summary><section id="learningPreferences"></section></details>
 
                 <div class="level-cards">
                     <div class="level-card level-100-card">
@@ -214,19 +226,21 @@
     </dialog>
 
     <!-- Scripts -->
-    <script src="js/progress.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/ui-state.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/today-engine.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/modules-100.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/modules-200.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/modules-300.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/modules-extras.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/mastery-content.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/quiz-engine.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/interactive.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/lab-engine.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/diagrams.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/mastery-engine.js?v=2026-07-ui-redesign-3"></script>
-    <script src="js/app.js?v=2026-07-ui-redesign-3"></script>
+    <script src="js/progress.js?v=2026-09-learning-1"></script>
+    <script src="js/ui-state.js?v=2026-09-learning-1"></script>
+    <script src="js/today-engine.js?v=2026-09-learning-1"></script>
+    <script src="js/modules-100.js?v=2026-09-learning-1"></script>
+    <script src="js/modules-200.js?v=2026-09-learning-1"></script>
+    <script src="js/modules-300.js?v=2026-09-learning-1"></script>
+    <script src="js/modules-extras.js?v=2026-09-learning-1"></script>
+    <script src="js/mastery-content.js?v=2026-09-learning-1"></script>
+    <script src="js/learning-content.js?v=2026-09-learning-1"></script>
+    <script src="js/quiz-engine.js?v=2026-09-learning-1"></script>
+    <script src="js/interactive.js?v=2026-09-learning-1"></script>
+    <script src="js/lab-engine.js?v=2026-09-learning-1"></script>
+    <script src="js/diagrams.js?v=2026-09-learning-1"></script>
+    <script src="js/mastery-engine.js?v=2026-09-learning-1"></script>
+    <script src="js/learning-engine.js?v=2026-09-learning-1"></script>
+    <script src="js/app.js?v=2026-09-learning-1"></script>
 </body>
 </html>

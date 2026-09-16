@@ -3,7 +3,7 @@ const UIStateManager = {
     VERSION: 1,
 
     defaultState() {
-        return { version: this.VERSION, lastDestination: 'today', lastModuleId: null, lastSectionByModule: {}, lastTabByModule: {}, lastTouchedAtByModule: {}, activePath: 'networking-levels', savedReferenceIds: [], filterPreferences: {} };
+        return { version: this.VERSION, lastDestination: 'today', lastModuleId: null, lastSectionByModule: {}, lastTabByModule: {}, lastTouchedAtByModule: {}, activePath: 'afd-diagnosis', sessionMinutes: 25, moduleModeByModule: {}, drafts: {}, savedReferenceIds: [], filterPreferences: {} };
     },
     normalize(value, validModuleIds = []) {
         if (!value || typeof value !== 'object' || Array.isArray(value) || value.version !== this.VERSION) return this.defaultState();
@@ -17,7 +17,12 @@ const UIStateManager = {
             lastSectionByModule: mapOfStrings(value.lastSectionByModule),
             lastTabByModule: Object.fromEntries(Object.entries(mapOfStrings(value.lastTabByModule)).filter(([, tab]) => ['learn', 'diagrams', 'interactive', 'quiz', 'lab'].includes(tab))),
             lastTouchedAtByModule: mapOfStrings(value.lastTouchedAtByModule),
-            activePath: typeof value.activePath === 'string' ? value.activePath.slice(0, 80) : 'networking-levels',
+            activePath: typeof value.activePath === 'string' ? value.activePath.slice(0, 80) : 'afd-diagnosis',
+            sessionMinutes: [10, 25, 60].includes(value.sessionMinutes) ? value.sessionMinutes : 25,
+            moduleModeByModule: Object.fromEntries(Object.entries(mapOfStrings(value.moduleModeByModule)).filter(([, mode]) => ['guided', 'browse'].includes(mode))),
+            drafts: Object.fromEntries(Object.entries(value.drafts && typeof value.drafts === 'object' && !Array.isArray(value.drafts) ? value.drafts : {})
+                .filter(([id, draft]) => accepts(id) && draft && typeof draft === 'object' && !Array.isArray(draft))
+                .slice(0, 100).map(([id, draft]) => [id, Object.fromEntries(['artifact', 'reflection'].filter(field => typeof draft[field] === 'string').map(field => [field, draft[field].slice(0, 4000)]))])),
             savedReferenceIds: Array.isArray(value.savedReferenceIds) ? value.savedReferenceIds.filter(item => typeof item === 'string').slice(0, 200) : [],
             filterPreferences: value.filterPreferences && typeof value.filterPreferences === 'object' && !Array.isArray(value.filterPreferences) ? value.filterPreferences : {}
         };
@@ -29,7 +34,7 @@ const UIStateManager = {
     save(state) {
         const normalized = this.normalize(state);
         try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(normalized)); }
-        catch { return this.defaultState(); }
+        catch { return false; }
         return normalized;
     },
     touchModule(moduleId, tab = 'learn', touchedAt = new Date().toISOString()) {
@@ -49,6 +54,22 @@ const UIStateManager = {
     setDestination(destination) {
         const state = this.get();
         state.lastDestination = destination;
+        return this.save(state);
+    },
+    setPreferences(preferences) {
+        const state = this.get();
+        state.activePath = preferences.activePath;
+        state.sessionMinutes = preferences.sessionMinutes;
+        return this.save(state);
+    },
+    saveMode(moduleId, mode) {
+        const state = this.get();
+        state.moduleModeByModule[moduleId] = mode;
+        return this.save(state);
+    },
+    saveDraft(moduleId, draft) {
+        const state = this.get();
+        state.drafts[moduleId] = { ...state.drafts[moduleId], ...draft };
         return this.save(state);
     }
 };

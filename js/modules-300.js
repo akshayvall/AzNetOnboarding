@@ -1292,10 +1292,10 @@ az network vnet subnet update \\
     ],
     quiz: [
         {
-            question: 'In hub-spoke topology, how do spoke VNets communicate with each other by default?',
+            question: 'In a hub-spoke topology explicitly configured for inspected spoke-to-spoke transit, how do the spokes communicate?',
             options: ['Directly — spoke-to-spoke traffic is allowed', 'Through the hub VNet (via Azure Firewall or NVA with UDRs)', 'They cannot communicate at all', 'Through the internet'],
             correct: 1,
-            explanation: 'VNet peering is non-transitive. For spoke-to-spoke communication, traffic must be routed through the hub VNet via Azure Firewall or a Network Virtual Appliance (NVA) using User Defined Routes (UDRs).'
+            explanation: 'VNet peering is non-transitive, so hub-spoke peerings alone do not create spoke-to-spoke transit. This inspected design requires a reachable Azure Firewall or NVA, explicit routes in both directions, forwarded-traffic permissions, and matching security policy. Direct spoke peering is a separate option when inspection is not required.'
         },
         {
             question: 'What is a User Defined Route (UDR)?',

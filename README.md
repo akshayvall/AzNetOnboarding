@@ -12,6 +12,27 @@ A pure-HTML / CSS / JavaScript study site (no build step, no frameworks) designe
 
 Progress is saved in your browser's `localStorage` — you can export/import it as JSON.
 
+## September learning release
+
+Release `2026-09-learning-1` includes the changes below. GitHub Pages publishes `main` only after the Node and browser gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
+
+- Today, Learn, Practice, Build, and More have distinct task views. The AFD diagnosis and broad networking paths support 10/25/60-minute sessions with prerequisite-aware recommendations and open reference access.
+- All 21 modules support guided/browse mode, worked request-path cases, prediction checks, changed tasks, fictional example evidence, downloadable worksheets, and subscription-free case analysis.
+- Quiz choices keep keyboard focus, explicit critical-question policy replaces the hidden first-question rule, and failed due reviews are recorded and rescheduled.
+- Progress backups identify their academy and format. Failed saves retain recoverable work, corrupt storage is protected, invalid imports preserve previous progress, and evidence drafts survive navigation.
+- Case analysis is self-attested practice. Existing Azure labs remain available, with separate optional-execution, data, cost, verification, and cleanup guidance. No Azure deployment is claimed by completing the local route.
+
+Run the local release gates:
+
+```powershell
+node --test tests/*.test.js
+python -m pip install -r tests/requirements.txt
+python -m playwright install chromium
+python tests/browser_smoke.py
+```
+
+The browser runner manages its own local server and disposable progress. It never runs Azure lab commands. Cloud-lab execution, manual screen-reader review, and measured learning outcomes remain separate checks.
+
 ---
 
 ## 🎯 Who is this for?

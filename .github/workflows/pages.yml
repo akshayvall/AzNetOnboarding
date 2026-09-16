@@ -36,6 +36,20 @@ jobs:
       - name: Run tests
         run: node --test tests/*.test.js
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install browser test dependencies
+        run: python -m pip install -r tests/requirements.txt
+
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run standalone browser gate
+        run: python tests/browser_smoke.py
+
   deploy:
     needs: validate
     environment:

@@ -27,12 +27,12 @@ const app = {
         this.buildNavigation();
         this.updateProgress();
         this.bindEvents();
+        LearningEngine.init(MODULES);
+        LearningEngine.renderPreferences();
         this.registerServiceWorker();
         MasteryEngine.init(MODULES);
-        const hash = window.location.hash.slice(1);
-        const module = hash ? MODULES.find(item => item.id === hash) : null;
-        if (module) this.loadModule(module.id);
-        else this.showDashboard();
+        window.addEventListener('popstate', () => this.syncHashRoute());
+        this.syncHashRoute();
     },
 
     slugify(text) {
@@ -46,6 +46,9 @@ const app = {
     },
 
     parseSections(module) {
+        if (this.currentModule?.id === module.id && document.getElementById('moduleCoaching')) {
+            return Array.from(document.querySelectorAll('#tab-learn h2')).map(heading => ({ slug: this.slugify(heading.textContent), title: heading.textContent.trim() }));
+        }
         if (_sectionCache[module.id]) return _sectionCache[module.id];
         const sections = [];
         const headingPattern = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
@@ -62,7 +65,16 @@ const app = {
         const sections = this.parseSections(module);
         document.querySelectorAll('#tab-learn h2').forEach(heading => {
             const slug = this.slugify(heading.textContent);
-            if (sections.some(section => section.slug === slug)) heading.id = `section-${slug}`;
+            if (!sections.some(section => section.slug === slug)) return;
+            heading.dataset.sectionId = slug;
+            const anchorId = `section-${slug}`;
+            if (!heading.id) heading.id = anchorId;
+            else if (heading.id !== anchorId && !document.getElementById(anchorId)) {
+                const anchor = document.createElement('span');
+                anchor.id = anchorId;
+                anchor.setAttribute('aria-hidden', 'true');
+                heading.prepend(anchor);
+            }
         });
     },
 
@@ -80,10 +92,17 @@ const app = {
     },
 
     scrollToSection(sectionId) {
-        const target = document.getElementById(`section-${sectionId}`);
+        if (['transfer-evidence', 'review-evidence'].includes(sectionId)) {
+            this.openEvidence(sectionId.startsWith('transfer') ? 'transfer' : 'review');
+            this.pendingSection = null;
+            return;
+        }
+        const target = document.getElementById(`section-${sectionId}`) || document.getElementById(sectionId === 'worked-example' ? 'learningWorkedTitle' : sectionId);
         if (!target) return;
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
         if (this.currentModule) UIStateManager.saveSection(this.currentModule.id, sectionId);
+        this.currentSection = sectionId;
+        this.setRoute(this.moduleRoute(), true);
         this.updateOutlinePosition(sectionId);
         this.pendingSection = null;
     },
@@ -93,12 +112,12 @@ const app = {
         this.sectionObserver = new IntersectionObserver(entries => {
             entries.forEach(entry => {
                 if (!entry.isIntersecting || !this.currentModule) return;
-                const sectionId = entry.target.id.replace('section-', '');
+                const sectionId = entry.target.dataset.sectionId || entry.target.id.replace('section-', '');
                 UIStateManager.saveSection(moduleId, sectionId);
                 this.updateOutlinePosition(sectionId);
             });
         }, { root: document.getElementById('content'), rootMargin: '0px 0px -60% 0px', threshold: 0.1 });
-        document.querySelectorAll('#tab-learn h2[id^="section-"]').forEach(heading => this.sectionObserver.observe(heading));
+        document.querySelectorAll('#tab-learn h2[data-section-id]').forEach(heading => this.sectionObserver.observe(heading));
     },
 
     observeAfterScroll(moduleId) {
@@ -164,7 +183,10 @@ const app = {
 
         document.getElementById('resetProgress').addEventListener('click', () => {
             if (confirm('Reset ALL progress? This cannot be undone.')) {
-                ProgressManager.resetAll();
+                if (!ProgressManager.resetAll()) {
+                    LearningEngine.renderStorageStatus();
+                    return;
+                }
                 this.buildNavigation();
                 this.updateProgress();
                 this.showDashboard();
@@ -184,6 +206,7 @@ const app = {
         document.getElementById('importFile').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            if (!confirm('Replace progress with this backup? Export your current progress first if you need to keep it.')) { e.target.value = ''; return; }
             try {
                 await ProgressManager.importProgress(file);
                 this.buildNavigation();
@@ -191,7 +214,7 @@ const app = {
                 this.showDashboard();
                 this.showToast('Progress imported!', 'success');
             } catch (err) {
-                this.showToast('Invalid progress file', 'error');
+                this.showToast(err.message || 'Progress could not be imported', 'error');
             }
             e.target.value = '';
         });
@@ -329,7 +352,7 @@ const app = {
     trapMobileNavFocus(event) {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar.classList.contains('mobile-open')) return;
-        const controls = Array.from(sidebar.querySelectorAll('button:not([disabled]), a[href], input:not([disabled])'));
+        const controls = Array.from(sidebar.querySelectorAll('button:not([disabled]), a[href], input:not([disabled])')).filter(control => control.getClientRects().length);
         if (!controls.length) return;
         const first = controls[0];
         const last = controls[controls.length - 1];
@@ -360,30 +383,61 @@ const app = {
         document.getElementById('mobileNavToggle').setAttribute('aria-expanded', 'false');
     },
 
-    navigateDestination(destination) {
+    navigateDestination(destination, route = {}) {
+        if (!LearningEngine.DESTINATIONS.includes(destination)) destination = 'today';
+        if (this.currentModule) LearningEngine.saveDrafts(this.currentModule.id);
+        this.sectionObserver?.disconnect();
+        this.closeMobileNav(false);
         UIStateManager.setDestination(destination);
-        document.querySelectorAll('.bottom-nav-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.destination === destination);
-        });
+        this.updateDestinationState(destination);
         if (destination === 'today') {
-            this.closeMobileNav(false);
             this.showDashboard();
             return;
         }
-        this.openMobileNav();
+        document.getElementById('dashboard').classList.remove('active');
+        document.getElementById('moduleView').classList.remove('active');
+        document.getElementById('destinationView').classList.add('active');
+        LearningEngine.renderDestination(destination, route);
+        this.currentModule = null;
+        this.setRoute({ ...route, destination, moduleId: null });
+        document.getElementById('content').scrollTop = 0;
+        document.getElementById('destinationTitle')?.focus({ preventScroll: true });
+    },
+
+    updateDestinationState(destination) {
+        document.querySelectorAll('[data-destination]').forEach(item => {
+            const active = item.dataset.destination === destination;
+            item.classList.toggle('active', active);
+            if (active) item.setAttribute('aria-current', 'page');
+            else item.removeAttribute('aria-current');
+        });
+    },
+
+    setRoute(route, replace = false) {
+        if (this.routing || this.loadingModule) return;
+        const hash = LearningEngine.formatRoute(route);
+        if (window.location.hash === hash) return;
+        window.history[replace ? 'replaceState' : 'pushState'](null, '', hash);
+    },
+
+    moduleRoute() {
+        return { moduleId: this.currentModule?.id, tab: this.currentTab, sectionId: this.currentSection, mode: this.currentMode };
     },
 
     isWorkflowPrototype(moduleId) {
-        return moduleId === WORKFLOW_PROTOTYPE_ID;
+        return typeof LEARNING_CONTENT !== 'undefined' ? Boolean(LEARNING_CONTENT.modules[moduleId]) : moduleId === WORKFLOW_PROTOTYPE_ID;
     },
 
     setModuleMode(mode) {
         if (!this.currentModule || !this.isWorkflowPrototype(this.currentModule.id)) return;
         const normalizedMode = mode === 'browse' ? 'browse' : 'guided';
+        this.currentMode = normalizedMode;
+        UIStateManager.saveMode(this.currentModule.id, normalizedMode);
         const moduleView = document.getElementById('moduleView');
         moduleView.classList.toggle('guided-mode', normalizedMode === 'guided');
         moduleView.classList.toggle('browse-mode', normalizedMode === 'browse');
         document.querySelectorAll('[data-module-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.moduleMode === normalizedMode)));
+        this.setRoute(this.moduleRoute(), true);
     },
 
     openEvidence(target) {
@@ -391,6 +445,8 @@ const app = {
         if (!disclosure) return;
         disclosure.open = true;
         disclosure.dataset.focusTarget = target || 'evidence';
+        this.currentSection = target === 'review' ? 'review-evidence' : 'transfer-evidence';
+        this.setRoute(this.moduleRoute(), true);
         disclosure.scrollIntoView({ behavior: 'smooth', block: 'start' });
         disclosure.querySelector('summary')?.focus();
     },
@@ -428,10 +484,16 @@ const app = {
         moduleView.classList.toggle('workflow-prototype', enabled);
         moduleView.classList.remove('guided-mode', 'browse-mode');
         this.renderSectionOutline(module);
+        document.querySelectorAll('.guided-stepper [data-tab], .module-tabs [data-tab]').forEach(control => {
+            control.hidden = control.dataset.tab === 'diagrams' ? !module.diagrams?.length :
+                control.dataset.tab === 'interactive' ? !module.interactive?.length :
+                control.dataset.tab === 'quiz' ? !module.quiz?.length :
+                control.dataset.tab === 'lab' ? !module.lab && !enabled : false;
+        });
         if (!enabled) return;
         const uiState = UIStateManager.get(MODULES.map(item => item.id));
         if (!this.pendingSection && uiState.lastSectionByModule[module.id]) this.pendingSection = uiState.lastSectionByModule[module.id];
-        this.setModuleMode('guided');
+        this.setModuleMode(this.requestedMode || uiState.moduleModeByModule[module.id] || 'guided');
         this.renderInlineCoreVisual(module);
     },
 
@@ -508,39 +570,65 @@ const app = {
     },
 
     syncHashRoute() {
-        const moduleId = window.location.hash.slice(1);
-        const module = moduleId ? MODULES.find(item => item.id === moduleId) : null;
-        const moduleViewActive = document.getElementById('moduleView').classList.contains('active');
-        if (module) {
-            if (!moduleViewActive || this.currentModule?.id !== module.id) this.loadModule(module.id);
-            return;
+        const route = LearningEngine.parseRoute(window.location.hash);
+        const module = MODULES.find(item => item.id === route.moduleId);
+        this.routing = true;
+        try {
+            if (module) {
+                const explicitMode = /[?&]mode=/.test(window.location.hash) ? route.mode : null;
+                if (!document.getElementById('moduleView').classList.contains('active') || this.currentModule?.id !== module.id) {
+                    this.loadModule(module.id, { ...route, mode: explicitMode });
+                } else {
+                    this.switchTab(route.tab);
+                    if (explicitMode) this.setModuleMode(explicitMode);
+                    if (route.sectionId) this.scrollToSection(route.sectionId);
+                }
+            } else this.navigateDestination(route.destination || 'today', route);
+        } finally {
+            this.routing = false;
         }
-        if (moduleViewActive) this.showDashboard();
     },
 
     // ─── VIEWS ──────────────────────────────────
     showDashboard() {
+        if (this.currentModule) LearningEngine.saveDrafts(this.currentModule.id);
+        this.sectionObserver?.disconnect();
+        this.closeMobileNav(false);
         UIStateManager.setDestination('today');
+        this.currentModule = null;
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('moduleView').classList.remove('active');
+        document.getElementById('destinationView').classList.remove('active');
         
         // Remove active state from nav
         document.querySelectorAll('#sidebar li').forEach(li => li.classList.remove('active'));
         
-        window.location.hash = '';
+        this.setRoute({ destination: 'today' });
+        this.updateDestinationState('today');
+        LearningEngine.renderPreferences();
+        document.getElementById('content').scrollTop = 0;
         this.updateProgress();
     },
 
-    loadModule(moduleId) {
+    loadModule(moduleId, route = {}) {
         const mod = MODULES.find(m => m.id === moduleId);
         if (!mod) return;
 
+        if (this.currentModule) LearningEngine.saveDrafts(this.currentModule.id);
+        this.loadingModule = true;
+        this.closeMobileNav(false);
+        this.sectionObserver?.disconnect();
+        this.currentSection = route.sectionId || null;
+        this.pendingSection = route.sectionId || this.pendingSection;
+        this.requestedMode = route.mode;
         this.currentModule = mod;
         this.currentTab = 'learn';
 
         // Switch view
         document.getElementById('dashboard').classList.remove('active');
+        document.getElementById('destinationView').classList.remove('active');
         document.getElementById('moduleView').classList.add('active');
+        this.updateDestinationState(route.tab === 'quiz' ? 'practice' : route.tab === 'lab' ? 'build' : 'learn');
 
         // Update header
         document.getElementById('moduleTitle').textContent = mod.title;
@@ -572,6 +660,7 @@ const app = {
                 <button class="btn-secondary" data-app-action="print-cheat-sheet" title="Print or save a one-page cheat-sheet">🖨️ Cheat-sheet (PDF)</button>
             </div>`;
         document.getElementById('tab-learn').innerHTML = learnHtml;
+        LearningEngine.renderCoaching(mod);
         this.initCopyButtons();
         this.injectSectionIds(mod);
 
@@ -593,12 +682,13 @@ const app = {
         // Initialize quiz
         if (mod.quiz) {
             QuizEngine.init(mod.id, mod.quiz);
-        }
+        } else document.getElementById('tab-quiz').innerHTML = '<p>This activity has no assessment.</p>';
 
         // Initialize lab
         if (mod.lab) {
             LabEngine.init(mod.id, mod.lab);
-        }
+        } else document.getElementById('tab-lab').innerHTML = '';
+        LearningEngine.renderLabPractice(mod);
 
         this.configureModuleExperience(mod);
 
@@ -622,15 +712,19 @@ const app = {
         completeBtn.style.background = mastery && MasteryEngine.STATE_RANK[mastery.state] >= MasteryEngine.STATE_RANK.practiced
             ? 'var(--success)' : '';
         MasteryEngine.renderModulePanel(mod);
+        LearningEngine.restoreDrafts(moduleId);
 
         // Switch to learn tab
-        this.switchTab('learn');
+        this.switchTab(route.tab || 'learn');
 
         // Set hash for bookmarking
-        window.location.hash = moduleId;
+        this.loadingModule = false;
+        this.setRoute(this.moduleRoute());
 
         // Save last visited
         ProgressManager.setLastVisited(moduleId);
+        document.getElementById('moduleTitle').tabIndex = -1;
+        document.getElementById('moduleTitle').focus({ preventScroll: true });
 
         if (this.pendingSection) {
             const sectionId = this.pendingSection;
@@ -646,6 +740,8 @@ const app = {
     },
 
     switchTab(tabName) {
+        if (!LearningEngine.TABS.includes(tabName)) return;
+        if (this.currentModule) LearningEngine.saveDrafts(this.currentModule.id);
         this.currentTab = tabName;
         if (this.currentModule) UIStateManager.touchModule(this.currentModule.id, tabName);
         
@@ -664,6 +760,8 @@ const app = {
             if (active) button.setAttribute('aria-current', 'step');
             else button.removeAttribute('aria-current');
         });
+        this.updateDestinationState(tabName === 'quiz' || tabName === 'interactive' ? 'practice' : tabName === 'lab' ? 'build' : 'learn');
+        if (this.currentModule) this.setRoute(this.moduleRoute());
     },
 
     // ─── MODULE NAVIGATION ──────────────────────
@@ -690,6 +788,7 @@ const app = {
                 ? `Next evidence: ${mastery.missing.join(', ')}`
                 : `${MasteryEngine.STATE_LABELS[mastery.state]} mastery recorded`;
             this.switchTab(nextTab);
+            if (mastery.missing.includes('transfer') && nextTab === 'learn') this.openEvidence('transfer');
             this.showToast(message, mastery.missing.length ? 'warning' : 'success');
             MasteryEngine.renderModulePanel(this.currentModule);
             this.buildNavigation();

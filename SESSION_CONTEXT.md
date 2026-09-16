@@ -4,6 +4,16 @@ Running log of AI-assisted work sessions. Newest first.
 
 ---
 
+## 2026-09-16 - Publication approved and release gates repeated
+- Akshay requested publication of the completed phases. Release `2026-09-learning-1` targets `main` in `akshayvall/AzNetOnboarding`; the existing Pages workflow must pass before deployment.
+- Repeated all 188 Node tests and 19 browser tests successfully, including disposable progress recovery, offline upgrades, and four viewport widths. The pending files contain no matches for the credential patterns checked.
+- Previous production baseline: `9eacd111fc807689c2cfc6affc65251e01c08975`. If rollback is needed, use a reviewed revert commit and a fresh cache release token; do not rewrite branch history or reset learner progress. Live deployment results will be recorded in the parent project after verification.
+
+## 2026-09-14 - All-phase local learning release
+- Implemented approved progress/assessment repairs, distinct learner destinations, AFD/broad-networking paths, session choices, and guided case learning across all 21 modules. Existing external labs remain separate from subscription-free self-attested practice.
+- Integrated bounded subagent content, persistence, assessment, UI, scheduling, and browser-gate work. All 188 academy Node tests and 19 browser tests passed; verified four viewport widths, recovery, drafts, offline isolation, and controlled worker upgrades.
+- Release token is `2026-09-learning-1`; no commits, pushes, deployment, or Azure lab execution. Manual screen-reader, human evidence review, and retention checks remain. Local preview: http://127.0.0.1:8891/azure-networking-academy/ .
+
 ## 2026-05-07 — AZ-104 decoupling + learning analysis
 
 - Reframed all AZ-104 / exam / certification wording across source + wiki to real-world Azure networking skills framing (README.md, modules-200/300/extras.js, wiki entity, ai-academy cross-ref)
