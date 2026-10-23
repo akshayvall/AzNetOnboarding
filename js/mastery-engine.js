@@ -109,6 +109,10 @@ const MasteryEngine = {
         if (!container) return;
         const progress = ProgressManager.getProgress();
         const realModules = this.getRealModules(modules, ACADEMY_MASTERY);
+        if (typeof BeginnerEngine !== 'undefined' && BeginnerEngine.isBeginner()) {
+            BeginnerEngine.renderHome(container, realModules);
+            return;
+        }
         const counts = this.getStateCounts(modules);
         const statuses = Object.fromEntries(realModules.map(module => [module.id, this.getStatus(module)]));
         const metadata = Object.fromEntries(realModules.map(module => [module.id, this.getMetadata(module.id) || { prerequisites: [] }]));

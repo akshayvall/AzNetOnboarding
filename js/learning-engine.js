@@ -1,5 +1,5 @@
 const LearningEngine = {
-    DESTINATIONS: ['today', 'learn', 'practice', 'build', 'more'],
+    DESTINATIONS: ['today', 'learn', 'practice', 'build', 'more', 'start', 'visual-lab'],
     TABS: ['learn', 'diagrams', 'interactive', 'quiz', 'lab'],
 
     escapeHtml(value) {
@@ -20,7 +20,8 @@ const LearningEngine = {
             query: (params.get('query') || '').slice(0, 160),
             level: ['100', '200', '300', '400'].includes(params.get('level')) ? params.get('level') : '',
             state: ['not_started', 'learned', 'practiced', 'demonstrated', 'durable'].includes(params.get('state')) ? params.get('state') : '',
-            pathOnly: params.get('path') === 'selected'
+            pathOnly: params.get('path') === 'selected',
+            lesson: /^[0-2]$/.test(params.get('lesson') || '') ? Number(params.get('lesson')) : 0
         };
     },
 
@@ -31,6 +32,7 @@ const LearningEngine = {
             if (route.sectionId) params.set('section', route.sectionId);
             if (route.mode === 'browse') params.set('mode', 'browse');
         } else {
+            if (route.destination === 'start') params.set('lesson', route.lesson || 0);
             if (route.query) params.set('query', route.query);
             if (route.level) params.set('level', route.level);
             if (route.state) params.set('state', route.state);
@@ -134,6 +136,14 @@ const LearningEngine = {
 
     renderDestination(destination, route = {}) {
         const container = document.getElementById('destinationView');
+        if (container && destination === 'start') {
+            BeginnerEngine.renderStarter(route.lesson);
+            return true;
+        }
+        if (container && destination === 'visual-lab') {
+            DiagramLab.render(container);
+            return true;
+        }
         if (!container || !['learn', 'practice', 'build', 'more'].includes(destination)) return false;
         container.innerHTML = this.renderDestinationHtml(destination, this.getContext(route));
         return true;
@@ -150,6 +160,7 @@ const LearningEngine = {
             <div class="learning-preference-fields"><div class="learning-field"><label for="learningPath">Learning path</label>
                 <select id="learningPath">${paths.map(path => `<option value="${this.escapeHtml(path.id)}" ${path.id === activePath ? 'selected' : ''}>${this.escapeHtml(path.title)}</option>`).join('')}</select></div>
             <div class="learning-field"><label for="sessionMinutes">Session length</label><select id="sessionMinutes">${[10, 25, 60].map(length => `<option value="${length}" ${length === minutes ? 'selected' : ''}>${length} minutes</option>`).join('')}</select></div></div>
+            ${typeof BeginnerEngine !== 'undefined' ? `<button type="button" class="btn-secondary" data-beginner-action="toggle">${BeginnerEngine.isBeginner() ? 'Use full learning tools' : 'Use beginner view'}</button>` : ''}
             <p id="learningPreferencesFeedback" class="learning-feedback" role="status" aria-live="polite"></p></div>`;
         return true;
     },
@@ -178,7 +189,7 @@ const LearningEngine = {
         const existing = document.getElementById('moduleCoaching');
         if (existing?.dataset.moduleId === module.id) return true;
         existing?.remove();
-        container.insertAdjacentHTML('afterbegin', this.renderCoachingHtml(module, content));
+        container.insertAdjacentHTML('beforeend', this.renderCoachingHtml(module, content));
         return true;
     },
 
@@ -495,7 +506,9 @@ const LearningEngine = {
         const transfer = content.transfer;
         const exemplar = content.exemplar;
         const moduleId = this.escapeHtml(module.id);
+        const beginner = typeof BeginnerEngine !== 'undefined' && BeginnerEngine.isBeginner();
         return `<section id="moduleCoaching" class="learning-surface module-coaching" data-module-id="${moduleId}" aria-labelledby="learningWorkedTitle">
+            <details id="optionalChallenge" ${beginner ? '' : 'open'}><summary>Optional challenge: use this idea in a realistic case</summary>
             <h2 id="learningWorkedTitle">Worked case: ${this.escapeHtml(example.title)}</h2>
             <p>${this.escapeHtml(example.scenario)}</p>
             ${this.renderTextList(example.steps, true)}
@@ -523,6 +536,7 @@ const LearningEngine = {
                 <dl class="learning-scores">${this.RUBRIC_LABELS.map((label, index) => `<div><dt>${label}</dt><dd>${this.escapeHtml(exemplar.scores?.[index] ?? 'Unscored')}/4</dd></div>`).join('')}</dl>
                 <p>${this.escapeHtml(exemplar.rationale)}</p>
             </details>` : ''}
+            </details>
         </section>`;
     },
 
@@ -585,7 +599,8 @@ const LearningEngine = {
             detail: module.subtitle,
             meta: [`Level ${module.level}`, this.STATE_LABELS[statuses[module.id]?.state] || 'Not started']
         }));
-        return `<form id="catalogFilters" class="learning-filters" role="search" aria-label="Module catalog">
+        return `${this.requestLabLink()}
+            <form id="catalogFilters" class="learning-filters" role="search" aria-label="Module catalog">
                 <div class="learning-field learning-query"><label for="catalogQuery">Search modules</label><input type="search" id="catalogQuery" name="query" maxlength="160" value="${this.escapeHtml(route.query || '')}"></div>
                 <div class="learning-field"><label for="catalogLevel">Level</label><select id="catalogLevel" name="level"><option value="">All levels</option>${[100, 200, 300, 400].map(level => `<option value="${level}" ${String(level) === String(route.level) ? 'selected' : ''}>${level}</option>`).join('')}</select></div>
                 <div class="learning-field"><label for="catalogState">Evidence state</label><select id="catalogState" name="state"><option value="">All states</option>${Object.entries(this.STATE_LABELS).map(([state, label]) => `<option value="${state}" ${state === route.state ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
@@ -613,7 +628,7 @@ const LearningEngine = {
         });
         groups.due.sort((left, right) => new Date(left.flags.dueAt) - new Date(right.flags.dueAt));
         groups.upcoming.sort((left, right) => new Date(left.flags.dueAt) - new Date(right.flags.dueAt));
-        return this.renderListSection('Due reviews', groups.due.map(row), 'No reviews due.') +
+        return this.requestLabLink() + this.renderListSection('Due reviews', groups.due.map(row), 'No reviews due.') +
             this.renderListSection('Weak concepts', groups.weak.map(row), 'No weak checks recorded.') +
             this.renderListSection('Upcoming reviews', groups.upcoming.map(row), 'No upcoming reviews scheduled.') +
             this.renderListSection('Voluntary practice', groups.voluntary.map(row), 'No other practice tasks.');
@@ -643,6 +658,10 @@ const LearningEngine = {
         return 'Legacy assessment; provenance unknown';
     },
 
+    requestLabLink() {
+        return '<a class="request-lab-link" href="#visual-lab"><strong>Follow a request through Front Door</strong><span>Start simple, change a scenario, and explain what happens next. No Azure subscription or commands.</span></a>';
+    },
+
     getEvidenceHistory(modules, progress = {}) {
         const history = [];
         modules.forEach(module => {
@@ -656,6 +675,12 @@ const LearningEngine = {
             if (entry.lab?.completed) add('External lab', entry.lab.completedAt, 'Completion recorded', 'Self-reported; execution not verified');
             if (entry.transfer) add('Transfer assessment', entry.transfer.completedAt, `${entry.transfer.score}/${entry.transfer.max}`, this.provenanceLabel(entry.transfer), entry.transfer.reflection);
             (entry.review?.attempts || []).forEach(attempt => add('Scheduled review', attempt.reviewedAt, attempt.passed ? 'Passed' : 'Needs practice', 'Recorded review result'));
+        });
+        const traceCheck = progress.practiceChecks?.['afd-request-lab'];
+        if (traceCheck) history.push({
+            moduleId: 'afd-request-lab', title: 'AFD request lab', kind: 'Five-case trace check',
+            date: traceCheck.completedAt, result: traceCheck.passed ? 'Threshold met (at least 4 of 5)' : 'Needs practice',
+            provenance: 'Locally checked practice; no quiz, lab or mastery credit', note: ''
         });
         return history.sort((left, right) => (new Date(right.date).getTime() || 0) - (new Date(left.date).getTime() || 0));
     },

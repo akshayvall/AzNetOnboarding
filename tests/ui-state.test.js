@@ -3,6 +3,16 @@ const test = require('node:test');
 
 const UIStateManager = require('../js/ui-state.js');
 
+test('beginner presentation is the default and switching never deletes other UI state', () => {
+    global.localStorage = makeStorage();
+    assert.equal(UIStateManager.get().experience, 'beginner');
+    UIStateManager.saveDraft('frontdoor-advanced', { artifact: 'keep this draft' });
+    UIStateManager.setExperience('full');
+    assert.equal(UIStateManager.get().experience, 'full');
+    assert.equal(UIStateManager.get().drafts['frontdoor-advanced'].artifact, 'keep this draft');
+    assert.equal(UIStateManager.normalize({ version: 1, experience: 'bogus' }).experience, 'beginner');
+});
+
 const makeStorage = initial => {
     const values = new Map(initial ? [[UIStateManager.STORAGE_KEY, initial]] : []);
     return {

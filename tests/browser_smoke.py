@@ -12,10 +12,11 @@ import unittest
 from urllib.parse import unquote, urlsplit
 
 from playwright.sync_api import expect, sync_playwright
+from browser_diagrams import DiagramBrowserTests
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE = "2026-09-learning-1"
+RELEASE = "2026-10-diagrams-1"
 MOUNT = "/academy/"
 VIEWPORTS = ((320, 900), (390, 844), (768, 1024), (1440, 1000))
 TIMEOUT = 10000
@@ -94,7 +95,7 @@ def local_server():
         thread.join(timeout=5)
 
 
-class AcademyBrowserTests(unittest.TestCase):
+class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
     def setUp(self):
         self.errors = []
         self.external_requests = []
@@ -113,6 +114,10 @@ class AcademyBrowserTests(unittest.TestCase):
         self.addCleanup(self.context.close)
         self.context.set_default_timeout(TIMEOUT)
         self.context.set_default_navigation_timeout(TIMEOUT)
+        if not self._testMethodName.startswith("test_beginner"):
+            self.context.add_init_script("""if (location.protocol === 'http:' && !localStorage.getItem('networking-academy-ui-state:v1')) {
+                localStorage.setItem('networking-academy-ui-state:v1', JSON.stringify({version: 1, experience: 'full'}));
+            }""")
         self.context.on("request", self.track_request)
         self.context.route("**/*", self.local_requests_only)
         self.page = self.context.new_page()
@@ -279,6 +284,70 @@ class AcademyBrowserTests(unittest.TestCase):
         expect(rows.locator("h3")).to_have_text([module["title"] for module in modules if module["id"] in path_ids])
         self.assertIn("path=selected", self.page.url)
 
+    def test_beginner_start_and_three_lessons(self):
+        self.open_page()
+        expect(self.page.get_by_role("button", name="Start from zero", exact=True)).to_be_visible()
+        expect(self.page.get_by_role("button", name="Take the placement test", exact=True)).to_be_visible()
+        self.page.get_by_role("button", name="Start from zero", exact=True).click()
+        for index in range(3):
+            expect(self.page.locator("#starterPosition")).to_have_text(f"Lesson {index + 1} of 3")
+            expect(self.page.locator("#starterLesson")).to_be_visible()
+            self.page.locator("#starterLesson summary").click()
+            self.page.get_by_role("button", name="Done reading", exact=True).click()
+        expect(self.page.locator("#moduleTitle")).to_have_text("Networking Fundamentals")
+        self.assertEqual(self.page.evaluate("ProgressManager.getProgress().completedLabs.length"), 0)
+        self.assertEqual(self.page.evaluate("Object.keys(ProgressManager.getProgress().quizScores).length"), 0)
+        self.page.reload(wait_until="domcontentloaded")
+        self.assertTrue(self.page.evaluate("BeginnerEngine.lessons.every(l => ProgressManager.getProgress().moduleMastery[l.id]?.contentReviewed)"))
+
+    def test_beginner_teaches_before_optional_challenge(self):
+        self.open_page("#net-fundamentals")
+        expect(self.page.locator("#beginnerOpening")).to_be_visible()
+        expect(self.page.locator("#masteryPanel")).not_to_be_visible()
+        expect(self.page.locator("#optionalChallenge")).not_to_have_attribute("open", "")
+        expect(self.page.locator("#learningWorkedTitle")).not_to_be_visible()
+        self.assertTrue(self.page.evaluate("""() => Boolean(document.getElementById('beginnerOpening').compareDocumentPosition(document.getElementById('optionalChallenge')) & Node.DOCUMENT_POSITION_FOLLOWING)"""))
+        expect(self.page.locator("#beginnerCheck fieldset")).to_have_count(3)
+        self.page.get_by_role("button", name="Check my understanding", exact=True).click()
+        expect(self.page.locator("#beginnerCheckFeedback")).to_contain_text("Choose an answer")
+        self.page.locator("#beginnerCheck fieldset").nth(0).locator("input").nth(0).check()
+        self.page.locator("#beginnerCheck fieldset").nth(1).locator("input").nth(1).check()
+        self.page.locator("#beginnerCheck fieldset").nth(2).locator("input").nth(2).check()
+        self.page.get_by_role("button", name="Check my understanding", exact=True).click()
+        expect(self.page.locator("#beginnerCheckFeedback")).to_contain_text("3 of 3")
+        self.assertEqual(self.page.evaluate("Object.keys(ProgressManager.getProgress().quizScores).length"), 0)
+        self.page.get_by_role("button", name="Use full learning tools", exact=True).click()
+        expect(self.page.locator("#masteryPanel")).to_be_visible()
+        expect(self.page.locator("#optionalChallenge")).to_have_attribute("open", "")
+        self.page.reload(wait_until="domcontentloaded")
+        self.assertEqual(self.page.evaluate("UIStateManager.get().experience"), "full")
+
+    def test_beginner_all_modules_and_mobile(self):
+        self.open_page()
+        modules = self.modules()
+        for module in modules:
+            self.load_module(module["id"])
+            expect(self.page.locator("#beginnerOpening")).to_be_visible()
+            expect(self.page.locator("#beginnerCheck fieldset")).to_have_count(3)
+            expect(self.page.locator("#learningWorkedTitle")).not_to_be_visible()
+            self.page.get_by_role("button", name="Done reading", exact=True).click()
+            self.assertTrue(self.page.evaluate("id => ProgressManager.getProgress().moduleMastery[id].contentReviewed", module["id"]))
+            self.assertNotIn(self.page.evaluate("id => MasteryEngine.getStatus(MODULES.find(m => m.id === id)).state", module["id"]), ["practiced", "demonstrated", "durable"])
+        for width, height in VIEWPORTS:
+            self.page.set_viewport_size({"width": width, "height": height})
+            self.navigate("today")
+            self.assert_no_overflow()
+            self.page.locator('a[href="#start?lesson=0"]').click()
+            self.assert_no_overflow()
+            self.screenshot(f"beginner-starter-{width}")
+            self.load_module("net-fundamentals")
+            self.assert_no_overflow()
+            self.screenshot(f"beginner-module-{width}")
+        progress = self.page.evaluate("ProgressManager.getProgress()")
+        self.assertEqual(progress["completedLabs"], [])
+        self.assertEqual(progress["quizScores"], {})
+        self.assertEqual(progress["completedModules"], [])
+
     def test_coaching_labels_and_activity_transitions(self):
         self.open_page()
         first = self.modules()[0]
@@ -310,7 +379,7 @@ class AcademyBrowserTests(unittest.TestCase):
                     guided: app.currentMode === 'guided' && !document.getElementById('moduleModeBar').hidden,
                     disabledSteps: document.querySelectorAll('.guided-stepper button:not([hidden]):disabled').length,
                     diagramCount: module.diagrams?.length || 0,
-                    svgCount: document.querySelectorAll('#inlineCoreVisual svg').length,
+                    svgCount: document.querySelectorAll('#inlineCoreVisual svg, #tab-learn [data-diagram-model] svg').length,
                     quizCount: QuizEngine.questions?.length || 0
                 };
             }) };

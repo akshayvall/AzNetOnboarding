@@ -12,6 +12,25 @@ A pure-HTML / CSS / JavaScript study site (no build step, no frameworks) designe
 
 Progress is saved in your browser's `localStorage` — you can export/import it as JSON.
 
+## October learning upgrade
+
+Release `2026-10-diagrams-1` combines the beginner-first entrance with rebuilt diagrams and an AFD request lab. Publication was approved on October 23; GitHub Pages serves it only after the deployment workflow's validation gates pass.
+
+| Stage | What to do | What to understand before moving on |
+|---|---|---|
+| Start from zero | Complete the three short Level 0 lessons; placement is optional | Names, addresses, requests, replies, edge vs origin |
+| Build foundations | Read the plain-language opening, then trace the simple diagram | Explain the path in your own words |
+| Follow one AFD request | Open the AFD request lab and select **Start tracing** | Predict whether a request stops at WAF, a redirect, a cache, or an origin |
+| Add depth | Switch to detailed views, change failure scenarios, then attempt the capstone | Explain the decision, the return path, and the evidence needed to diagnose a failure |
+
+All 22 diagram entries and 11 formerly static lesson visuals now use a shared catalog of 26 models. Maps, numbered steps, predictions, narration, and print transcripts come from the same model rather than separately maintained drawings. Simple views hide advanced configuration; detailed views expose tier, private-origin, routing, and failure distinctions where relevant.
+
+The walkthroughs have Previous, Next, Show all, and Reset controls, with no autoplay or looping motion. Mobile defaults to a readable step list; the optional map scrolls locally without shrinking its labels. Each model includes sources and limitations, and printing produces a complete explanation of the selected scenario.
+
+The AFD lab includes a five-question practice check with a four-correct target. Reading and practice remain separate from quiz, Azure-lab, and demonstrated-mastery evidence. Existing progress is preserved; failed saves expose recovery rather than claiming that work was saved.
+
+See the [October audit and implementation record](docs/diagram-audit-2026-10.md) for the corrected findings, evidence, and remaining human-learning checks. The upgrade does not claim that every advanced lesson has been rewritten or that completing a visual lab proves production skills.
+
 ## September learning release
 
 Release `2026-09-learning-1` includes the changes below. GitHub Pages publishes `main` only after the Node and browser gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
@@ -25,13 +44,11 @@ Release `2026-09-learning-1` includes the changes below. GitHub Pages publishes 
 Run the local release gates:
 
 ```powershell
-node --test tests/*.test.js
-python -m pip install -r tests/requirements.txt
-python -m playwright install chromium
-python tests/browser_smoke.py
+node --test tests\*.test.js
+python tests\browser_smoke.py
 ```
 
-The browser runner manages its own local server and disposable progress. It never runs Azure lab commands. Cloud-lab execution, manual screen-reader review, and measured learning outcomes remain separate checks.
+For a first browser-test setup, install the requirements from `tests\requirements.txt` and the Playwright Chromium browser if they are missing. The browser runner manages its own local server and disposable progress. It never runs Azure lab commands. Cloud-lab execution, manual screen-reader review, and measured learning outcomes remain separate checks.
 
 ---
 
@@ -48,7 +65,7 @@ No prior Azure or networking experience required.
 
 ## 🗺️ Curriculum
 
-The content is organized into three levels (21 modules total).
+Three short Level 0 lessons introduce names, request/response paths, and Front Door before the three technical levels (21 modules total).
 
 ### ⬡ Level 100 — Foundations (4 modules)
 Start here if terms like *subnet*, *DNS*, or *TCP handshake* are new to you.
@@ -100,7 +117,7 @@ The curriculum covers the full **"configure and manage virtual networking"** ski
 - Network Security Groups & Application Security Groups
 - Azure DNS (public + private zones)
 - VPN Gateway & ExpressRoute basics
-- Load balancing (Basic LB, Application Gateway, Traffic Manager, **Front Door**)
+- Load balancing (Azure Load Balancer, Application Gateway, Traffic Manager, **Front Door**)
 - Network monitoring & troubleshooting
 
 The L300 **Real-World Networking Scenarios** module puts these together with troubleshooting drills and production design challenges.
@@ -109,20 +126,22 @@ The L300 **Real-World Networking Scenarios** module puts these together with tro
 
 ## 🚪 Why so much Azure Front Door?
 
-Front Door is Microsoft's global, Layer-7 edge platform — and it's increasingly the "front door" (pun intended) of every modern Azure workload. This academy dedicates **three full modules** to it:
+Front Door is Microsoft's global, Layer-7 edge platform. This academy dedicates **four full modules** to it:
 
 1. **L200 — Fundamentals:** what it is, how routing works, origins, caching
 2. **L300 — Advanced Configuration:** Rules Engine, TLS, custom domains, Private Link
 3. **L300 — WAF & Security:** managed rule sets, bot protection, DDoS integration
 4. **L300 — Caching & Performance:** cache keys, compression, purge strategies
 
-Plus hands-on labs that inspect real Front Door response headers from Cloud Shell.
+The subscription-free AFD request lab connects these modules through one reusable request story. Optional Cloud Shell labs inspect real Front Door response headers.
 
 ---
 
 ## ✨ Features
 
-- **Interactive diagrams** — animated OSI model, packet flow, VNet topology
+- **Progressive diagrams** — 26 shared models with simple/detailed views, learner-controlled steps, predictions, and failure scenarios
+- **AFD request lab** — compare cache, WAF, redirect, origin-health, tier, and connection choices without an Azure subscription
+- **Readable alternatives** — mobile step lists, named SVG maps, complete text explanations, and print transcripts
 - **Quizzes** — multiple-choice, match-the-layer, subnet calculator, flashcards
 - **Hands-on labs** — runnable `az cli` / `nslookup` / `tcpping` / `traceroute` steps in Azure Cloud Shell
 - **Progress tracking** — per-module, per-level, overall %, day streak
@@ -132,7 +151,7 @@ Plus hands-on labs that inspect real Front Door response headers from Cloud Shel
 - **Diagnostic learning route** — ten questions recommend the earliest networking competency worth practicing
 - **Today workspace** — one deterministic next action, due evidence, and the next three milestones
 - **Mobile study shell** — five-item bottom navigation plus an accessible, focus-managed module drawer
-- **Guided Front Door prototype** — guided/browse modes, exact-section resume, compact evidence, and an inline packet-path visual
+- **Guided Front Door learning** — guided/browse modes, exact-section resume, compact evidence, and shared request-path visuals
 
 ---
 
@@ -147,14 +166,14 @@ launch.bat
 Auto-detects Python or Node, serves on http://localhost:8080.
 
 ### Manual
-```bash
+```powershell
 # Python
-python -m http.server 8080
+python -m http.server 8080 --bind 127.0.0.1
 
 # or Node
-npx http-server -p 8080 -c-1
+npx http-server -a 127.0.0.1 -p 8080 -c-1
 ```
-Then open http://localhost:8080.
+Then open http://127.0.0.1:8080. Loopback binding keeps the preview off the local network.
 
 ---
 
@@ -164,17 +183,23 @@ Then open http://localhost:8080.
 index.html              # Single-page app shell
 launch.bat              # Windows local-server launcher
 css/
-  styles.css            # All styling
+  styles.css            # Shared shell and learning tools
+  learning.css          # Guided lessons and beginner presentation
+  diagrams.css          # Diagrams, mobile alternatives, and printing
 js/
   app.js                # Router, view management, progress wiring
+  beginner.js           # Level 0 lessons and beginner-first presentation
   progress.js           # localStorage-backed progress tracking
   ui-state.js           # separate versioned navigation and resume state
   today-engine.js       # deterministic daily action selection
+  learning-engine.js    # Learning destinations, coaching, and evidence history
   mastery-content.js    # Outcomes, diagnostics, transfer challenges, rubrics
   mastery-engine.js     # Mastery dashboard, evidence flow, review queue
   quiz-engine.js        # Quiz rendering & scoring
   lab-engine.js         # Step-by-step lab runner
-  diagrams.js           # Animated SVG/Canvas diagrams
+  diagram-models.js     # Shared catalog, foundational models, and sources
+  diagram-afd.js        # AFD, private-origin, and capstone scenarios
+  diagrams.js           # SVG/step renderer, walkthrough controls, and AFD lab
   interactive.js        # Subnet calc, flashcards, drag-drop
   modules-100.js        # L100 content (4 modules)
   modules-200.js        # L200 content (6 core modules)
@@ -182,21 +207,26 @@ js/
   modules-extras.js     # +3 L200 + +3 L300 deep-dive modules
 manifest.webmanifest    # Install metadata
 sw.js                   # Offline app-shell cache
-tests/                  # Node test contracts for curriculum, mastery, platform
+tests/                  # Node contracts and self-contained Chromium regressions
 .github/workflows/
   pages.yml             # Validate, then deploy to GitHub Pages
 ```
 
 ### Validation
 
-```bash
-node --test tests/*.test.js
-for file in js/*.js sw.js; do node --check "$file"; done
+```powershell
+node --test tests\*.test.js
+python tests\browser_smoke.py
+$files = @((Get-ChildItem js\*.js).FullName) + (Join-Path (Get-Location) 'sw.js')
+foreach ($file in $files) {
+    node --check $file
+    if ($LASTEXITCODE -ne 0) { throw "Syntax check failed: $file" }
+}
 ```
 
-The diagram contract verifies all 22 diagram instances for builder coverage, unique IDs, step parity, bounded SVG output, known geometry regressions, keyboard access, mobile readability, Step wraparound, current Azure framing, and release-cache coherence. See [docs/diagram-audit-2026-07.md](docs/diagram-audit-2026-07.md).
+On October 23, the local upgrade passed **205 Node tests, 32 browser tests, and syntax checks for all 20 JavaScript files**. The browser matrix exercises all 26 models at 320/390/768/1440 pixels with normal and reduced-motion preferences, including explicit map inspection on mobile.
 
-The July 2026 browser matrix additionally rendered every diagram at desktop, tablet, and mobile widths with reduced motion enabled.
+Diagram coverage includes semantic paths and branch omissions, scenario/tier changes, isolated SVG IDs, bounded stepping without wraparound, predictions, keyboard focus, label geometry, service boundaries, storage failure/retry, printing, and release-cache coherence. A separate 32-graph visual review reported no page errors or measured path collisions. These checks do not replace human screen-reader testing, real Azure execution, or a retention study. The [October audit](docs/diagram-audit-2026-10.md) supersedes the July clean-bill claims.
 
 ---
 

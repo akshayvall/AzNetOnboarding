@@ -3,7 +3,7 @@ const UIStateManager = {
     VERSION: 1,
 
     defaultState() {
-        return { version: this.VERSION, lastDestination: 'today', lastModuleId: null, lastSectionByModule: {}, lastTabByModule: {}, lastTouchedAtByModule: {}, activePath: 'afd-diagnosis', sessionMinutes: 25, moduleModeByModule: {}, drafts: {}, savedReferenceIds: [], filterPreferences: {} };
+        return { version: this.VERSION, experience: 'beginner', lastDestination: 'today', lastModuleId: null, lastSectionByModule: {}, lastTabByModule: {}, lastTouchedAtByModule: {}, activePath: 'afd-diagnosis', sessionMinutes: 25, moduleModeByModule: {}, drafts: {}, savedReferenceIds: [], filterPreferences: {} };
     },
     normalize(value, validModuleIds = []) {
         if (!value || typeof value !== 'object' || Array.isArray(value) || value.version !== this.VERSION) return this.defaultState();
@@ -12,7 +12,8 @@ const UIStateManager = {
         const mapOfStrings = input => Object.fromEntries(Object.entries(input && typeof input === 'object' && !Array.isArray(input) ? input : {}).filter(([id, item]) => accepts(id) && typeof item === 'string').map(([id, item]) => [id, item.slice(0, 160)]));
         return {
             version: this.VERSION,
-            lastDestination: ['today', 'learn', 'practice', 'build', 'more'].includes(value.lastDestination) ? value.lastDestination : 'today',
+            experience: value.experience === 'full' ? 'full' : 'beginner',
+            lastDestination: ['today', 'learn', 'practice', 'build', 'more', 'start', 'visual-lab'].includes(value.lastDestination) ? value.lastDestination : 'today',
             lastModuleId: accepts(value.lastModuleId) ? value.lastModuleId : null,
             lastSectionByModule: mapOfStrings(value.lastSectionByModule),
             lastTabByModule: Object.fromEntries(Object.entries(mapOfStrings(value.lastTabByModule)).filter(([, tab]) => ['learn', 'diagrams', 'interactive', 'quiz', 'lab'].includes(tab))),
@@ -65,6 +66,11 @@ const UIStateManager = {
     saveMode(moduleId, mode) {
         const state = this.get();
         state.moduleModeByModule[moduleId] = mode;
+        return this.save(state);
+    },
+    setExperience(experience) {
+        const state = this.get();
+        state.experience = experience;
         return this.save(state);
     },
     saveDraft(moduleId, draft) {

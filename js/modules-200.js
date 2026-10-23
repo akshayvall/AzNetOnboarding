@@ -61,7 +61,7 @@ const MODULES_200 = [
 
     <div class="warning-box">
         <h4>⚠️ Critical</h4>
-        <p>Priority processing: Rules are evaluated in priority order (lowest number first). The <strong>first matching rule wins</strong>. If no custom rule matches, the default DenyAll at 65500 kicks in. You cannot delete or modify default rules, but you can override them with higher-priority custom rules.</p>
+        <p>Priority processing: Rules are evaluated in priority order (lowest number first). The <strong>first matching rule wins</strong>. If no custom rule matches, default allow rules at 65000 and 65001 are evaluated before DenyAll at 65500. You cannot delete default rules, but higher-priority matching custom rules can override them.</p>
     </div>
 </div>
 
@@ -77,7 +77,7 @@ const MODULES_200 = [
         <tr><td><strong>AzureFrontDoor.Backend</strong></td><td>Azure Front Door backend IPs — use to lock access</td></tr>
         <tr><td><strong>Storage</strong></td><td>Azure Storage service IPs</td></tr>
         <tr><td><strong>Sql</strong></td><td>Azure SQL Database IPs</td></tr>
-        <tr><td><strong>AzureActiveDirectory</strong></td><td>Azure AD IPs</td></tr>
+        <tr><td><strong>AzureActiveDirectory</strong></td><td>Microsoft Entra ID IPs; the service-tag identifier retains its original name</td></tr>
     </table>
 
     <div class="tip-box">
@@ -110,26 +110,7 @@ az network nsg rule create -g rg-prod --nsg-name nsg-prod \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'nsg-traffic-flow',
-            type: 'nsg-filtering',
-            title: 'NSG Traffic Filtering — How Rules Are Evaluated',
-            icon: '🛡️',
-            description: 'Watch how NSG rules filter incoming traffic. Rules are evaluated by priority (lowest number first). First match wins.',
-            steps: [
-                'Three types of traffic arrive: legitimate HTTPS, authorized SSH, and an attacker trying RDP.',
-                'Each request hits the NSG at the subnet or NIC level.',
-                'NSG evaluates rules by priority. Rule 100 (Allow HTTPS) — matches the HTTPS request.',
-                'HTTPS traffic passes through to the VM — it matched the Allow rule at priority 100.',
-                'SSH from 10.0.x.x matches Rule 200 (Allow SSH from internal) — passes through.',
-                'RDP from the attacker matches Rule 300 (Deny RDP) — BLOCKED! Connection refused.'
-            ],
-            legend: [
-                { color: '#107c10', label: 'Allowed Traffic' },
-                { color: '#d13438', label: 'Denied Traffic' },
-                { color: '#ff8c00', label: 'Default Deny All' }
-            ]
-        }
+        { id: 'nsg-traffic-flow', type: 'nsg-filtering' },
     ],
     quiz: [
         {
@@ -510,7 +491,7 @@ az network private-dns link vnet create \\
         },
         {
             question: 'You delegate your domain to Azure DNS. Where do you configure the Name Server (NS) records?',
-            options: ['In the Azure DNS zone', 'At your domain registrar', 'In the VNet DNS settings', 'In Azure AD'],
+            options: ['In the Azure DNS zone', 'At your domain registrar', 'In the VNet DNS settings', 'In Microsoft Entra ID'],
             correct: 1,
             explanation: 'You update the NS records at your domain registrar to point to Azure DNS name servers (ns1-01.azure-dns.com, etc.). This tells the internet that Azure DNS is authoritative for your domain.'
         },
@@ -764,62 +745,7 @@ az network private-dns link vnet show \\
     <p>Azure offers four main load balancing services. Choosing the right one depends on your traffic type, scope, and requirements.</p>
 
     <div class="diagram-container">
-        <svg viewBox="0 0 650 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:650px;font-family:'Segoe UI',sans-serif">
-          <!-- Header -->
-          <rect x="200" y="10" width="250" height="40" rx="8" fill="#0078D4"/>
-          <text x="325" y="36" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">Choose Your Load Balancer</text>
-          <!-- Arrow down -->
-          <line x1="325" y1="50" x2="325" y2="75" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
-          <!-- Decision: Global or Regional -->
-          <rect x="225" y="75" width="200" height="36" rx="6" fill="#F3F2F1" stroke="#0078D4" stroke-width="2"/>
-          <text x="325" y="98" text-anchor="middle" fill="#0078D4" font-size="13" font-weight="600">Global or Regional?</text>
-          <!-- Left branch: Global -->
-          <line x1="275" y1="111" x2="165" y2="145" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
-          <rect x="105" y="145" width="120" height="32" rx="6" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="165" y="166" text-anchor="middle" fill="#0078D4" font-size="12" font-weight="600">Global</text>
-          <!-- Right branch: Regional -->
-          <line x1="375" y1="111" x2="485" y2="145" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
-          <rect x="425" y="145" width="120" height="32" rx="6" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="485" y="166" text-anchor="middle" fill="#0078D4" font-size="12" font-weight="600">Regional</text>
-          <!-- Global → HTTP(S)? -->
-          <line x1="165" y1="177" x2="165" y2="200" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
-          <rect x="105" y="200" width="120" height="32" rx="6" fill="#F3F2F1" stroke="#FF8C00" stroke-width="1.5"/>
-          <text x="165" y="221" text-anchor="middle" fill="#FF8C00" font-size="12" font-weight="600">HTTP/HTTPS?</text>
-          <!-- Regional → HTTP(S)? -->
-          <line x1="485" y1="177" x2="485" y2="200" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
-          <rect x="425" y="200" width="120" height="32" rx="6" fill="#F3F2F1" stroke="#FF8C00" stroke-width="1.5"/>
-          <text x="485" y="221" text-anchor="middle" fill="#FF8C00" font-size="12" font-weight="600">HTTP/HTTPS?</text>
-          <!-- Global Yes → Front Door -->
-          <line x1="135" y1="232" x2="90" y2="268" stroke="#107C10" stroke-width="2" marker-end="url(#arrowG)"/>
-          <text x="95" y="258" fill="#107C10" font-size="10">Yes</text>
-          <rect x="30" y="270" width="130" height="50" rx="8" fill="#0078D4"/>
-          <text x="95" y="293" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Front Door</text>
-          <text x="95" y="308" text-anchor="middle" fill="#B3D7F2" font-size="9">L7 · Global · HTTP</text>
-          <!-- Global No → Traffic Manager -->
-          <line x1="195" y1="232" x2="240" y2="268" stroke="#D13438" stroke-width="2" marker-end="url(#arrowR)"/>
-          <text x="225" y="258" fill="#D13438" font-size="10">No</text>
-          <rect x="180" y="270" width="130" height="50" rx="8" fill="#7A3B93"/>
-          <text x="245" y="293" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Traffic Manager</text>
-          <text x="245" y="308" text-anchor="middle" fill="#D9C2E9" font-size="9">DNS · Global · Any</text>
-          <!-- Regional Yes → App Gateway -->
-          <line x1="455" y1="232" x2="410" y2="268" stroke="#107C10" stroke-width="2" marker-end="url(#arrowG)"/>
-          <text x="415" y="258" fill="#107C10" font-size="10">Yes</text>
-          <rect x="340" y="270" width="130" height="50" rx="8" fill="#107C10"/>
-          <text x="405" y="293" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">App Gateway</text>
-          <text x="405" y="308" text-anchor="middle" fill="#B7E1CD" font-size="9">L7 · Regional · HTTP</text>
-          <!-- Regional No → Load Balancer -->
-          <line x1="515" y1="232" x2="560" y2="268" stroke="#D13438" stroke-width="2" marker-end="url(#arrowR)"/>
-          <text x="545" y="258" fill="#D13438" font-size="10">No</text>
-          <rect x="500" y="270" width="130" height="50" rx="8" fill="#00BCF2"/>
-          <text x="565" y="293" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Load Balancer</text>
-          <text x="565" y="308" text-anchor="middle" fill="#D6F0FB" font-size="9">L4 · Regional · TCP/UDP</text>
-          <!-- Arrow markers -->
-          <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#555"/></marker>
-            <marker id="arrowG" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#107C10"/></marker>
-            <marker id="arrowR" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#D13438"/></marker>
-          </defs>
-        </svg>
+        <div data-diagram-model="lb-choice"></div>
     </div>
 
     <table class="content-table">
@@ -913,26 +839,7 @@ az network private-dns link vnet show \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'lb-comparison',
-            type: 'load-balancer',
-            title: 'Azure Load Balancing — L4 vs L7 Comparison',
-            icon: '⚖️',
-            description: 'Compare Azure Load Balancer (Layer 4) with Application Gateway (Layer 7). Understand when to use each.',
-            steps: [
-                'Incoming requests arrive from multiple users hitting your frontend IP.',
-                'Azure Load Balancer (L4): Distributes TCP/UDP traffic using a 5-tuple hash (src IP, dst IP, src port, dst port, protocol).',
-                'Application Gateway (L7): Understands HTTP content — can route by URL path, hostname, and inspect headers.',
-                'L4 backend: VMs receive raw traffic. Load balancer doesn\'t inspect content.',
-                'L7 backend: Requests routed by path — /api/* to API pool, /web/* to web pool, /img/* to static pool.',
-                'Key difference: L4 = Fast, protocol-agnostic | L7 = Smart, content-aware with SSL offload and WAF.'
-            ],
-            legend: [
-                { color: '#0078d4', label: 'Layer 4 (Load Balancer)' },
-                { color: '#107c10', label: 'Layer 7 (App Gateway)' },
-                { color: '#ff8c00', label: 'Backend VMs' }
-            ]
-        }
+        { id: 'lb-comparison', type: 'load-balancer' },
     ],
     quiz: [
         {
@@ -1204,12 +1111,12 @@ az network lb rule list \\
     
     <div class="concept-box">
         <h4>🔑 Think of it This Way</h4>
-        <p>Front Door sits at the "front door" of your application. Users connect to the nearest edge location (low latency), and Front Door routes their request to the best backend (origin) based on your routing rules. It's like having a concierge at every major city directing visitors to the right office.</p>
+        <p>Front Door sits at the "front door" of your application. DNS directs users to a serving edge location, and Front Door applies checks, routing rules and caching decisions there. When an origin is needed, selection uses health, priority, measured latency and weight. Think of a reception desk that can answer some requests and direct others to an available branch.</p>
     </div>
 
     <h3>Key Capabilities</h3>
     <ul>
-        <li><strong>Global HTTP/HTTPS load balancing</strong> — Route users to the nearest healthy backend</li>
+        <li><strong>Global HTTP/HTTPS load balancing</strong> — Select an eligible origin using health, priority, latency and weight, with session affinity when configured</li>
         <li><strong>CDN/Caching</strong> — Cache content at the edge for faster delivery</li>
         <li><strong>SSL/TLS termination</strong> — Offload SSL at the edge</li>
         <li><strong>WAF (Web Application Firewall)</strong> — Custom rules in Standard; managed rule sets and Bot Manager in Premium</li>
@@ -1224,91 +1131,7 @@ az network lb rule list \\
     <h2>Front Door Architecture</h2>
     
     <div class="diagram-container">
-        <svg viewBox="0 0 750 380" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:750px;font-family:'Segoe UI',sans-serif">
-          <!-- Users Column -->
-          <text x="60" y="20" text-anchor="middle" fill="#0078D4" font-size="13" font-weight="700">Users</text>
-          <rect x="10" y="35" width="100" height="32" rx="6" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="60" y="56" text-anchor="middle" fill="#323130" font-size="11">👤 NYC</text>
-          <rect x="10" y="80" width="100" height="32" rx="6" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="60" y="101" text-anchor="middle" fill="#323130" font-size="11">👤 London</text>
-          <rect x="10" y="125" width="100" height="32" rx="6" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="60" y="146" text-anchor="middle" fill="#323130" font-size="11">👤 Tokyo</text>
-          <rect x="10" y="170" width="100" height="32" rx="6" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="60" y="191" text-anchor="middle" fill="#323130" font-size="11">👤 Sydney</text>
-
-          <!-- Arrows: Users → Front Door -->
-          <defs><marker id="fdArrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0078D4"/></marker></defs>
-          <line x1="110" y1="51" x2="230" y2="100" stroke="#0078D4" stroke-width="1.5" marker-end="url(#fdArrow)"/>
-          <line x1="110" y1="96" x2="230" y2="110" stroke="#0078D4" stroke-width="1.5" marker-end="url(#fdArrow)"/>
-          <line x1="110" y1="141" x2="230" y2="125" stroke="#0078D4" stroke-width="1.5" marker-end="url(#fdArrow)"/>
-          <line x1="110" y1="186" x2="230" y2="140" stroke="#0078D4" stroke-width="1.5" marker-end="url(#fdArrow)"/>
-
-          <!-- Front Door Box -->
-          <rect x="230" y="30" width="280" height="185" rx="10" fill="#0078D4" opacity="0.07" stroke="#0078D4" stroke-width="2"/>
-          <rect x="265" y="42" width="210" height="32" rx="6" fill="#0078D4"/>
-          <text x="370" y="63" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Azure Front Door</text>
-          <text x="370" y="92" text-anchor="middle" fill="#0078D4" font-size="12" font-weight="600">Edge Locations</text>
-          <text x="290" y="112" fill="#323130" font-size="11">• Ashburn</text>
-          <text x="290" y="128" fill="#323130" font-size="11">• London</text>
-          <text x="290" y="144" fill="#323130" font-size="11">• Tokyo</text>
-          <text x="400" y="112" fill="#323130" font-size="11">• Sydney</text>
-          <text x="400" y="128" fill="#323130" font-size="11">• São Paulo</text>
-          <text x="400" y="144" fill="#323130" font-size="11">• + 95 more</text>
-          <!-- Features row -->
-          <rect x="255" y="160" width="60" height="20" rx="4" fill="#00BCF2" opacity="0.2"/>
-          <text x="285" y="174" text-anchor="middle" fill="#005A8C" font-size="9" font-weight="600">WAF</text>
-          <rect x="322" y="160" width="60" height="20" rx="4" fill="#00BCF2" opacity="0.2"/>
-          <text x="352" y="174" text-anchor="middle" fill="#005A8C" font-size="9" font-weight="600">CDN</text>
-          <rect x="389" y="160" width="60" height="20" rx="4" fill="#00BCF2" opacity="0.2"/>
-          <text x="419" y="174" text-anchor="middle" fill="#005A8C" font-size="9" font-weight="600">SSL</text>
-          <rect x="456" y="160" width="60" height="20" rx="4" fill="#00BCF2" opacity="0.2"/>
-          <text x="486" y="174" text-anchor="middle" fill="#005A8C" font-size="9" font-weight="600">Cache</text>
-          <!-- Health badge -->
-          <rect x="255" y="186" width="120" height="18" rx="4" fill="#107C10" opacity="0.15"/>
-          <text x="315" y="199" text-anchor="middle" fill="#107C10" font-size="9" font-weight="600">Health Probes Active</text>
-
-          <!-- Arrows: Front Door → Origins -->
-          <line x1="510" y1="100" x2="580" y2="51" stroke="#107C10" stroke-width="1.5" marker-end="url(#fdArrowG)"/>
-          <line x1="510" y1="110" x2="580" y2="101" stroke="#107C10" stroke-width="1.5" marker-end="url(#fdArrowG)"/>
-          <line x1="510" y1="125" x2="580" y2="151" stroke="#107C10" stroke-width="1.5" marker-end="url(#fdArrowG)"/>
-          <line x1="510" y1="140" x2="580" y2="201" stroke="#107C10" stroke-width="1.5" marker-end="url(#fdArrowG)"/>
-          <defs><marker id="fdArrowG" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#107C10"/></marker></defs>
-
-          <!-- Origins Column -->
-          <text x="670" y="20" text-anchor="middle" fill="#107C10" font-size="13" font-weight="700">Origins</text>
-          <rect x="580" y="35" width="160" height="32" rx="6" fill="#E7F3E8" stroke="#107C10" stroke-width="1.5"/>
-          <text x="660" y="50" text-anchor="middle" fill="#323130" font-size="10" font-weight="600">App Service</text>
-          <text x="660" y="62" text-anchor="middle" fill="#605E5C" font-size="9">East US</text>
-          <rect x="580" y="82" width="160" height="32" rx="6" fill="#E7F3E8" stroke="#107C10" stroke-width="1.5"/>
-          <text x="660" y="97" text-anchor="middle" fill="#323130" font-size="10" font-weight="600">App Service</text>
-          <text x="660" y="109" text-anchor="middle" fill="#605E5C" font-size="9">West Europe</text>
-          <rect x="580" y="135" width="160" height="32" rx="6" fill="#FFF4E5" stroke="#FF8C00" stroke-width="1.5"/>
-          <text x="660" y="150" text-anchor="middle" fill="#323130" font-size="10" font-weight="600">VM Scale Set</text>
-          <text x="660" y="162" text-anchor="middle" fill="#605E5C" font-size="9">East Asia</text>
-          <rect x="580" y="185" width="160" height="32" rx="6" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="660" y="200" text-anchor="middle" fill="#323130" font-size="10" font-weight="600">Storage Account</text>
-          <text x="660" y="212" text-anchor="middle" fill="#605E5C" font-size="9">Central US</text>
-
-          <!-- Routing Methods -->
-          <text x="375" y="250" text-anchor="middle" fill="#323130" font-size="12" font-weight="700">Routing Methods</text>
-          <rect x="55" y="265" width="145" height="44" rx="6" fill="#F3F2F1" stroke="#0078D4" stroke-width="1"/>
-          <text x="127" y="283" text-anchor="middle" fill="#0078D4" font-size="11" font-weight="600">⚡ Latency</text>
-          <text x="127" y="300" text-anchor="middle" fill="#605E5C" font-size="9">Fastest response</text>
-          <rect x="215" y="265" width="145" height="44" rx="6" fill="#F3F2F1" stroke="#FF8C00" stroke-width="1"/>
-          <text x="287" y="283" text-anchor="middle" fill="#FF8C00" font-size="11" font-weight="600">🎯 Priority</text>
-          <text x="287" y="300" text-anchor="middle" fill="#605E5C" font-size="9">Primary / Secondary</text>
-          <rect x="375" y="265" width="145" height="44" rx="6" fill="#F3F2F1" stroke="#7A3B93" stroke-width="1"/>
-          <text x="447" y="283" text-anchor="middle" fill="#7A3B93" font-size="11" font-weight="600">⚖️ Weighted</text>
-          <text x="447" y="300" text-anchor="middle" fill="#605E5C" font-size="9">% distribution</text>
-          <rect x="535" y="265" width="165" height="44" rx="6" fill="#F3F2F1" stroke="#107C10" stroke-width="1"/>
-          <text x="617" y="283" text-anchor="middle" fill="#107C10" font-size="11" font-weight="600">💚 Health Probes</text>
-          <text x="617" y="300" text-anchor="middle" fill="#605E5C" font-size="9">Automatic failover</text>
-
-          <!-- Flow summary -->
-          <text x="375" y="340" text-anchor="middle" fill="#605E5C" font-size="10">Users → Nearest Edge → Intelligent Routing → Best Healthy Origin</text>
-          <rect x="120" y="350" width="510" height="22" rx="4" fill="#0078D4" opacity="0.06"/>
-          <text x="375" y="365" text-anchor="middle" fill="#0078D4" font-size="10" font-weight="600">Failover in &lt; 30 seconds · 100+ edge locations · Built-in WAF &amp; DDoS protection</text>
-        </svg>
+        <div data-diagram-model="afd-request"></div>
     </div>
 
     <h3>Front Door SKUs</h3>
@@ -1531,34 +1354,14 @@ az afd route create \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'fd-routing-flow',
-            type: 'frontdoor-routing',
-            title: 'Azure Front Door — Global Request Routing',
-            icon: '🚨',
-            description: 'See how a user request flows through Front Door\'s global edge network to your backend origins. This is Front Door\'s core architecture.',
-            steps: [
-                'Users from around the world send HTTPS requests to your Front Door endpoint (contoso.azurefd.net).',
-                'DNS resolves to the nearest Edge POP via Anycast — user connects to the closest Microsoft edge location.',
-                'Front Door processes the request: WAF inspection, SSL termination, URL-based routing, and caching.',
-                'Traffic is forwarded to the primary origin group (East US App Service) over Microsoft\'s backbone.',
-                'If primary is unhealthy, Front Door automatically fails over to secondary origin (West Europe).',
-                'Health probes continuously monitor origin health. Unhealthy origins are removed from rotation automatically.'
-            ],
-            legend: [
-                { color: '#0078d4', label: 'User Traffic' },
-                { color: '#00bcf2', label: 'Edge POPs' },
-                { color: '#107c10', label: 'Primary Origin' },
-                { color: '#ff8c00', label: 'Secondary Origin' }
-            ]
-        }
+        { id: 'fd-routing-flow', type: 'frontdoor-routing' },
     ],
     quiz: [
         {
             question: 'Azure Front Door operates from which infrastructure?',
-            options: ['A single Azure region you choose', 'Multiple Azure regions you deploy to', 'Microsoft\'s global edge network (100+ locations)', 'Your on-premises data center'],
+            options: ['A single Azure region you choose', 'Multiple Azure regions you deploy to', 'Microsoft\'s global edge network', 'Your on-premises data center'],
             correct: 2,
-            explanation: 'Front Door operates from Microsoft\'s global edge network with 100+ points of presence (PoPs) worldwide. You don\'t deploy to specific regions — it\'s automatically global.'
+            explanation: 'Front Door operates from Microsoft\'s global edge network. A profile is not deployed into a single customer-selected Azure region. Use current product documentation rather than memorising a changing PoP count.'
         },
         {
             question: 'What is the default routing method in Azure Front Door?',
@@ -1597,14 +1400,14 @@ az afd route create \\
             id: 'fd-architecture',
             title: 'Front Door Request Flow',
             description: 'Place these steps in the correct order for how Front Door handles a request.',
-            items: ['Origin processes request and responds', 'Front Door forwards to best origin', 'User connects to nearest edge location', 'Edge sends response to user (may cache)', 'Front Door matches route and applies rules', 'DNS resolves to Front Door edge'],
+            items: ['Origin processes request and responds', 'Front Door selects and contacts an eligible origin', 'User connects to the selected edge; TLS and configured WAF checks run', 'Edge returns the response; eligible content may be cached', 'Front Door matches route, applies rules and finds a cache miss', 'DNS resolves to Front Door edge'],
             targets: {
                 'Step 1': ['DNS resolves to Front Door edge'],
-                'Step 2': ['User connects to nearest edge location'],
-                'Step 3': ['Front Door matches route and applies rules'],
-                'Step 4': ['Front Door forwards to best origin'],
+                'Step 2': ['User connects to the selected edge; TLS and configured WAF checks run'],
+                'Step 3': ['Front Door matches route, applies rules and finds a cache miss'],
+                'Step 4': ['Front Door selects and contacts an eligible origin'],
                 'Step 5': ['Origin processes request and responds'],
-                'Step 6': ['Edge sends response to user (may cache)']
+                'Step 6': ['Edge returns the response; eligible content may be cached']
             }
         },
         {
@@ -1967,38 +1770,8 @@ az afd endpoint show \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'vpn-s2s',
-            type: 'vpn-tunnel',
-            title: 'Site-to-Site VPN Tunnel',
-            icon: '🔒',
-            description: 'Watch how a Site-to-Site VPN creates an encrypted tunnel between your on-premises network and Azure over the public internet.',
-            steps: [
-                'On-premises datacenter with servers and a VPN device (firewall/router) with a public IP.',
-                'IPsec/IKE establishes an encrypted tunnel over the public internet. The negotiated algorithms must satisfy your current gateway SKU and security policy requirements.',
-                'Azure VNet with a VPN Gateway in the GatewaySubnet receives the encrypted traffic.',
-                'Result: On-premises servers (192.168.x.x) can communicate with Azure VMs (10.0.x.x) as if on the same network.'
-            ]
-        },
-        {
-            id: 'expressroute-arch',
-            type: 'expressroute',
-            title: 'ExpressRoute — Private Dedicated Connection',
-            icon: '⚡',
-            description: 'ExpressRoute provides a private, high-bandwidth connection to Azure that never touches the public internet.',
-            steps: [
-                'On-premises datacenter with enterprise apps and databases connects via its edge router.',
-                'A connectivity provider (Equinix, AT&T, Megaport) establishes BGP peering at a meet-me location.',
-                'Microsoft Edge Enterprise (MSEE) routers at the peering location — always a redundant pair for HA.',
-                'From MSEE, traffic enters Azure\'s backbone — access VNets, Storage, SQL, and even M365.',
-                'Key facts: private connectivity with redundant BGP sessions; bandwidth, gateway capability, SLA conditions, and encryption options depend on the selected design and current service documentation.'
-            ],
-            legend: [
-                { color: '#ff8c00', label: 'On-Premises' },
-                { color: '#8e44ad', label: 'Connectivity Provider' },
-                { color: '#0078d4', label: 'Microsoft Edge' }
-            ]
-        }
+        { id: 'vpn-s2s', type: 'vpn-tunnel' },
+        { id: 'expressroute-arch', type: 'expressroute' },
     ],
     quiz: [
         {
@@ -2316,7 +2089,7 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
     learn: `
 <div class="learn-section">
     <h2>VNet Peering</h2>
-    <p>VNet peering connects two VNets so resources in each VNet can communicate as if they're on the same network. Traffic stays on the Microsoft backbone — never crosses the public internet.</p>
+    <p>VNet peering lets resources in two VNets communicate over the Microsoft backbone using private addresses. The VNets remain separate address spaces, policies still apply, and peering is non-transitive: A-to-B and B-to-C peerings do not automatically connect A to C.</p>
     
     <h3>Types of Peering</h3>
     <table class="content-table">
@@ -2385,23 +2158,7 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
 </div>
 `,
     diagrams: [
-        {
-            id: 'vnet-peering-diagram',
-            type: 'vnet-peering',
-            title: 'VNet Peering — Cross-Region & Cross-Subscription',
-            icon: '🔗',
-            description: 'VNet Peering connects two VNets so resources can communicate using private IPs. Traffic stays on Microsoft\'s backbone.',
-            steps: [
-                'VNet A in East US with VMs on 10.0.x.x address space.',
-                'VNet B in West Europe with VMs on 10.1.x.x address space (different subscription).',
-                'Global VNet Peering established — traffic flows over Microsoft\'s backbone, never the public internet.',
-                'Key properties: Non-transitive, no IP overlap allowed, each direction configured independently, gateway transit available.'
-            ],
-            legend: [
-                { color: '#0078d4', label: 'VNet A (East US)' },
-                { color: '#107c10', label: 'VNet B (West Europe)' }
-            ]
-        }
+        { id: 'vnet-peering-diagram', type: 'vnet-peering' },
     ],
     quiz: [
         {

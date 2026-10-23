@@ -20,12 +20,12 @@ const MODULES_EXTRAS = [
     learn: `
 <div class="learn-section">
     <h2>Why Azure Bastion?</h2>
-    <p>The traditional way to manage Azure VMs is to give them a public IP and open port 3389 (RDP) or 22 (SSH). This is dangerous — internet-exposed management ports are the #1 target of brute-force and ransomware attacks.</p>
-    <p><strong>Azure Bastion</strong> is a fully managed jump-box service that lets you connect to your VMs through the Azure portal over TLS — no public IP on the VM, no open management ports, no VPN required.</p>
+    <p>Direct remote management can use a VM public IP with port 3389 (RDP) or 22 (SSH). Allowing those ports from anywhere exposes the VM's sign-in service to internet scanning and brute-force attacks.</p>
+    <p><strong>Azure Bastion</strong> is a managed connection service: the browser connects over HTTPS and Bastion connects to the VM privately using RDP/SSH. The VM needs no public IP or internet-exposed management ports, but its NSG and guest firewall must allow the required private Bastion-to-VM connection.</p>
 
     <div class="concept-box">
         <h4>🔑 Core Idea</h4>
-        <p>Bastion sits in a dedicated subnet inside your VNet (<span class="code-inline">AzureBastionSubnet</span>) and proxies HTTPS from the browser to RDP/SSH on the private IP of your VM. The VM never needs a public IP.</p>
+        <p>A dedicated Bastion deployment (Basic, Standard or Premium) sits in <span class="code-inline">AzureBastionSubnet</span> and connects browser HTTPS sessions to private VM RDP/SSH sessions. Developer uses a shared service instead. Neither pattern requires a public IP on the target VM.</p>
     </div>
 
     <h3>Bastion SKUs</h3>
@@ -44,9 +44,9 @@ const MODULES_EXTRAS = [
 
     <h3>Requirements</h3>
     <ul>
-        <li>A subnet named <strong>exactly</strong> <span class="code-inline">AzureBastionSubnet</span> with at least <strong>/26</strong> (Basic/Developer) or <strong>/26</strong> recommended (Standard). Use <strong>/26 or larger</strong> for autoscale.</li>
-        <li>A Standard public IP (for internet-facing SKUs) — Bastion host receives the IP, VMs do not.</li>
-        <li>Target VMs in the same VNet or peered VNet (IP-based connection works for any reachable IP with Standard SKU).</li>
+        <li>New dedicated deployments require a subnet named <strong>exactly</strong> <span class="code-inline">AzureBastionSubnet</span>, sized <strong>/26 or larger</strong>. Developer does not require that subnet.</li>
+        <li>Internet-facing dedicated deployments require a Standard, static public IP for the Bastion host. Developer and Premium private-only deployments do not require this public IP.</li>
+        <li>Developer connects to a VM in the same VNet. Dedicated SKUs also support peered VNets; Standard and Premium add native-client and IP-based connection features. Reachability and access rules still apply.</li>
     </ul>
 
     <div class="warning-box">
@@ -60,7 +60,7 @@ const MODULES_EXTRAS = [
     <div class="comparison-grid">
         <div class="comparison-card">
             <h4>❌ Public IP + RDP/SSH</h4>
-            <p>Simple, cheapest, but exposes management ports to the entire internet. High risk of compromise.</p>
+            <p>A direct public endpoint needs careful source restrictions and monitoring. Open-to-anywhere management rules increase exposure to attacks.</p>
         </div>
         <div class="comparison-card">
             <h4>⚠️ Self-hosted Jump Box VM</h4>
@@ -68,38 +68,20 @@ const MODULES_EXTRAS = [
         </div>
         <div class="comparison-card">
             <h4>✅ Azure Bastion</h4>
-            <p>Fully managed, no public IP on VMs, MFA via Azure AD, integrates with Just-in-Time access. Recommended for production.</p>
+            <p>Managed connection path without public IPs on target VMs. Use Microsoft Entra ID controls for portal access and separately configure supported VM authentication, network rules and least-privilege access.</p>
         </div>
     </div>
 </div>
 `,
     diagrams: [
-        {
-            id: 'bastion-flow',
-            type: 'bastion',
-            title: 'Bastion Connection Flow — No Public IPs on Your VMs',
-            icon: '🚪',
-            description: 'User connects to a Windows VM through Azure Bastion. Traffic stays inside Azure — the VM never gets a public IP.',
-            steps: [
-                'Admin opens https://portal.azure.com and clicks Connect → Bastion on the target VM.',
-                'Portal tunnels HTTPS (443) through the Bastion host in AzureBastionSubnet.',
-                'Bastion opens an RDP (3389) session over the VNet to the VM\'s private IP.',
-                'Session streams back to the browser as TLS-encrypted HTML5 — no client install needed.',
-                'Because the VM has no public IP, attackers on the internet have no surface to attack.'
-            ],
-            legend: [
-                { color: '#0078D4', label: 'HTTPS (443) from browser' },
-                { color: '#7A3B93', label: 'RDP/SSH inside VNet' },
-                { color: '#d13438', label: 'Blocked — no public exposure' }
-            ]
-        }
+        { id: 'bastion-flow', type: 'bastion' },
     ],
     quiz: [
         {
-            question: 'What must the Bastion subnet be named?',
+            question: 'For a dedicated Bastion deployment, what must its subnet be named?',
             options: ['BastionSubnet', 'AzureBastion', 'AzureBastionSubnet', 'Any name you choose'],
             correct: 2,
-            explanation: 'The subnet must be named exactly "AzureBastionSubnet" (case-sensitive). Azure will reject any other name during deployment.'
+            explanation: 'Dedicated Basic, Standard and Premium deployments require exactly "AzureBastionSubnet". Developer uses a shared service without that dedicated subnet.'
         },
         {
             question: 'Which Bastion SKU is required to connect using the native Windows RDP (mstsc) client via `az network bastion`?',
@@ -108,27 +90,27 @@ const MODULES_EXTRAS = [
             explanation: 'Native client support (SSH/RDP via az CLI tunnel) is a Standard-tier feature. Basic only supports browser-based HTML5 sessions.'
         },
         {
-            question: 'SCENARIO: You deploy a VM with no public IP. RDP (3389) is blocked at the NSG. Your admin needs to troubleshoot an app issue on the VM. What is the lowest-cost, most secure way to grant access?',
+            question: 'SCENARIO: A VM has no public IP and its NSG blocks RDP. You want managed browser-based administration without exposing the VM to the internet. Which option supplies the required private path?',
             options: [
                 'Add a public IP to the VM temporarily',
                 'Deploy a jump-box VM with a public IP in a separate subnet',
-                'Deploy Azure Bastion (Basic) in the same VNet and connect via the portal',
+                'Deploy a supported Bastion configuration and allow its private RDP path in the NSG and guest firewall',
                 'Use a Site-to-Site VPN from the admin\'s home router'
             ],
             correct: 2,
-            explanation: 'Bastion Basic is the fastest, most secure option. No public IP on the VM, no jump-box to patch, TLS in the browser. VPN from a home router is slow and high-overhead for one admin. Adding a public IP or jump-box re-exposes the management surface.',
+            explanation: 'Bastion removes the need for a public VM address, but it does not bypass NSGs or the guest firewall. Allow the required private RDP/SSH path, configure access permissions and verify the supported SKU and region. Compare cost rather than assuming Bastion is always cheapest.',
             type: 'scenario'
         },
         {
             question: 'Which of these are advantages of Azure Bastion over exposing RDP to the internet? (Select all that apply)',
             options: [
                 'No public IP required on target VMs',
-                'Integrates with Azure AD + MFA for the portal login',
+                'Portal access can use Microsoft Entra ID controls such as MFA',
                 'Automatic file-copy between local machine and VM (Standard+)',
                 'Free — Azure Bastion has no per-hour cost'
             ],
             correct: [0, 1, 2],
-            explanation: 'Bastion removes the public IP, uses Azure AD for authentication, and Standard/Premium support file copy. However, it has a meaningful per-hour cost and outbound data charges — not free.',
+            explanation: 'Bastion avoids a public IP on the target VM. Portal identity controls and VM sign-in are separate concerns. Standard/Premium support native-client file transfer in supported configurations. Check current SKU pricing and data charges; do not assume all deployments are free.',
             type: 'multi-select'
         },
         {
@@ -346,25 +328,7 @@ az network bastion rdp \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'natgw-flow',
-            type: 'natgw',
-            title: 'NAT Gateway — Dedicated Outbound SNAT',
-            icon: '🔀',
-            description: 'Watch how subnet VMs share a pool of public IPs via NAT Gateway.',
-            steps: [
-                'Three VMs in snet-web need outbound internet access.',
-                'The subnet is associated with a NAT Gateway.',
-                'Each outbound connection is SNAT\'d to one of the NAT Gateway\'s public IPs.',
-                'Responses return via the NAT Gateway\'s connection-tracking table and back to the originating VM.',
-                'Because the pool is dedicated (not shared), SNAT port exhaustion is extremely unlikely.'
-            ],
-            legend: [
-                { color: '#107c10', label: 'Outbound SNAT' },
-                { color: '#0078D4', label: 'Response returns via state tracking' },
-                { color: '#d13438', label: 'Inbound — NOT supported' }
-            ]
-        }
+        { id: 'natgw-flow', type: 'natgw' },
     ],
     quiz: [
         {
@@ -552,20 +516,7 @@ az network public-ip delete --name pip-natgw --resource-group rg-academy-lab`,
 </div>
 `,
     diagrams: [
-        {
-            id: 'udr-flow',
-            type: 'udr',
-            title: 'UDR Force-Tunnel to Firewall',
-            icon: '🗺️',
-            description: 'Without UDR, spoke VM traffic exits to internet directly. With UDR, it goes through hub firewall first.',
-            steps: [
-                'VM in spoke subnet sends a request to an external IP (8.8.8.8).',
-                'Without UDR, system route sends it straight to the internet via SNAT.',
-                'With UDR (0.0.0.0/0 → Virtual Appliance → firewall IP), traffic is forwarded through the firewall in the hub VNet.',
-                'Firewall inspects, logs, and allows/denies the request.',
-                'Allowed traffic exits to the internet via the firewall\'s public IP.'
-            ]
-        }
+        { id: 'udr-flow', type: 'udr' },
     ],
     quiz: [
         {
@@ -583,7 +534,7 @@ az network public-ip delete --name pip-natgw --resource-group rg-academy-lab`,
                 '0.0.0.0/0 → Virtual Network Gateway'
             ],
             correct: 1,
-            explanation: '0.0.0.0/0 (all non-VNet traffic) pointed at the firewall\'s private IP as a Virtual Appliance next hop. This overrides the default system "0.0.0.0/0 → Internet" route via longest-prefix tie-breaking.',
+            explanation: 'A 0.0.0.0/0 UDR can point to the firewall as a Virtual Appliance next hop. Most-specific prefix is considered first. For equal prefixes, the general route-source preference is UDR > BGP > system, subject to platform exceptions. More-specific routes can still win; configure forwarding, policy, translation where needed, and the return path.',
             type: 'scenario'
         },
         {
@@ -755,26 +706,7 @@ az network public-ip delete --name pip-natgw --resource-group rg-academy-lab`,
 </div>
 `,
     diagrams: [
-        {
-            id: 'firewall-topology',
-            type: 'firewall',
-            title: 'Azure Firewall in Hub-Spoke',
-            icon: '🔥',
-            description: 'Azure Firewall in the hub inspects all spoke internet-bound and cross-spoke traffic.',
-            steps: [
-                'Spoke VM in snet-web initiates request to an external API.',
-                'UDR on spoke subnet forces 0.0.0.0/0 through Firewall\'s private IP.',
-                'Firewall evaluates application rules — target FQDN is in the allow list.',
-                'Traffic is SNAT\'d to the firewall public IP and sent to the internet.',
-                'Response returns via firewall connection tracking, back to the spoke VM.',
-                'An unrelated spoke-to-spoke request is also forced through the firewall for east-west inspection.'
-            ],
-            legend: [
-                { color: '#E8443A', label: 'Firewall-inspected path' },
-                { color: '#107c10', label: 'Allowed via app rule' },
-                { color: '#d13438', label: 'Denied (example)' }
-            ]
-        }
+        { id: 'firewall-topology', type: 'firewall' },
     ],
     quiz: [
         {
@@ -1025,20 +957,7 @@ az network vnet subnet update \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'nw-ipflow',
-            type: 'nwatcher',
-            title: 'IP Flow Verify — Which Rule Wins?',
-            icon: '🔍',
-            description: 'IP Flow Verify asks Azure: given src/dst/port/protocol, which NSG rule would match?',
-            steps: [
-                'User reports VM-A cannot reach 8.8.8.8:443.',
-                'Admin opens Network Watcher → IP flow verify.',
-                'Selects VM-A, Direction=Outbound, Protocol=TCP, Local=VM IP, Remote=8.8.8.8:443.',
-                'Result: DENY. Matched rule: Custom_Block_Internet at priority 200.',
-                'Admin now knows exactly which NSG rule to fix — no guessing.'
-            ]
-        }
+        { id: 'nw-ipflow', type: 'nwatcher' },
     ],
     quiz: [
         {
@@ -1273,21 +1192,7 @@ az deployment group create --resource-group rg-capstone --template-file main.bic
 </div>
 `,
     diagrams: [
-        {
-            id: 'capstone-arch',
-            type: 'hub-spoke-capstone',
-            title: 'Enterprise Hub-Spoke Reference Architecture',
-            icon: '🏆',
-            description: 'The full picture — Front Door at the edge, Firewall in the hub, private endpoints in the data spoke.',
-            steps: [
-                'User requests app.contoso.com → DNS resolves to Front Door anycast IP.',
-                'Front Door Premium evaluates WAF rules, applies caching, then selects healthy backend.',
-                'Traffic reaches the web-tier internal Load Balancer in spoke A via Private Link.',
-                'Web VM calls SQL PaaS via a Private Endpoint — traffic never touches the public internet.',
-                'Separately, any internet-bound traffic from spoke VMs is forced through Azure Firewall via UDR.',
-                'Firewall applies FQDN rules, logs everything, and SNATs outbound via its public IP.'
-            ]
-        }
+        { id: 'capstone-arch', type: 'hub-spoke-capstone' },
     ],
     quiz: [
         {

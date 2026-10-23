@@ -72,10 +72,10 @@ const MODULES_100 = [
             <h4>TCP (Transmission Control Protocol)</h4>
             <ul>
                 <li>Connection-oriented (3-way handshake)</li>
-                <li>Reliable — guarantees delivery</li>
+                <li>Reliable byte stream — retransmits loss, but a connection can still fail</li>
                 <li>Ordered — data arrives in sequence</li>
-                <li>Slower but dependable</li>
-                <li>Used by: HTTP, SSH, FTP, SMTP</li>
+                <li>Ordering and retransmission add overhead; performance depends on the application</li>
+                <li>Used by: HTTP/1.1, HTTP/2, SSH, FTP, SMTP; HTTP/3 uses QUIC over UDP</li>
             </ul>
         </div>
         <div class="comparison-card">
@@ -102,10 +102,10 @@ const MODULES_100 = [
     <h3>Public vs. Private IP Addresses</h3>
     <table class="content-table">
         <tr><th>Type</th><th>Range</th><th>Use</th></tr>
-        <tr><td><strong>Private (Class A)</strong></td><td>10.0.0.0 – 10.255.255.255</td><td>Large enterprise networks</td></tr>
-        <tr><td><strong>Private (Class B)</strong></td><td>172.16.0.0 – 172.31.255.255</td><td>Medium networks</td></tr>
-        <tr><td><strong>Private (Class C)</strong></td><td>192.168.0.0 – 192.168.255.255</td><td>Small/home networks</td></tr>
-        <tr><td><strong>Public</strong></td><td>Everything else</td><td>Internet-routable</td></tr>
+        <tr><td><strong>Private: 10.0.0.0/8</strong></td><td>10.0.0.0 – 10.255.255.255</td><td>Private network address planning</td></tr>
+        <tr><td><strong>Private: 172.16.0.0/12</strong></td><td>172.16.0.0 – 172.31.255.255</td><td>Private network address planning</td></tr>
+        <tr><td><strong>Private: 192.168.0.0/16</strong></td><td>192.168.0.0 – 192.168.255.255</td><td>Common in home networks</td></tr>
+        <tr><td><strong>Public</strong></td><td>Globally routable allocations</td><td>Not every other address is public: loopback, link-local and other special ranges also exist</td></tr>
     </table>
 
     <div class="concept-box">
@@ -140,8 +140,8 @@ const MODULES_100 = [
         <li>Your OS checks its local DNS cache</li>
         <li>If not cached, it queries your configured DNS resolver</li>
         <li>The resolver queries root servers → TLD servers (.com) → authoritative servers</li>
-        <li>The authoritative server returns the IP address</li>
-        <li>Your browser connects to that IP</li>
+        <li>The authoritative server answers the resolver, which can cache the answer and return it to your device</li>
+        <li>Your browser can then attempt a separate connection to that address</li>
     </ol>
 
     <h3>DNS Record Types</h3>
@@ -193,71 +193,10 @@ const MODULES_100 = [
 </div>
 `,
     diagrams: [
-        {
-            id: 'osi-layers',
-            type: 'osi-model',
-            title: 'The OSI Model — 7 Layers with Azure Mapping',
-            icon: '📶',
-            description: 'Step through each OSI layer and see which Azure services operate at that layer. Hover over layers for details.',
-            steps: [
-                'Layer 7 — Application: HTTP/DNS. Azure Front Door & Application Gateway work here.',
-                'Layer 6 — Presentation: SSL/TLS encryption. Azure handles TLS termination at the edge.',
-                'Layer 5 — Session: Manages connections. Azure uses session affinity (sticky sessions).',
-                'Layer 4 — Transport: TCP/UDP. Azure Load Balancer operates at this layer.',
-                'Layer 3 — Network: IP routing. VNets, NSGs, and User-Defined Routes live here.',
-                'Layer 2 — Data Link: MAC addressing. Azure manages virtual NICs internally.',
-                'Layer 1 — Physical: Cables & signals. Azure datacenters handle all physical infrastructure.'
-            ],
-            legend: [
-                { color: '#d13438', label: 'Upper Layers (7-5)' },
-                { color: '#ff8c00', label: 'Transport (4)' },
-                { color: '#107c10', label: 'Lower Layers (3-1)' }
-            ]
-        },
-        {
-            id: 'tcp-3way',
-            type: 'tcp-handshake',
-            title: 'TCP 3-Way Handshake',
-            icon: '🤝',
-            description: 'Watch how TCP establishes a reliable connection before any data is sent. This is why TCP is "connection-oriented."',
-            steps: [
-                'Step 1 — SYN: Client sends a SYN packet with an initial sequence number (seq=100) to the server.',
-                'Step 2 — SYN-ACK: Server responds with its own sequence number (seq=300) and acknowledges the client (ack=101).',
-                'Step 3 — ACK: Client acknowledges the server\'s sequence (ack=301). Three-way handshake complete!',
-                'Connection Established! Both sides can now send data reliably. Every Azure service using TCP (HTTP, SSH, SQL) does this.'
-            ]
-        },
-        {
-            id: 'dns-flow',
-            type: 'dns-resolution',
-            title: 'DNS Resolution — How Names Become IPs',
-            icon: '🔍',
-            description: 'Follow a DNS query from your browser all the way to the authoritative server. This happens every time you visit a website.',
-            steps: [
-                'Your browser needs to reach "app.contoso.com" — it needs an IP address.',
-                'First check: local DNS cache. If you visited recently, the IP is cached.',
-                'If not cached, ask the ISP\'s recursive resolver to find it.',
-                'Resolver asks a Root DNS server: "Who manages .com?"',
-                'Root says: "Ask the .com TLD server at this address."',
-                'TLD says: "The authoritative server for contoso.com is at this address."',
-                'Authoritative server responds with the final IP: 20.245.156.100 — browser connects!'
-            ]
-        },
-        {
-            id: 'packet-travel',
-            type: 'packet-journey',
-            title: 'How a Packet Travels to Azure',
-            icon: '📦',
-            description: 'Trace a network packet from your computer through the internet to an Azure VM. Each hop processes headers at different layers.',
-            steps: [
-                'Your PC creates an HTTP request. The NIC driver frames it for the local network.',
-                'Your router performs NAT — replaces your private IP with the public IP for the internet.',
-                'Your ISP routes the packet through the internet backbone using BGP routing tables.',
-                'Packet enters Microsoft\'s network at the nearest edge POP via Anycast.',
-                'Microsoft\'s private backbone routes it to the destination Azure region.',
-                'Azure\'s SDN delivers it to the VM\'s virtual NIC inside your VNet.'
-            ]
-        }
+        { id: 'osi-layers', type: 'osi-model' },
+        { id: 'tcp-3way', type: 'tcp-handshake' },
+        { id: 'dns-flow', type: 'dns-resolution' },
+        { id: 'packet-travel', type: 'packet-journey' },
     ],
     quiz: [
         {
@@ -288,7 +227,7 @@ const MODULES_100 = [
             question: 'What is the key difference between TCP and UDP?',
             options: ['TCP is faster than UDP', 'UDP guarantees delivery, TCP does not', 'TCP is connection-oriented and reliable, UDP is connectionless', 'UDP uses port numbers, TCP does not'],
             correct: 2,
-            explanation: 'TCP establishes a connection (3-way handshake) and guarantees ordered, reliable delivery. UDP is "fire and forget" — faster but no delivery guarantee. DNS uses UDP for quick lookups, while HTTP uses TCP for reliable web page delivery.'
+            explanation: 'TCP provides an ordered byte stream with retransmission, but a connection can still fail. UDP has no delivery or ordering guarantee. DNS can use UDP or TCP. HTTP/1.1 and HTTP/2 normally use TCP; HTTP/3 uses QUIC over UDP.'
         },
         {
             question: 'Which IP range is a private (non-routable) address space?',
@@ -464,61 +403,10 @@ dig portal.azure.com CNAME</div>`,
     <p>Before you create any networking resources, you need to understand how Azure organizes everything. Think of it as a tree structure:</p>
     
     <div class="diagram-container">
-        <svg viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg" style="max-width:600px;width:100%;font-family:'Segoe UI',sans-serif">
-          <!-- Azure AD Tenant -->
-          <rect x="150" y="10" width="300" height="44" rx="8" fill="#fff" stroke="#0078D4" stroke-width="2"/>
-          <text x="300" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="#0078D4">Azure AD Tenant</text>
-          <text x="300" y="46" text-anchor="middle" font-size="10" fill="#555">Identity &amp; Access Management</text>
-          <!-- Line down -->
-          <line x1="300" y1="54" x2="300" y2="74" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
-          <!-- Management Groups -->
-          <rect x="170" y="74" width="260" height="40" rx="8" fill="#fff" stroke="#0078D4" stroke-width="2"/>
-          <text x="300" y="94" text-anchor="middle" font-size="12" font-weight="600" fill="#0078D4">Management Groups</text>
-          <text x="300" y="108" text-anchor="middle" font-size="10" fill="#555">Organize subscriptions</text>
-          <!-- Line splits -->
-          <line x1="300" y1="114" x2="300" y2="130" stroke="#333" stroke-width="1.5"/>
-          <line x1="300" y1="130" x2="180" y2="130" stroke="#333" stroke-width="1.5"/>
-          <line x1="300" y1="130" x2="420" y2="130" stroke="#333" stroke-width="1.5"/>
-          <line x1="180" y1="130" x2="180" y2="148" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
-          <line x1="420" y1="130" x2="420" y2="148" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
-          <!-- Sub A -->
-          <rect x="110" y="148" width="140" height="38" rx="8" fill="#fff" stroke="#107C10" stroke-width="2"/>
-          <text x="180" y="166" text-anchor="middle" font-size="12" font-weight="600" fill="#107C10">Sub A (Dev)</text>
-          <text x="180" y="180" text-anchor="middle" font-size="9" fill="#555">Development</text>
-          <!-- Sub B -->
-          <rect x="350" y="148" width="140" height="38" rx="8" fill="#fff" stroke="#FF8C00" stroke-width="2"/>
-          <text x="420" y="166" text-anchor="middle" font-size="12" font-weight="600" fill="#FF8C00">Sub B (Prod)</text>
-          <text x="420" y="180" text-anchor="middle" font-size="9" fill="#555">Production</text>
-          <!-- Lines down -->
-          <line x1="180" y1="186" x2="180" y2="210" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
-          <line x1="420" y1="186" x2="420" y2="210" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
-          <!-- RG 1 -->
-          <rect x="110" y="210" width="140" height="36" rx="8" fill="#fff" stroke="#7A3B93" stroke-width="2"/>
-          <text x="180" y="228" text-anchor="middle" font-size="11" font-weight="600" fill="#7A3B93">RG: Networking</text>
-          <text x="180" y="241" text-anchor="middle" font-size="9" fill="#555">Resource Group 1</text>
-          <!-- RG 3 -->
-          <rect x="350" y="210" width="140" height="36" rx="8" fill="#fff" stroke="#7A3B93" stroke-width="2"/>
-          <text x="420" y="228" text-anchor="middle" font-size="11" font-weight="600" fill="#7A3B93">RG: Frontend</text>
-          <text x="420" y="241" text-anchor="middle" font-size="9" fill="#555">Resource Group 3</text>
-          <!-- Lines down -->
-          <line x1="180" y1="246" x2="180" y2="270" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
-          <line x1="420" y1="246" x2="420" y2="270" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
-          <!-- Resources 1 -->
-          <rect x="95" y="270" width="170" height="54" rx="8" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="180" y="288" text-anchor="middle" font-size="10" fill="#333">VNet, NSG,</text>
-          <text x="180" y="301" text-anchor="middle" font-size="10" fill="#333">Public IP,</text>
-          <text x="180" y="314" text-anchor="middle" font-size="10" fill="#333">Load Balancer</text>
-          <!-- Resources 3 -->
-          <rect x="335" y="270" width="170" height="54" rx="8" fill="#FFF4E5" stroke="#FF8C00" stroke-width="1.5"/>
-          <text x="420" y="288" text-anchor="middle" font-size="10" fill="#333">Front Door,</text>
-          <text x="420" y="301" text-anchor="middle" font-size="10" fill="#333">App Service,</text>
-          <text x="420" y="314" text-anchor="middle" font-size="10" fill="#333">Storage</text>
-          <!-- Arrowhead marker -->
-          <defs><marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#333"/></marker></defs>
-        </svg>
+        <div data-diagram-model="azure-hierarchy"></div>
     </div>
 
-    <h3>Azure AD Tenant</h3>
+    <h3>Microsoft Entra ID Tenant</h3>
     <p>Your organization's identity boundary. It contains all your users, groups, and service principals. One tenant can have many subscriptions.</p>
 
     <h3>Management Groups</h3>
@@ -533,7 +421,7 @@ dig portal.azure.com CNAME</div>`,
 
     <div class="concept-box">
         <h4>🔑 Key Concept: Subscription Limits</h4>
-        <p>Many Azure resources have per-subscription limits. For example: max 1,000 VNets per subscription, max 5,000 NSG rules. These are soft limits that can be increased via support requests.</p>
+        <p>Azure limits depend on the resource, scope, region and subscription. Some quotas can be increased; others are fixed. Check the current <a href="https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits" target="_blank" rel="noopener noreferrer">Azure service limits</a> before sizing a design rather than assuming every limit can be raised.</p>
     </div>
 
     <h3>Resource Groups</h3>
@@ -575,36 +463,7 @@ dig portal.azure.com CNAME</div>`,
     <p>In supported regions, Availability Zones are logical groupings of one or more physically separate datacenters with independent power, cooling, and networking. Region, service, tier, and configuration support vary, and logical zone numbers can map differently across subscriptions.</p>
     
     <div class="diagram-container">
-        <svg viewBox="0 0 550 220" xmlns="http://www.w3.org/2000/svg" style="max-width:550px;width:100%;font-family:'Segoe UI',sans-serif">
-          <!-- Region box -->
-          <rect x="10" y="10" width="530" height="200" rx="12" fill="#E8F4FD" stroke="#0078D4" stroke-width="2"/>
-          <text x="275" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#0078D4">Region: East US</text>
-          <!-- Zone 1 -->
-          <rect x="35" y="48" width="145" height="120" rx="8" fill="#fff" stroke="#107C10" stroke-width="2"/>
-          <text x="107" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#107C10">Zone 1</text>
-          <rect x="55" y="78" width="100" height="28" rx="5" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.2"/>
-          <text x="105" y="96" text-anchor="middle" font-size="11" fill="#333">VM-1</text>
-          <rect x="55" y="114" width="100" height="28" rx="5" fill="#FFF4E5" stroke="#FF8C00" stroke-width="1.2"/>
-          <text x="105" y="132" text-anchor="middle" font-size="11" fill="#333">DB-1</text>
-          <!-- Zone 2 -->
-          <rect x="202" y="48" width="145" height="120" rx="8" fill="#fff" stroke="#107C10" stroke-width="2"/>
-          <text x="274" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#107C10">Zone 2</text>
-          <rect x="222" y="78" width="100" height="28" rx="5" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.2"/>
-          <text x="272" y="96" text-anchor="middle" font-size="11" fill="#333">VM-2</text>
-          <rect x="222" y="114" width="100" height="28" rx="5" fill="#FFF4E5" stroke="#FF8C00" stroke-width="1.2"/>
-          <text x="272" y="132" text-anchor="middle" font-size="11" fill="#333">DB-2</text>
-          <!-- Zone 3 -->
-          <rect x="369" y="48" width="145" height="120" rx="8" fill="#fff" stroke="#107C10" stroke-width="2"/>
-          <text x="441" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#107C10">Zone 3</text>
-          <rect x="389" y="78" width="100" height="28" rx="5" fill="#E8F0FE" stroke="#0078D4" stroke-width="1.2"/>
-          <text x="439" y="96" text-anchor="middle" font-size="11" fill="#333">VM-3</text>
-          <!-- Latency line -->
-          <line x1="60" y1="182" x2="490" y2="182" stroke="#7A3B93" stroke-width="1.5" stroke-dasharray="6,3"/>
-          <circle cx="107" cy="182" r="3" fill="#7A3B93"/>
-          <circle cx="274" cy="182" r="3" fill="#7A3B93"/>
-          <circle cx="441" cy="182" r="3" fill="#7A3B93"/>
-          <text x="275" y="198" text-anchor="middle" font-size="11" fill="#7A3B93" font-style="italic">Azure targets low-latency inter-zone networking (~2ms RTT)</text>
-        </svg>
+        <div data-diagram-model="azure-regions"></div>
     </div>
 
     <h3>Service Tiers by Availability</h3>
@@ -628,7 +487,7 @@ dig portal.azure.com CNAME</div>`,
     <h3>How ARM Works</h3>
     <ol>
         <li>You send a request (e.g., "create a VNet")</li>
-        <li>ARM authenticates and authorizes you (Azure AD + RBAC)</li>
+        <li>ARM authenticates and authorizes you (Microsoft Entra ID + RBAC)</li>
         <li>ARM routes the request to the appropriate resource provider (e.g., Microsoft.Network)</li>
         <li>The resource provider creates the resource</li>
         <li>ARM returns the result</li>
@@ -649,26 +508,7 @@ dig portal.azure.com CNAME</div>`,
 </div>
 `,
     diagrams: [
-        {
-            id: 'azure-global-infra',
-            type: 'azure-regions',
-            title: 'Azure Global Infrastructure — Regions & Availability',
-            icon: '🌍',
-            description: 'Explore example Azure regions, availability zones in supported regions, and paired versus nonpaired region architectures. These building blocks enable resilience choices but do not make a workload resilient automatically.',
-            steps: [
-                'East US is one example region. Region selection should follow latency, data residency, service support, capacity, and recovery requirements.',
-                'West Europe is a separate region. Deploying in another region requires explicit workload and data architecture.',
-                'Southeast Asia is another example. Service and availability-zone support must be checked per region.',
-                'Supported interregion services can carry traffic on Microsoft\'s global network; measure latency for the actual region pair and protocol.',
-                'Availability zones isolate datacenter failures in supported regions. Zonal and zone-redundant services divide failover responsibility differently.',
-                'Some regions are paired and others are nonpaired. Service-specific replication such as GRS can use a pair, but workload resilience and failover are not automatic.'
-            ],
-            legend: [
-                { color: '#0078d4', label: 'Americas' },
-                { color: '#107c10', label: 'Europe' },
-                { color: '#ff8c00', label: 'Asia Pacific' }
-            ]
-        }
+        { id: 'azure-global-infra', type: 'azure-regions' },
     ],
     quiz: [
         {
@@ -680,7 +520,7 @@ dig portal.azure.com CNAME</div>`,
                 'Resource Group → Management Group → Subscription'
             ],
             correct: 1,
-            explanation: 'The hierarchy is: Azure AD Tenant → Management Groups → Subscriptions → Resource Groups → Resources. Management Groups contain subscriptions, and subscriptions contain resource groups.'
+            explanation: 'The resource hierarchy is management groups → subscriptions → resource groups → resources. A Microsoft Entra ID tenant provides the identity boundary trusted by the subscriptions; it is not a network container.'
         },
         {
             question: 'A resource group is located in East US. Can you create a VNet in West Europe inside this resource group?',
@@ -715,7 +555,7 @@ dig portal.azure.com CNAME</div>`,
             question: 'Which component authenticates and authorizes all Azure management requests?',
             options: ['Azure Firewall', 'Azure Resource Manager (ARM)', 'Network Security Groups', 'Azure Front Door'],
             correct: 1,
-            explanation: 'Azure Resource Manager (ARM) handles authentication (via Azure AD) and authorization (via RBAC) for all management plane operations. Every API call, CLI command, or Portal action goes through ARM.'
+            explanation: 'Azure Resource Manager (ARM) handles authentication (via Microsoft Entra ID) and authorization (via RBAC) for management-plane operations. Data-plane calls to applications and services are distinct.'
         }
     ],
     interactive: [
@@ -724,9 +564,9 @@ dig portal.azure.com CNAME</div>`,
             id: 'azure-hierarchy',
             title: 'Build the Azure Hierarchy',
             description: 'Arrange these Azure components in order from broadest (top) to narrowest (bottom).',
-            items: ['Resource', 'Subscription', 'Management Group', 'Resource Group', 'Azure AD Tenant'],
+            items: ['Resource', 'Subscription', 'Management Group', 'Resource Group', 'Microsoft Entra ID Tenant'],
             targets: {
-                'Level 1 (Broadest)': ['Azure AD Tenant'],
+                'Identity boundary': ['Microsoft Entra ID Tenant'],
                 'Level 2': ['Management Group'],
                 'Level 3': ['Subscription'],
                 'Level 4': ['Resource Group'],
@@ -738,7 +578,7 @@ dig portal.azure.com CNAME</div>`,
             id: 'azure-env-flashcards',
             title: 'Azure Environment Flashcards',
             cards: [
-                { front: 'What is Azure AD Tenant?', back: 'Your organization\'s identity boundary in Azure. Contains users, groups, and service principals. One tenant can have many subscriptions.' },
+                { front: 'What is a Microsoft Entra ID tenant?', back: 'Your organization\'s identity boundary. Contains users, groups, and service principals. Multiple Azure subscriptions can trust the same tenant.' },
                 { front: 'What is RBAC?', back: 'Role-Based Access Control. Provides fine-grained access management for Azure resources. Roles like Owner, Contributor, Reader can be assigned at any scope.' },
                 { front: 'What is a Region Pair?', back: 'A service-specific relationship between two regions. Some services use pairs for geo-replication, but many newer regions are nonpaired and pair membership does not create automatic workload DR.' },
                 { front: 'What is ARM?', back: 'Azure Resource Manager — the deployment and management layer. All management actions go through ARM, which handles authentication, authorization, and routing to resource providers.' },
@@ -884,40 +724,7 @@ az group show --name rg-academy-lab --output table</div>`,
     <p>Subnets divide your VNet into smaller segments. Each subnet gets a portion of the VNet's address space.</p>
     
     <div class="diagram-container">
-        <svg viewBox="0 0 550 500" xmlns="http://www.w3.org/2000/svg" style="max-width:550px;width:100%;font-family:'Segoe UI',sans-serif">
-          <!-- VNet outer -->
-          <rect x="10" y="10" width="530" height="480" rx="12" fill="#F0F6FF" stroke="#0078D4" stroke-width="2" stroke-dasharray="8,4"/>
-          <text x="275" y="34" text-anchor="middle" font-size="14" font-weight="700" fill="#0078D4">VNet: 10.0.0.0/16</text>
-          <!-- Web-Tier Subnet -->
-          <rect x="30" y="48" width="490" height="95" rx="8" fill="#E6F4EA" stroke="#107C10" stroke-width="1.5" stroke-dasharray="6,3"/>
-          <text x="50" y="66" font-size="12" font-weight="600" fill="#107C10">Subnet: Web-Tier</text>
-          <text x="490" y="66" text-anchor="end" font-size="10" fill="#555">10.0.1.0/24</text>
-          <rect x="50" y="78" width="90" height="48" rx="6" fill="#fff" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="95" y="106" text-anchor="middle" font-size="11" fill="#333">VM-01</text>
-          <rect x="160" y="78" width="90" height="48" rx="6" fill="#fff" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="205" y="106" text-anchor="middle" font-size="11" fill="#333">VM-02</text>
-          <rect x="270" y="78" width="90" height="48" rx="6" fill="#fff" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="315" y="106" text-anchor="middle" font-size="11" fill="#333">VM-03</text>
-          <!-- App-Tier Subnet -->
-          <rect x="30" y="158" width="490" height="95" rx="8" fill="#FFF8E1" stroke="#FF8C00" stroke-width="1.5" stroke-dasharray="6,3"/>
-          <text x="50" y="176" font-size="12" font-weight="600" fill="#FF8C00">Subnet: App-Tier</text>
-          <text x="490" y="176" text-anchor="end" font-size="10" fill="#555">10.0.2.0/24</text>
-          <rect x="50" y="188" width="90" height="48" rx="6" fill="#fff" stroke="#FF8C00" stroke-width="1.5"/>
-          <text x="95" y="216" text-anchor="middle" font-size="11" fill="#333">VM-04</text>
-          <rect x="160" y="188" width="90" height="48" rx="6" fill="#fff" stroke="#FF8C00" stroke-width="1.5"/>
-          <text x="205" y="216" text-anchor="middle" font-size="11" fill="#333">VM-05</text>
-          <!-- DB-Tier Subnet -->
-          <rect x="30" y="268" width="490" height="95" rx="8" fill="#FCE4EC" stroke="#D13438" stroke-width="1.5" stroke-dasharray="6,3"/>
-          <text x="50" y="286" font-size="12" font-weight="600" fill="#D13438">Subnet: DB-Tier</text>
-          <text x="490" y="286" text-anchor="end" font-size="10" fill="#555">10.0.3.0/24</text>
-          <rect x="50" y="298" width="90" height="48" rx="6" fill="#fff" stroke="#D13438" stroke-width="1.5"/>
-          <text x="95" y="326" text-anchor="middle" font-size="11" fill="#333">DB-01</text>
-          <!-- GatewaySubnet -->
-          <rect x="30" y="378" width="490" height="55" rx="8" fill="#F3E5F5" stroke="#7A3B93" stroke-width="1.5" stroke-dasharray="6,3"/>
-          <text x="50" y="400" font-size="12" font-weight="600" fill="#7A3B93">GatewaySubnet</text>
-          <text x="490" y="400" text-anchor="end" font-size="10" fill="#555">10.0.255.0/27</text>
-          <text x="50" y="420" font-size="10" fill="#777" font-style="italic">(Reserved for VPN/ExpressRoute)</text>
-        </svg>
+        <div data-diagram-model="vnet-architecture"></div>
     </div>
 
     <h3>Reserved Subnet Names</h3>
@@ -994,27 +801,7 @@ az network vnet subnet list \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'vnet-3tier',
-            type: 'vnet-architecture',
-            title: 'Azure VNet — 3-Tier Architecture',
-            icon: '🏗️',
-            description: 'A production VNet with web, app, and database subnets — each protected by NSGs. This is the most common Azure architecture.',
-            steps: [
-                'Virtual Network (VNet): Your private network in Azure. Address space 10.0.0.0/16 gives you 65,536 IPs.',
-                'Web Tier Subnet (10.0.1.0/24): Front-end VMs exposed to the internet via load balancer. NSG allows HTTP/HTTPS.',
-                'App Tier Subnet (10.0.2.0/24): Business logic VMs. NSG only allows traffic from the web tier.',
-                'DB Tier Subnet (10.0.3.0/24): SQL Server on port 1433. NSG only allows from app tier — never from internet.',
-                'GatewaySubnet (10.0.255.0/27): Reserved for VPN Gateway. Connects Azure to your on-premises network.',
-                'Traffic flows: Web → App → DB. Each subnet\'s NSG enforces the segmentation.'
-            ],
-            legend: [
-                { color: '#107c10', label: 'Web Tier' },
-                { color: '#ff8c00', label: 'App Tier' },
-                { color: '#d13438', label: 'DB Tier' },
-                { color: '#0078d4', label: 'Gateway' }
-            ]
-        }
+        { id: 'vnet-3tier', type: 'vnet-architecture' },
     ],
     quiz: [
         {
@@ -1303,43 +1090,13 @@ az network public-ip create \\
     <h3>Why Use NAT Gateway?</h3>
     <ul>
         <li><strong>Predictable outbound IPs:</strong> All outbound traffic uses the NAT Gateway's public IP(s)</li>
-        <li><strong>No SNAT port exhaustion:</strong> Supports 64,000+ concurrent connections per IP</li>
+        <li><strong>Finite outbound capacity:</strong> SNAT ports and connections can still be exhausted. Size the IP pool, reuse connections, and monitor failures.</li>
         <li><strong>Scalable:</strong> Up to 16 public IPs per NAT Gateway</li>
         <li><strong>Automatic:</strong> No user routes needed; overrides other outbound scenarios</li>
     </ul>
 
     <div class="diagram-container">
-        <svg viewBox="0 0 400 340" xmlns="http://www.w3.org/2000/svg" style="max-width:400px;width:100%;font-family:'Segoe UI',sans-serif">
-          <defs>
-            <marker id="an" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#333"/></marker>
-          </defs>
-          <!-- Internet cloud -->
-          <ellipse cx="200" cy="30" rx="70" ry="24" fill="#E8F4FD" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="200" y="35" text-anchor="middle" font-size="13" font-weight="600" fill="#0078D4">Internet</text>
-          <!-- Arrow up from NAT to Internet -->
-          <line x1="200" y1="54" x2="200" y2="80" stroke="#333" stroke-width="1.5" marker-end="url(#an)"/>
-          <text x="218" y="72" font-size="9" fill="#555">outbound</text>
-          <!-- NAT Gateway -->
-          <rect x="120" y="80" width="160" height="50" rx="8" fill="#fff" stroke="#107C10" stroke-width="2"/>
-          <text x="200" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#107C10">NAT Gateway</text>
-          <text x="200" y="118" text-anchor="middle" font-size="10" fill="#555">PIP: 20.x.x.x</text>
-          <!-- Arrow down -->
-          <line x1="200" y1="130" x2="200" y2="160" stroke="#333" stroke-width="1.5" marker-end="url(#an)"/>
-          <!-- Subnet -->
-          <rect x="60" y="160" width="280" height="110" rx="8" fill="#F0F6FF" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="6,3"/>
-          <text x="200" y="180" text-anchor="middle" font-size="12" font-weight="600" fill="#0078D4">Subnet: 10.0.1.0/24</text>
-          <!-- VM-01 -->
-          <rect x="90" y="192" width="100" height="55" rx="6" fill="#fff" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="140" y="215" text-anchor="middle" font-size="11" font-weight="600" fill="#333">VM-01</text>
-          <text x="140" y="233" text-anchor="middle" font-size="10" fill="#777">.10</text>
-          <!-- VM-02 -->
-          <rect x="210" y="192" width="100" height="55" rx="6" fill="#fff" stroke="#0078D4" stroke-width="1.5"/>
-          <text x="260" y="215" text-anchor="middle" font-size="11" font-weight="600" fill="#333">VM-02</text>
-          <text x="260" y="233" text-anchor="middle" font-size="10" fill="#777">.11</text>
-          <!-- Footer text -->
-          <text x="200" y="300" text-anchor="middle" font-size="11" fill="#555">All outbound traffic uses NAT Gateway IP</text>
-          <text x="200" y="318" text-anchor="middle" font-size="10" fill="#777">(20.x.x.x for both VM-01 and VM-02)</text>
-        </svg>
+        <div data-diagram-model="natgw"></div>
     </div>
 </div>
 
@@ -1368,7 +1125,7 @@ az network public-ip create \\
         },
         {
             question: 'What is the purpose of IP address 168.63.129.16?',
-            options: ['It is the default gateway for all VNets', 'It is Azure\'s virtual public IP used for health probes and DNS', 'It is the Azure AD authentication endpoint', 'It is the default DNS server for all VMs'],
+            options: ['It is the default gateway for all VNets', 'It is Azure\'s virtual public IP used for health probes and DNS', 'It is the Microsoft Entra ID authentication endpoint', 'It is the default DNS server for all VMs'],
             correct: 1,
             explanation: '168.63.129.16 is Azure\'s virtual public IP. It\'s used by load balancer health probes, Azure DNS, DHCP, and other platform services. NSGs must allow traffic from this IP for these services to work.'
         },
@@ -1376,7 +1133,7 @@ az network public-ip create \\
             question: 'What does Azure NAT Gateway provide?',
             options: ['Inbound internet connectivity', 'VNet-to-VNet peering', 'Predictable outbound internet connectivity', 'DNS resolution'],
             correct: 2,
-            explanation: 'NAT Gateway provides predictable, scalable outbound internet connectivity. All traffic from associated subnets uses the NAT Gateway\'s public IP(s), preventing SNAT port exhaustion.'
+            explanation: 'NAT Gateway supplies explicit, scalable outbound translation for eligible internet flows. Its capacity is finite: monitor SNAT usage and connection reuse. More-specific routes and a UDR to a virtual appliance can select a different path.'
         },
         {
             question: 'When does a Dynamic private IP address change in Azure?',

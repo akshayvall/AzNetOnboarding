@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'azure-networking-academy-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-learning-1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-10-diagrams-1`;
 const APP_BASE = new URL(self.registration.scope);
 const INDEX_URL = new URL('index.html', APP_BASE).href;
 const APP_SHELL = [
@@ -7,24 +7,28 @@ const APP_SHELL = [
     'index.html',
     'manifest.webmanifest',
     'icons/app-icon.svg',
-    'css/styles.css?v=2026-09-learning-1',
-    'css/learning.css?v=2026-09-learning-1',
-    'js/progress.js?v=2026-09-learning-1',
-    'js/ui-state.js?v=2026-09-learning-1',
-    'js/today-engine.js?v=2026-09-learning-1',
-    'js/modules-100.js?v=2026-09-learning-1',
-    'js/modules-200.js?v=2026-09-learning-1',
-    'js/modules-300.js?v=2026-09-learning-1',
-    'js/modules-extras.js?v=2026-09-learning-1',
-    'js/mastery-content.js?v=2026-09-learning-1',
-    'js/learning-content.js?v=2026-09-learning-1',
-    'js/quiz-engine.js?v=2026-09-learning-1',
-    'js/interactive.js?v=2026-09-learning-1',
-    'js/lab-engine.js?v=2026-09-learning-1',
-    'js/diagrams.js?v=2026-09-learning-1',
-    'js/mastery-engine.js?v=2026-09-learning-1',
-    'js/learning-engine.js?v=2026-09-learning-1',
-    'js/app.js?v=2026-09-learning-1'
+    'css/styles.css?v=2026-10-diagrams-1',
+    'css/learning.css?v=2026-10-diagrams-1',
+    'css/diagrams.css?v=2026-10-diagrams-1',
+    'js/progress.js?v=2026-10-diagrams-1',
+    'js/ui-state.js?v=2026-10-diagrams-1',
+    'js/today-engine.js?v=2026-10-diagrams-1',
+    'js/modules-100.js?v=2026-10-diagrams-1',
+    'js/modules-200.js?v=2026-10-diagrams-1',
+    'js/modules-300.js?v=2026-10-diagrams-1',
+    'js/modules-extras.js?v=2026-10-diagrams-1',
+    'js/mastery-content.js?v=2026-10-diagrams-1',
+    'js/learning-content.js?v=2026-10-diagrams-1',
+    'js/quiz-engine.js?v=2026-10-diagrams-1',
+    'js/interactive.js?v=2026-10-diagrams-1',
+    'js/lab-engine.js?v=2026-10-diagrams-1',
+    'js/diagram-models.js?v=2026-10-diagrams-1',
+    'js/diagram-afd.js?v=2026-10-diagrams-1',
+    'js/diagrams.js?v=2026-10-diagrams-1',
+    'js/mastery-engine.js?v=2026-10-diagrams-1',
+    'js/learning-engine.js?v=2026-10-diagrams-1',
+    'js/beginner.js?v=2026-10-diagrams-1',
+    'js/app.js?v=2026-10-diagrams-1'
 ].map(path => new URL(path, APP_BASE).href);
 
 self.addEventListener('install', event => {

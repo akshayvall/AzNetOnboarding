@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### October diagram and learning upgrade (release `2026-10-diagrams-1`)
+- Replaced the 22 diagram definitions and 11 separately authored lesson SVGs with 26 shared semantic models. Maps, narration, predictions, and transcripts now use the same nodes, connections, steps, and scenario data.
+- Added simple/detailed views, Previous/Next/Show all/Reset, prediction pauses, explicit failure scenarios, mobile step lists, locally scrolling maps, per-instance SVG IDs, sources, and complete print transcripts. Removed the old automatic animations and renderer styles.
+- Added the subscription-free AFD request lab with cache, WAF, redirect, origin-health, tier, and connectivity choices; a visible Start tracing action; a five-question practice check; and honest failed-save recovery without granting mastery credit.
+- Corrected DNS referrals, OSI highlighting, three-tier and inspected paths, return routing, finite NAT capacity, NSG defaults, route selection, AFD processing/tier distinctions, all-unhealthy fallback, Private Link components, and managed-service boundaries. Updated directly related lesson, quiz, and flashcard explanations.
+- Clarified current cache-validation, Bastion SKU, and WAF-response behavior from official sources. Normal and rate-limit WAF blocks have different documented blank-body defaults; 429 does not universally require customization.
+- Advanced the offline release candidate to `2026-10-diagrams-1`. Passed 205 Node tests, 32 browser tests, and all 20 JavaScript syntax checks on October 23; refreshed 32 graph screenshots with no reported page errors or measured path collisions.
+- Added implementation dispositions and verification limits to the October audit. Publication approved October 23, subject to the Pages workflow gates. No Azure lab execution; manual screen-reader, additional-browser, and human-retention checks remain.
+
+### October beginner experience (earlier local stage)
+- Added three Level 0 lessons, beginner-default home and module presentation, optional placement testing, plain-language openings, three-question checks, and teaching before optional advanced cases.
+- Kept full learning tools accessible and separated reading completion from quizzes, labs, and demonstrated mastery without discarding existing evidence.
+- Added beginner persistence/routing/browser regression coverage and offline release candidate `2026-10-beginner-1`. Passed 192 Node tests and 22 browser tests on October 23.
+- Added `docs/diagram-audit-2026-10.md`: all 33 unique SVGs reviewed, including 11 previously uncounted inline lesson diagrams. The findings superseded the older broad claims below and became the repair baseline for the subsequent diagram upgrade.
+
 ### September learning release
 - Added distinct learning destinations, AFD/broad-networking routes, session choices, all-module guided coaching, predictions, changed tasks, illustrative evidence, and subscription-free case practice.
 - Fixed recoverable save/import failures, corrupt-storage protection, drafts, quiz focus and critical policy, rubric validation, and failed/duplicate review handling. Local practice and reviewer labels do not claim external execution or certification.

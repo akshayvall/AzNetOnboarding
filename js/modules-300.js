@@ -198,50 +198,18 @@ Action: Modify Response Header → Overwrite
     <ul>
         <li>Azure App Service / Web Apps</li>
         <li>Azure Storage (Blob)</li>
-        <li>Azure Application Gateway (Internal LB)</li>
-        <li>Internal Load Balancer</li>
-        <li>Any Private Link-enabled service</li>
+        <li>Supported Application Gateway Private Link configurations</li>
+        <li>Applications behind an internal load balancer, published through a Private Link Service</li>
+        <li>Check the current Front Door-supported origin types and Private Link regions; support is not universal</li>
     </ul>
 
     <div class="diagram-container">
-        <svg viewBox="0 0 650 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:650px;font-family:'Segoe UI',sans-serif">
-          <defs>
-            <marker id="pl-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#0078D4"/></marker>
-            <marker id="pl-arrow-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#107C10"/></marker>
-          </defs>
-          <!-- User -->
-          <rect x="10" y="50" width="90" height="50" rx="10" fill="#0078D4"/>
-          <text x="55" y="72" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">👤 Users</text>
-          <text x="55" y="88" text-anchor="middle" fill="#d0e8ff" font-size="9">Internet</text>
-          <!-- Arrow 1 -->
-          <line x1="100" y1="75" x2="160" y2="75" stroke="#0078D4" stroke-width="2" marker-end="url(#pl-arrow)"/>
-          <!-- Front Door -->
-          <rect x="168" y="42" width="130" height="66" rx="10" fill="#0078D4"/>
-          <text x="233" y="66" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Azure Front Door</text>
-          <text x="233" y="82" text-anchor="middle" fill="#d0e8ff" font-size="9">Edge POP</text>
-          <text x="233" y="96" text-anchor="middle" fill="#d0e8ff" font-size="9">WAF + TLS</text>
-          <!-- Private Link tunnel -->
-          <line x1="298" y1="75" x2="420" y2="75" stroke="#107C10" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#pl-arrow-g)"/>
-          <rect x="318" y="54" width="82" height="18" rx="4" fill="#e6f4ea"/>
-          <text x="359" y="66" text-anchor="middle" fill="#107C10" font-size="8" font-weight="600">Private Link</text>
-          <text x="359" y="92" text-anchor="middle" fill="#555" font-size="7">Microsoft Backbone</text>
-          <!-- Origin -->
-          <rect x="428" y="35" width="200" height="80" rx="10" fill="#107C10"/>
-          <text x="528" y="60" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">App Service</text>
-          <text x="528" y="78" text-anchor="middle" fill="#d0f0d0" font-size="10">No public endpoint</text>
-          <text x="528" y="94" text-anchor="middle" fill="#d0f0d0" font-size="10">10.0.1.4</text>
-          <!-- Key points -->
-          <text x="60" y="150" fill="#107C10" font-size="11" font-weight="600">✓ No public endpoint</text>
-          <text x="250" y="150" fill="#107C10" font-size="11" font-weight="600">✓ Traffic stays on backbone</text>
-          <text x="475" y="150" fill="#107C10" font-size="11" font-weight="600">✓ Maximum security</text>
-          <!-- Subtle border -->
-          <rect x="2" y="2" width="646" height="216" rx="12" fill="none" stroke="#e0e0e0" stroke-width="1"/>
-        </svg>
+        <div data-diagram-model="frontdoor-private-link" data-diagram-origin-kind="appservice"></div>
     </div>
 
     <div class="tip-box">
         <h4>💡 Why Private Link Origins Matter</h4>
-        <p>Without Private Link, your origin needs a public endpoint (even if restricted by NSG/service tag). With Private Link, the origin has zero public exposure. This is the most secure pattern: Front Door (edge security) + Private Link (private connectivity) + WAF (application security).</p>
+        <p>Private Link provides a private origin-side path; it does not automatically disable public access. Approve the managed endpoint, disable or restrict the origin's public path, and verify origin HTTPS and application authentication. For a VM origin behind an internal load balancer, include the Private Link Service. Public-origin restrictions are an alternative pattern, not a private tunnel.</p>
     </div>
 
     <h3>Lock Down a Public Origin</h3>
@@ -259,28 +227,7 @@ Action: Modify Response Header → Overwrite
 </div>
 `,
     diagrams: [
-        {
-            id: 'fd-rules-engine',
-            type: 'frontdoor-rules-engine',
-            title: 'Front Door Rules Engine Pipeline',
-            icon: '🔧',
-            description: 'Front Door evaluates WAF before route settings and associated Rule Sets. Rule Set conditions can then modify headers, rewrite or redirect URLs, and override origin or caching configuration.',
-            steps: [
-                'An incoming HTTP request arrives at Front Door: GET /api/v2/users.',
-                'At the edge, WAF is evaluated first; route settings and associated Rule Sets follow.',
-                'WAF managed and custom rules can block malicious requests or enforce rate limits.',
-                'Rule Set header actions add, overwrite, or delete allowed request and response headers.',
-                'Rule Set URL actions rewrite origin-bound paths or redirect clients to another URL.',
-                'Route configuration override can select an origin group, forwarding protocol, or cache configuration.',
-                'Modified request forwarded to the origin. All rule transformations applied.'
-            ],
-            legend: [
-                { color: '#d13438', label: 'WAF first' },
-                { color: '#0078d4', label: 'Header actions' },
-                { color: '#ff8c00', label: 'URL actions' },
-                { color: '#107c10', label: 'Route/cache override' }
-            ]
-        }
+        { id: 'fd-rules-engine', type: 'frontdoor-rules-engine' },
     ],
     quiz: [
         {
@@ -457,52 +404,10 @@ curl -I -H "X-Azure-FDID: wrong-profile-id" https://your-origin-hostname/</div>`
     learn: `
 <div class="learn-section">
     <h2>How Front Door Caching Works</h2>
-    <p>Front Door caches content at its 100+ edge locations. When a user requests a resource, Front Door checks if it's cached at the nearest edge. If yes (cache hit), it returns immediately without contacting your origin. If no (cache miss), it fetches from the origin, caches it, and serves it.</p>
+    <p>Front Door can cache eligible responses in its edge network. A fresh response for the same cache key can be returned without fetching the origin response again. A miss may contact an origin, but storing the result still depends on the route, request and response cache policy. An expired entry may need revalidation or refresh. Never share personalised responses just because their URL matches.</p>
     
     <div class="diagram-container">
-        <svg viewBox="0 0 650 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:650px;font-family:'Segoe UI',sans-serif">
-          <defs>
-            <marker id="ca-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#0078D4"/></marker>
-            <marker id="ca-arr-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#107C10"/></marker>
-            <marker id="ca-arr-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#D13438"/></marker>
-          </defs>
-          <!-- Row labels -->
-          <text x="10" y="18" fill="#333" font-size="12" font-weight="700">Cache Hit</text>
-          <text x="10" y="118" fill="#333" font-size="12" font-weight="700">Cache Miss</text>
-          <!-- ROW 1: Cache Hit -->
-          <rect x="10" y="30" width="75" height="40" rx="8" fill="#0078D4"/>
-          <text x="47" y="55" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">👤 User</text>
-          <line x1="85" y1="50" x2="130" y2="50" stroke="#0078D4" stroke-width="2" marker-end="url(#ca-arr)"/>
-          <rect x="138" y="30" width="100" height="40" rx="8" fill="#0078D4"/>
-          <text x="188" y="55" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Edge POP</text>
-          <line x1="238" y1="50" x2="283" y2="50" stroke="#107C10" stroke-width="2" marker-end="url(#ca-arr-g)"/>
-          <rect x="291" y="30" width="105" height="40" rx="8" fill="#107C10"/>
-          <text x="343" y="48" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">CACHE HIT</text>
-          <text x="343" y="62" text-anchor="middle" fill="#d0f0d0" font-size="9">✓ Found</text>
-          <line x1="396" y1="50" x2="441" y2="50" stroke="#107C10" stroke-width="2" marker-end="url(#ca-arr-g)"/>
-          <rect x="449" y="30" width="130" height="40" rx="8" fill="#107C10"/>
-          <text x="514" y="48" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">⚡ Response</text>
-          <text x="514" y="62" text-anchor="middle" fill="#d0f0d0" font-size="10">fast! &lt;10ms</text>
-          <!-- ROW 2: Cache Miss -->
-          <rect x="10" y="130" width="75" height="40" rx="8" fill="#0078D4"/>
-          <text x="47" y="155" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">👤 User</text>
-          <line x1="85" y1="150" x2="130" y2="150" stroke="#0078D4" stroke-width="2" marker-end="url(#ca-arr)"/>
-          <rect x="138" y="130" width="100" height="40" rx="8" fill="#0078D4"/>
-          <text x="188" y="155" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Edge POP</text>
-          <line x1="238" y1="150" x2="283" y2="150" stroke="#D13438" stroke-width="2" marker-end="url(#ca-arr-r)"/>
-          <rect x="291" y="130" width="105" height="40" rx="8" fill="#D13438"/>
-          <text x="343" y="148" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">CACHE MISS</text>
-          <text x="343" y="162" text-anchor="middle" fill="#ffd0d0" font-size="9">✗ Not found</text>
-          <line x1="396" y1="150" x2="441" y2="150" stroke="#FF8C00" stroke-width="2" marker-end="url(#ca-arr)"/>
-          <rect x="449" y="130" width="80" height="40" rx="8" fill="#FF8C00"/>
-          <text x="489" y="155" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Origin</text>
-          <line x1="529" y1="150" x2="549" y2="150" stroke="#107C10" stroke-width="2" marker-end="url(#ca-arr-g)"/>
-          <rect x="555" y="130" width="85" height="40" rx="8" fill="#107C10"/>
-          <text x="597" y="148" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Response</text>
-          <text x="597" y="162" text-anchor="middle" fill="#d0f0d0" font-size="8">+ Store</text>
-          <!-- Border -->
-          <rect x="2" y="2" width="646" height="196" rx="12" fill="none" stroke="#e0e0e0" stroke-width="1"/>
-        </svg>
+        <div data-diagram-model="frontdoor-caching"></div>
     </div>
 
     <h3>Cache Key</h3>
@@ -608,29 +513,7 @@ az afd endpoint purge \\
 </div>
 `,
     diagrams: [
-        {
-            id: 'fd-caching-flow',
-            type: 'frontdoor-caching',
-            title: 'Front Door Caching — Cache Miss vs Cache Hit',
-            icon: '💾',
-            description: 'Understand how Front Door\'s edge caching works. First request = cache miss (goes to origin). Subsequent requests = cache hit (served instantly from edge).',
-            steps: [
-                'First user request arrives at Front Door for GET /style.css.',
-                'Request forwarded to the nearest Edge POP.',
-                'Edge POP checks its local cache — MISS! This asset hasn\'t been cached yet.',
-                'POP forwards the request to the origin server.',
-                'Origin responds with 200 OK + the file. POP caches it and returns it to the user.',
-                'Second user (or same user) requests the same file.',
-                'Request hits the same Edge POP.',
-                'Edge POP checks cache — HIT! Returns the cached copy instantly, no origin contact.',
-                'TTL controls: Cache-Control headers, purge API for invalidation, query string caching modes.'
-            ],
-            legend: [
-                { color: '#d13438', label: 'Cache Miss' },
-                { color: '#107c10', label: 'Cache Hit' },
-                { color: '#0078d4', label: 'User Request' }
-            ]
-        }
+        { id: 'fd-caching-flow', type: 'frontdoor-caching' },
     ],
     quiz: [
         {
@@ -678,8 +561,8 @@ az afd endpoint purge \\
             cards: [
                 { front: 'What is a cache key?', back: 'The unique identifier for a cached resource. By default it includes the URL path and (optionally) query string. Two requests with the same cache key return the same cached content.' },
                 { front: 'When should you use "Ignore Query String" caching?', back: 'When the page content doesn\'t change based on query parameters. Common for static assets. Ignoring query strings increases cache hit ratio by consolidating requests.' },
-                { front: 'What is cache revalidation?', back: 'When a cached item\'s TTL expires, Front Door checks with the origin if content changed (using If-Modified-Since or ETag). If unchanged, origin returns 304 Not Modified and the cache is refreshed — no full download needed.' },
-                { front: 'What is a stale response?', back: 'A cached response past its TTL. Front Door may serve stale content while revalidating with the origin in the background (stale-while-revalidate pattern).' },
+                { front: 'What is cache revalidation?', back: 'Front Door can check a stale copy against a reachable origin using Last-Modified and If-Modified-Since. An unchanged resource can return 304 Not Modified so the validated body is reused; a changed resource returns a new body. Current Front Door documentation specifies Last-Modified, not ETag, as its supported validator.' },
+                { front: 'What is a stale response?', back: 'A cached response older than its freshness lifetime. It normally needs validation or replacement. Front Door may sometimes serve stale data during origin errors; do not rely on it as guaranteed background refresh or outage recovery.' },
                 { front: 'How do you test authenticated cache isolation?', back: 'Use two separate identities against the same URL. Give each response a user-specific marker and prove neither identity ever receives the other marker.' }
             ]
         }
@@ -757,7 +640,7 @@ az afd endpoint purge \\
                 subtitle: 'Key takeaway',
                 type: 'confirm',
                 explanation: 'X-Cache: TCP_HIT means the response was served directly from the Front Door edge cache — the origin was never contacted. This is the ideal outcome for cacheable content: faster response times and zero load on your origin server. TCP_MISS means the edge had to fetch from the origin.',
-                portal: `<ol><li><strong>TCP_HIT</strong> — served from edge cache; origin not contacted (fastest)</li><li><strong>TCP_MISS</strong> — cache miss; content fetched from origin then cached at edge</li><li><strong>TCP_REMOTE_HIT</strong> — served from a nearby PoP's cache, not the local one</li><li>High cache-hit ratios reduce origin costs and improve global latency</li></ol>`
+                portal: `<ol><li><strong>TCP_HIT</strong> — served from cache without an origin fetch for this response</li><li><strong>TCP_MISS</strong> — origin fetch was needed; this does not prove the response was stored</li><li><strong>TCP_REMOTE_HIT</strong> — served from a remote cache rather than the local cache</li><li>Inspect cache headers and measure origin load and latency; a hit is not a fixed response-time guarantee</li></ol>`
             }
         ]
     }
@@ -776,14 +659,11 @@ az afd endpoint purge \\
     learn: `
 <div class="learn-section">
     <h2>Web Application Firewall (WAF) on Front Door</h2>
-    <p>WAF protects your web applications from common attacks like SQL injection, cross-site scripting (XSS), and other OWASP top 10 threats. On Front Door, WAF operates at the edge — blocking attacks before they reach your origin.</p>
+    <p>A web application firewall (WAF) applies configured rules to HTTP requests at the edge. It can help detect or block attack patterns such as SQL injection and cross-site scripting, depending on policy mode, rules and actions. It does not replace secure application code or authorization.</p>
     
     <div class="concept-box">
         <h4>🔑 WAF at the Edge</h4>
-        <p>Because Front Door WAF runs at the edge (100+ locations), attacks are blocked close to the attacker, not at your origin. This means:<br>
-        • Lower latency for legitimate users (attack traffic doesn't consume origin resources)<br>
-        • Global protection regardless of attack source<br>
-        • DDoS mitigation at the network edge</p>
+        <p>For HTTPS, Front Door terminates client TLS before WAF evaluates the HTTP request. A matching Block action in Prevention mode can stop the request before origin access; Detection mode observes without enforcing the block. Built-in edge DDoS protection and WAF are different controls inside the service, not serial appliances. Configure diagnostic exports explicitly.</p>
     </div>
 
     <h3>WAF Policy Modes</h3>
@@ -878,75 +758,12 @@ az network front-door waf-policy rule create \\
 <div class="learn-section">
     <h2>End-to-End Security Pattern</h2>
     <div class="diagram-container">
-        <svg viewBox="0 0 750 250" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:750px;font-family:'Segoe UI',sans-serif">
-          <defs>
-            <marker id="sec-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#0078D4"/></marker>
-            <marker id="sec-arr-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#107C10"/></marker>
-          </defs>
-          <!-- Title -->
-          <text x="375" y="20" text-anchor="middle" fill="#333" font-size="14" font-weight="700">End-to-End Security</text>
-          <!-- User -->
-          <rect x="10" y="55" width="70" height="45" rx="8" fill="#0078D4"/>
-          <text x="45" y="82" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">👤 User</text>
-          <line x1="80" y1="77" x2="115" y2="77" stroke="#0078D4" stroke-width="2" marker-end="url(#sec-arr)"/>
-          <!-- DDoS -->
-          <rect x="123" y="50" width="90" height="55" rx="8" fill="#7A3B93"/>
-          <text x="168" y="73" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">DDoS</text>
-          <text x="168" y="88" text-anchor="middle" fill="#e8d0f0" font-size="9">Protection</text>
-          <line x1="213" y1="77" x2="248" y2="77" stroke="#0078D4" stroke-width="2" marker-end="url(#sec-arr)"/>
-          <!-- WAF -->
-          <rect x="256" y="35" width="110" height="115" rx="8" fill="#D13438"/>
-          <text x="311" y="56" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">WAF</text>
-          <line x1="276" y1="65" x2="346" y2="65" stroke="#ffa0a0" stroke-width="0.5"/>
-          <text x="311" y="80" text-anchor="middle" fill="#ffd0d0" font-size="9">• OWASP Rules</text>
-          <text x="311" y="95" text-anchor="middle" fill="#ffd0d0" font-size="9">• Bot Mgmt</text>
-          <text x="311" y="110" text-anchor="middle" fill="#ffd0d0" font-size="9">• Geo-block</text>
-          <text x="311" y="125" text-anchor="middle" fill="#ffd0d0" font-size="9">• Rate limit</text>
-          <text x="311" y="142" text-anchor="middle" fill="#ffd0d0" font-size="9">• Custom rules</text>
-          <line x1="366" y1="77" x2="401" y2="77" stroke="#0078D4" stroke-width="2" marker-end="url(#sec-arr)"/>
-          <!-- Front Door -->
-          <rect x="409" y="50" width="110" height="55" rx="8" fill="#0078D4"/>
-          <text x="464" y="73" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Front Door</text>
-          <text x="464" y="90" text-anchor="middle" fill="#d0e8ff" font-size="9">Edge POP</text>
-          <line x1="519" y1="77" x2="589" y2="77" stroke="#107C10" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#sec-arr-g)"/>
-          <!-- Private Link label -->
-          <rect x="528" y="58" width="52" height="14" rx="3" fill="#e6f4ea"/>
-          <text x="554" y="69" text-anchor="middle" fill="#107C10" font-size="7" font-weight="600">Pvt Link</text>
-          <!-- Origin -->
-          <rect x="597" y="50" width="140" height="55" rx="8" fill="#107C10"/>
-          <text x="667" y="73" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Origin</text>
-          <text x="667" y="90" text-anchor="middle" fill="#d0f0d0" font-size="9">No public access</text>
-          <!-- Flow line at bottom -->
-          <rect x="10" y="180" width="727" height="55" rx="10" fill="#f5f5f5" stroke="#e0e0e0"/>
-          <text x="375" y="200" text-anchor="middle" fill="#555" font-size="11" font-weight="600">Multi-Layer Defense: DDoS → WAF → Front Door → Private Link → Origin</text>
-          <text x="375" y="222" text-anchor="middle" fill="#888" font-size="10">Each layer filters threats before they reach the next</text>
-          <!-- Border -->
-          <rect x="2" y="2" width="746" height="246" rx="12" fill="none" stroke="#e0e0e0" stroke-width="1"/>
-        </svg>
+        <div data-diagram-model="waf-inspection"></div>
     </div>
 </div>
 `,
     diagrams: [
-        {
-            id: 'waf-request-flow',
-            type: 'waf-inspection',
-            title: 'WAF Request Inspection — Blocking Attacks',
-            icon: '🛡️',
-            description: 'Watch how the Web Application Firewall evaluates requests against managed rule sets and custom rules, blocking application-layer attacks and over-threshold requests while allowing legitimate traffic.',
-            steps: [
-                'Four types of requests arrive: normal GET, SQL injection, XSS attack, and an API burst over a configured threshold.',
-                'All requests pass through the WAF inspection pipeline.',
-                'WAF evaluates managed rule sets and custom rules for injection, XSS, rate limits, bot signals, geo conditions, and other application-layer patterns.',
-                'Legitimate GET /products request passes all checks — forwarded to the web application.',
-                'Malicious and over-threshold requests are blocked or logged according to policy and recorded for investigation. Volumetric network-layer DDoS protection is a separate control.',
-                'WAF modes: Detection (log only, don\'t block) or Prevention (block and log). Always start in Detection!'
-            ],
-            legend: [
-                { color: '#107c10', label: 'Allowed' },
-                { color: '#d13438', label: 'Blocked' },
-                { color: '#ff8c00', label: 'WAF Rules' }
-            ]
-        }
+        { id: 'waf-request-flow', type: 'waf-inspection' },
     ],
     quiz: [
         {
@@ -974,15 +791,15 @@ az network front-door waf-policy rule create \\
             explanation: 'SQL Injection rules detect and block attempts to inject malicious SQL code through user inputs (query strings, form fields, headers). This prevents attackers from accessing or modifying your database.'
         },
         {
-            question: 'What is the recommended end-to-end security pattern for a Front Door-protected application?',
+            question: 'A Premium application supports a private origin and must deny direct public origin access. Which combination addresses that requirement?',
             options: [
                 'Front Door + public origin with firewall rules',
-                'Front Door (WAF at edge) + Private Link origin (zero public exposure)',
+                'Front Door WAF + approved Private Link origin + public access disabled + HTTPS and application authorization',
                 'Application Gateway + NSG rules only',
                 'Traffic Manager + DDoS protection'
             ],
             correct: 1,
-            explanation: 'The most secure pattern: Front Door with WAF at the edge + Private Link origin (Premium) so the origin has zero public exposure. WAF blocks attacks at the edge, Private Link ensures no direct access to the origin.'
+            explanation: 'Private Link supplies the supported private connection, not every security control. Approve the managed endpoint, disable the public path, use origin HTTPS, tune WAF, and keep application authorization. Verify both the intended path and denial of direct public access.'
         }
     ],
     interactive: [
@@ -1033,8 +850,8 @@ az network front-door waf-policy rule create \\
                 title: 'Create a Custom Rate Limiting Rule',
                 subtitle: 'Limit requests to 100 per minute per IP',
                 type: 'confirm',
-                explanation: 'Rate limiting protects against DDoS, brute force, and scraping attacks by capping how many requests a single IP can make in a time window. When exceeded, the client receives a 429 Too Many Requests response.',
-                portal: `<ol><li>In your WAF policy, go to <strong>Custom rules</strong></li><li>Click <strong>+ Add custom rule</strong></li><li>Name: <strong>rate-limit-all</strong></li><li>Rule type: <strong>Rate limit</strong></li><li>Priority: <strong>100</strong></li><li>Rate limit duration: <strong>1 minute</strong></li><li>Rate limit threshold: <strong>100</strong> requests</li><li>Condition: Match variable: <strong>RequestUri</strong>, Operator: <strong>Any</strong></li><li>Action: <strong>Block</strong> (returns 429)</li><li>Click <strong>Add</strong></li></ol>`,
+                explanation: 'A rate-limit custom rule applies its configured action after matching traffic exceeds a threshold. Detection does not enforce Block. Current documentation specifies 429 for rate-limit blocks and 403 for normal WAF blocks when the block response body is blank; custom response settings can change the result. Check the policy and logs rather than inferring the rule from a status code. Distributed enforcement is not an exact per-request quota.',
+                portal: `<ol><li>In your WAF policy, go to <strong>Custom rules</strong></li><li>Click <strong>+ Add custom rule</strong></li><li>Name: <strong>rate-limit-all</strong></li><li>Rule type: <strong>Rate limit</strong></li><li>Priority: <strong>100</strong></li><li>Rate limit duration: <strong>1 minute</strong></li><li>Rate limit threshold: <strong>100</strong> requests</li><li>Condition: Match variable: <strong>RequestUri</strong>, Operator: <strong>Any</strong></li><li>Action: <strong>Block</strong>; enforced only in Prevention mode, with the policy's configured block response</li><li>Click <strong>Add</strong></li></ol>`,
                 cli: `<div class="lab-code-block">az network front-door waf-policy rule create \\\n    --resource-group rg-academy \\\n    --policy-name wafacademy \\\n    --name RateLimitAll \\\n    --priority 100 \\\n    --rule-type RateLimitRule \\\n    --action Block \\\n    --rate-limit-threshold 100 \\\n    --rate-limit-duration-in-minutes 1 \\\n    --match-variable RequestUri \\\n    --operator Any \\\n    --match-values "/"</div>`,
                 tip: 'For production, consider different rate limits for different paths: stricter for /login and /api, more lenient for /static.',
                 verification: 'Custom rules section shows "rate-limit-all" with rate limit: 100 requests/1 minute, action: Block.'
@@ -1096,50 +913,7 @@ az network front-door waf-policy rule create \\
     <p>The hub-spoke model is the most common enterprise network architecture in Azure. It provides centralized management while isolating workloads.</p>
     
     <div class="diagram-container">
-        <svg viewBox="0 0 650 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:650px;font-family:'Segoe UI',sans-serif">
-          <defs>
-            <marker id="hs-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#0078D4"/></marker>
-          </defs>
-          <!-- On-Premises -->
-          <rect x="240" y="10" width="170" height="50" rx="10" fill="#7A3B93"/>
-          <text x="325" y="32" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">🏢 On-Premises</text>
-          <text x="325" y="48" text-anchor="middle" fill="#e8d0f0" font-size="9">Corporate Network</text>
-          <!-- Line from On-Prem to Hub -->
-          <line x1="325" y1="60" x2="325" y2="110" stroke="#7A3B93" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#hs-arr)"/>
-          <text x="355" y="88" fill="#7A3B93" font-size="8">VPN / ExpressRoute</text>
-          <!-- Hub VNet -->
-          <rect x="135" y="115" width="380" height="150" rx="14" fill="none" stroke="#0078D4" stroke-width="2" stroke-dasharray="8,4"/>
-          <text x="325" y="135" text-anchor="middle" fill="#0078D4" font-size="13" font-weight="700">Hub VNet  10.0.0.0/16</text>
-          <!-- VPN Gateway in hub -->
-          <rect x="160" y="150" width="140" height="45" rx="8" fill="#7A3B93"/>
-          <text x="230" y="170" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">VPN Gateway</text>
-          <text x="230" y="185" text-anchor="middle" fill="#e8d0f0" font-size="9">10.0.1.0/27</text>
-          <!-- Azure Firewall in hub -->
-          <rect x="340" y="150" width="150" height="45" rx="8" fill="#D13438"/>
-          <text x="415" y="170" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">🔥 Azure Firewall</text>
-          <text x="415" y="185" text-anchor="middle" fill="#ffd0d0" font-size="9">10.0.0.0/26</text>
-          <!-- Bastion / DNS label -->
-          <text x="325" y="248" text-anchor="middle" fill="#0078D4" font-size="9">+ Bastion, DNS, Monitoring</text>
-          <!-- Peering lines -->
-          <line x1="225" y1="265" x2="145" y2="310" stroke="#FF8C00" stroke-width="2" marker-end="url(#hs-arr)"/>
-          <text x="160" y="285" fill="#FF8C00" font-size="8" font-weight="600">Peering</text>
-          <line x1="425" y1="265" x2="505" y2="310" stroke="#FF8C00" stroke-width="2" marker-end="url(#hs-arr)"/>
-          <text x="480" y="285" fill="#FF8C00" font-size="8" font-weight="600">Peering</text>
-          <!-- Spoke 1 -->
-          <rect x="30" y="310" width="230" height="80" rx="10" fill="#107C10"/>
-          <text x="145" y="335" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Spoke 1 — Web</text>
-          <text x="145" y="352" text-anchor="middle" fill="#d0f0d0" font-size="10">10.1.0.0/16</text>
-          <rect x="100" y="360" width="90" height="22" rx="5" fill="#0a5c0a"/>
-          <text x="145" y="376" text-anchor="middle" fill="#fff" font-size="10">🖥 VMs</text>
-          <!-- Spoke 2 -->
-          <rect x="390" y="310" width="230" height="80" rx="10" fill="#00BCF2"/>
-          <text x="505" y="335" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Spoke 2 — DB</text>
-          <text x="505" y="352" text-anchor="middle" fill="#d0f0ff" font-size="10">10.2.0.0/16</text>
-          <rect x="460" y="360" width="90" height="22" rx="5" fill="#007a9e"/>
-          <text x="505" y="376" text-anchor="middle" fill="#fff" font-size="10">🗄 SQL</text>
-          <!-- Border -->
-          <rect x="2" y="2" width="646" height="396" rx="12" fill="none" stroke="#e0e0e0" stroke-width="1"/>
-        </svg>
+        <div data-diagram-model="hub-spoke"></div>
     </div>
 
     <h3>Hub VNet Contains (Shared Services)</h3>
@@ -1155,7 +929,7 @@ az network front-door waf-policy rule create \\
     <ul>
         <li>Application-specific resources</li>
         <li>Isolated from other spokes</li>
-        <li>All internet/on-prem traffic routed through hub (forced tunneling)</li>
+        <li>Selected traffic is routed through the hub only when routes, forwarding and security policy implement that design</li>
     </ul>
 </div>
 
@@ -1203,92 +977,20 @@ az network vnet subnet update \\
 <div class="learn-section">
     <h2>Complete Architecture: Front Door + Hub-Spoke</h2>
     <div class="diagram-container">
-        <svg viewBox="0 0 550 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:550px;font-family:'Segoe UI',sans-serif">
-          <defs>
-            <marker id="fd-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#0078D4"/></marker>
-            <marker id="fd-arr-d" markerWidth="8" markerHeight="6" refX="3" refY="0" orient="auto"><path d="M0,0 L6,0 L3,8" fill="#0078D4"/></marker>
-          </defs>
-          <!-- Internet Users -->
-          <text x="275" y="22" text-anchor="middle" fill="#333" font-size="13" font-weight="700">🌐 Internet Users</text>
-          <!-- Arrow down -->
-          <line x1="275" y1="30" x2="275" y2="55" stroke="#0078D4" stroke-width="2" marker-end="url(#fd-arr-d)"/>
-          <!-- Front Door -->
-          <rect x="140" y="60" width="270" height="65" rx="12" fill="#0078D4"/>
-          <text x="275" y="82" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Azure Front Door</text>
-          <text x="205" y="105" text-anchor="middle" fill="#d0e8ff" font-size="10">WAF</text>
-          <text x="275" y="105" text-anchor="middle" fill="#d0e8ff" font-size="10">CDN</text>
-          <text x="345" y="105" text-anchor="middle" fill="#d0e8ff" font-size="10">SSL</text>
-          <!-- Arrow down with label -->
-          <line x1="275" y1="125" x2="275" y2="170" stroke="#107C10" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#fd-arr-d)"/>
-          <rect x="195" y="137" width="160" height="16" rx="4" fill="#e6f4ea"/>
-          <text x="275" y="149" text-anchor="middle" fill="#107C10" font-size="8" font-weight="600">Private Link / Service Tag</text>
-          <!-- Hub VNet -->
-          <rect x="120" y="175" width="310" height="90" rx="12" fill="none" stroke="#D13438" stroke-width="2" stroke-dasharray="8,4"/>
-          <text x="275" y="195" text-anchor="middle" fill="#D13438" font-size="12" font-weight="700">Hub VNet</text>
-          <!-- Azure Firewall inside hub -->
-          <rect x="195" y="205" width="160" height="45" rx="8" fill="#D13438"/>
-          <text x="275" y="225" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">🔥 Azure Firewall</text>
-          <text x="275" y="242" text-anchor="middle" fill="#ffd0d0" font-size="9">Centralized security</text>
-          <!-- Arrows splitting to spokes -->
-          <line x1="220" y1="265" x2="145" y2="310" stroke="#FF8C00" stroke-width="2" marker-end="url(#fd-arr)"/>
-          <line x1="330" y1="265" x2="405" y2="310" stroke="#FF8C00" stroke-width="2" marker-end="url(#fd-arr)"/>
-          <text x="160" y="290" fill="#FF8C00" font-size="8" font-weight="600">UDR</text>
-          <text x="385" y="290" fill="#FF8C00" font-size="8" font-weight="600">UDR</text>
-          <!-- Spoke Web -->
-          <rect x="30" y="315" width="210" height="90" rx="10" fill="#107C10"/>
-          <text x="135" y="338" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Spoke — Web</text>
-          <rect x="55" y="350" width="75" height="22" rx="5" fill="#0a5c0a"/>
-          <text x="92" y="365" text-anchor="middle" fill="#fff" font-size="9">App GW</text>
-          <rect x="140" y="350" width="75" height="22" rx="5" fill="#0a5c0a"/>
-          <text x="177" y="365" text-anchor="middle" fill="#fff" font-size="9">VMs</text>
-          <text x="135" y="395" text-anchor="middle" fill="#d0f0d0" font-size="9">Web Tier</text>
-          <!-- Spoke API -->
-          <rect x="310" y="315" width="210" height="90" rx="10" fill="#00BCF2"/>
-          <text x="415" y="338" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Spoke — API</text>
-          <rect x="335" y="350" width="75" height="22" rx="5" fill="#007a9e"/>
-          <text x="372" y="365" text-anchor="middle" fill="#fff" font-size="9">APIM</text>
-          <rect x="420" y="350" width="75" height="22" rx="5" fill="#007a9e"/>
-          <text x="457" y="365" text-anchor="middle" fill="#fff" font-size="9">VMs</text>
-          <text x="415" y="395" text-anchor="middle" fill="#d0f0ff" font-size="9">API Tier</text>
-          <!-- Border -->
-          <rect x="2" y="2" width="546" height="416" rx="12" fill="none" stroke="#e0e0e0" stroke-width="1"/>
-        </svg>
+        <div data-diagram-model="hub-spoke-capstone" data-diagram-scenario="private-origin"></div>
     </div>
     
     <div class="concept-box">
         <h4>🔑 Multi-Layer Defense</h4>
-        <p>1. <strong>Azure DDoS Protection</strong> — Volumetric attack protection<br>
-        2. <strong>Front Door WAF</strong> — Application layer protection at edge<br>
-        3. <strong>Azure Firewall</strong> — Network layer protection centrally<br>
-        4. <strong>NSGs</strong> — Subnet/NIC level micro-segmentation<br>
-        5. <strong>Private Endpoints</strong> — Remove public exposure entirely</p>
+        <p><strong>Front Door</strong> includes edge DDoS protection; its configured WAF evaluates HTTP after client TLS termination.<br>
+        <strong>Azure Firewall</strong> inspects only the paths explicitly routed through it.<br>
+        <strong>NSGs</strong> apply subnet/NIC traffic rules.<br>
+        <strong>Private endpoints</strong> provide private connectivity; configure public access restrictions and application authorization separately. Azure SQL remains a managed service outside the VNet, while its private endpoint NIC is inside a subnet.</p>
     </div>
 </div>
 `,
     diagrams: [
-        {
-            id: 'hub-spoke-arch',
-            type: 'hub-spoke',
-            title: 'Hub-Spoke Network Architecture',
-            icon: '🏗️',
-            description: 'The gold-standard Azure network architecture. Central hub VNet with shared services, spoke VNets for workloads, connected via peering.',
-            steps: [
-                'Hub VNet: Central network with shared services — Azure Firewall, VPN Gateway, and DNS.',
-                'Spoke 1 (Production): Production workloads with web and database tiers. Isolated from other spokes.',
-                'Spoke 2 (Dev/Test): Development and testing environment. Separate subscription for cost tracking.',
-                'Spoke 3 (Shared Services): Monitoring (Log Analytics), secrets management (Key Vault).',
-                'Spoke 4 (DMZ): Public-facing services with NVA firewall and public load balancer.',
-                'VNet Peering: All spokes peer with the hub. Spoke-to-spoke traffic routes through the hub firewall.',
-                'On-Premises: Connected via VPN Gateway or ExpressRoute through the hub.'
-            ],
-            legend: [
-                { color: '#0078d4', label: 'Hub VNet' },
-                { color: '#107c10', label: 'Production' },
-                { color: '#ff8c00', label: 'Dev/Test' },
-                { color: '#8e44ad', label: 'Shared Services' },
-                { color: '#d13438', label: 'DMZ' }
-            ]
-        }
+        { id: 'hub-spoke-arch', type: 'hub-spoke' },
     ],
     quiz: [
         {
@@ -1668,7 +1370,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
             title: 'Networking Rapid Review — Full Deck',
             cards: [
                 { front: 'What is Network Watcher?', back: 'Azure\'s network monitoring and diagnostics tool. Features include IP Flow Verify, Connection Troubleshoot, Connection Monitor, packet capture, VNet flow logs, topology, and VPN diagnostics.' },
-                { front: 'What is Azure Bastion?', back: 'PaaS service for secure RDP/SSH access to VMs directly from the Azure portal — no public IP needed on the VM. Requires AzureBastionSubnet (/26). Developer SKU allows connection from native SSH/RDP clients.' },
+                { front: 'What is Azure Bastion?', back: 'A managed RDP/SSH connection service; the target VM needs no public IP. New dedicated deployments require AzureBastionSubnet (/26 or larger), while Developer uses a shared service. Native SSH/RDP clients require Standard or Premium, not Developer.' },
                 { front: 'What is a system route in Azure?', back: 'Azure automatically creates routes for VNet subnets, VNet peering, service endpoints, and the internet. System routes can be overridden by User Defined Routes (UDRs).' },
                 { front: 'Can a subnet belong to multiple VNets?', back: 'No. A subnet exists within exactly one VNet. Subnets cannot span VNets. Each subnet gets a portion of the parent VNet\'s address space.' },
                 { front: 'What is the effective security rule?', back: 'The combination of all NSG rules (subnet + NIC level) that apply to a specific network interface. You can use Network Watcher > Effective Security Rules or az network nic list-effective-nsg to see them.' },

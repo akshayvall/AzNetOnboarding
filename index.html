@@ -8,8 +8,9 @@
     <meta name="theme-color" content="#0078d4">
     <title>Azure Networking Academy — L100 to L300</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="css/styles.css?v=2026-09-learning-1">
-    <link rel="stylesheet" href="css/learning.css?v=2026-09-learning-1">
+    <link rel="stylesheet" href="css/styles.css?v=2026-10-diagrams-1">
+    <link rel="stylesheet" href="css/learning.css?v=2026-10-diagrams-1">
+    <link rel="stylesheet" href="css/diagrams.css?v=2026-10-diagrams-1">
     <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -36,9 +37,11 @@
             </div>
 
             <div class="workspace-nav" aria-label="Learning destinations">
+                <a href="#start" data-destination="start">Level 0: Start here</a>
                 <a href="#today" data-destination="today">Today</a>
                 <a href="#learn" data-destination="learn">Learn</a>
                 <a href="#practice" data-destination="practice">Practice</a>
+                <a href="#visual-lab" data-destination="visual-lab">AFD request lab</a>
                 <a href="#build" data-destination="build">Build</a>
                 <a href="#more" data-destination="more">Progress and settings</a>
             </div>
@@ -72,8 +75,8 @@
             <!-- Dashboard (shown by default) -->
             <div id="dashboard" class="view active">
                 <header class="academy-identity networking-identity">
-                    <div><p class="identity-kicker">Edge Operations Fieldbook</p><h1>Azure Networking Academy</h1></div>
-                    <ol class="identity-rail packet-path" aria-label="Packet path"><li>Resolve</li><li>Edge</li><li>Route</li><li>Inspect</li><li>Origin</li><li>Observe</li></ol>
+                    <div><p class="identity-kicker">From your first request to Azure Front Door</p><h1>Azure Networking Academy</h1></div>
+                    <ol class="identity-rail packet-path" aria-label="Simplified request path"><li>Resolve</li><li>Connect</li><li>Inspect</li><li>Route</li><li>Respond</li></ol>
                 </header>
 
                 <section id="masteryDashboard" class="mastery-dashboard" aria-label="Learning route and mastery progress"></section>
@@ -142,6 +145,14 @@
                 </div>
 
                 <section id="masteryPanel" class="mastery-panel" aria-label="Module outcome and mastery evidence" hidden></section>
+                <div class="beginner-toolbar">
+                    <nav class="beginner-tabs" aria-label="Beginner lesson tools">
+                        <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="learn">Read</button>
+                        <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="diagrams">See it</button>
+                        <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="interactive">Try it</button>
+                    </nav>
+                    <button id="experienceToggle" type="button" class="btn-secondary" data-beginner-action="toggle">Use full learning tools</button>
+                </div>
 
                 <div id="moduleModeBar" class="module-mode-bar" hidden>
                     <div class="module-mode-switch" role="group" aria-label="Module navigation mode">
@@ -226,21 +237,24 @@
     </dialog>
 
     <!-- Scripts -->
-    <script src="js/progress.js?v=2026-09-learning-1"></script>
-    <script src="js/ui-state.js?v=2026-09-learning-1"></script>
-    <script src="js/today-engine.js?v=2026-09-learning-1"></script>
-    <script src="js/modules-100.js?v=2026-09-learning-1"></script>
-    <script src="js/modules-200.js?v=2026-09-learning-1"></script>
-    <script src="js/modules-300.js?v=2026-09-learning-1"></script>
-    <script src="js/modules-extras.js?v=2026-09-learning-1"></script>
-    <script src="js/mastery-content.js?v=2026-09-learning-1"></script>
-    <script src="js/learning-content.js?v=2026-09-learning-1"></script>
-    <script src="js/quiz-engine.js?v=2026-09-learning-1"></script>
-    <script src="js/interactive.js?v=2026-09-learning-1"></script>
-    <script src="js/lab-engine.js?v=2026-09-learning-1"></script>
-    <script src="js/diagrams.js?v=2026-09-learning-1"></script>
-    <script src="js/mastery-engine.js?v=2026-09-learning-1"></script>
-    <script src="js/learning-engine.js?v=2026-09-learning-1"></script>
-    <script src="js/app.js?v=2026-09-learning-1"></script>
+    <script src="js/progress.js?v=2026-10-diagrams-1"></script>
+    <script src="js/ui-state.js?v=2026-10-diagrams-1"></script>
+    <script src="js/today-engine.js?v=2026-10-diagrams-1"></script>
+    <script src="js/modules-100.js?v=2026-10-diagrams-1"></script>
+    <script src="js/modules-200.js?v=2026-10-diagrams-1"></script>
+    <script src="js/modules-300.js?v=2026-10-diagrams-1"></script>
+    <script src="js/modules-extras.js?v=2026-10-diagrams-1"></script>
+    <script src="js/mastery-content.js?v=2026-10-diagrams-1"></script>
+    <script src="js/learning-content.js?v=2026-10-diagrams-1"></script>
+    <script src="js/quiz-engine.js?v=2026-10-diagrams-1"></script>
+    <script src="js/interactive.js?v=2026-10-diagrams-1"></script>
+    <script src="js/lab-engine.js?v=2026-10-diagrams-1"></script>
+    <script src="js/diagram-models.js?v=2026-10-diagrams-1"></script>
+    <script src="js/diagram-afd.js?v=2026-10-diagrams-1"></script>
+    <script src="js/diagrams.js?v=2026-10-diagrams-1"></script>
+    <script src="js/mastery-engine.js?v=2026-10-diagrams-1"></script>
+    <script src="js/learning-engine.js?v=2026-10-diagrams-1"></script>
+    <script src="js/beginner.js?v=2026-10-diagrams-1"></script>
+    <script src="js/app.js?v=2026-10-diagrams-1"></script>
 </body>
 </html>

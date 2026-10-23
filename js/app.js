@@ -24,6 +24,7 @@ const app = {
     sectionObserver: null,
 
     init() {
+        BeginnerEngine.init();
         this.buildNavigation();
         this.updateProgress();
         this.bindEvents();
@@ -99,6 +100,8 @@ const app = {
         }
         const target = document.getElementById(`section-${sectionId}`) || document.getElementById(sectionId === 'worked-example' ? 'learningWorkedTitle' : sectionId);
         if (!target) return;
+        const challenge = target.closest('#optionalChallenge');
+        if (challenge) challenge.open = true;
         target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
         if (this.currentModule) UIStateManager.saveSection(this.currentModule.id, sectionId);
         this.currentSection = sectionId;
@@ -441,6 +444,7 @@ const app = {
     },
 
     openEvidence(target) {
+        if (BeginnerEngine.isBeginner() && !BeginnerEngine.setExperience('full')) return;
         const disclosure = document.querySelector('#masteryPanel .evidence-disclosure');
         if (!disclosure) return;
         disclosure.open = true;
@@ -467,7 +471,8 @@ const app = {
     renderInlineCoreVisual(module) {
         document.getElementById('inlineCoreVisual')?.remove();
         if (!this.isWorkflowPrototype(module.id) || !module.diagrams?.length || typeof DiagramEngine.renderPreview !== 'function') return;
-        const firstSection = document.querySelector('#tab-learn .learn-section');
+        if (document.querySelector('#tab-learn [data-diagram-model]')) return;
+        const firstSection = document.querySelectorAll('#tab-learn .learn-section')[1];
         if (!firstSection) return;
         const preview = document.createElement('section');
         preview.id = 'inlineCoreVisual';
@@ -492,7 +497,7 @@ const app = {
         });
         if (!enabled) return;
         const uiState = UIStateManager.get(MODULES.map(item => item.id));
-        if (!this.pendingSection && uiState.lastSectionByModule[module.id]) this.pendingSection = uiState.lastSectionByModule[module.id];
+        if (!BeginnerEngine.isBeginner() && !this.pendingSection && uiState.lastSectionByModule[module.id]) this.pendingSection = uiState.lastSectionByModule[module.id];
         this.setModuleMode(this.requestedMode || uiState.moduleModeByModule[module.id] || 'guided');
         this.renderInlineCoreVisual(module);
     },
@@ -645,6 +650,9 @@ const app = {
 
         // Load content (learn + optional references block + cheat-sheet button)
         let learnHtml = mod.learn || '<p>Content coming soon.</p>';
+        if (['frontdoor-basics', 'frontdoor-advanced', 'frontdoor-caching', 'frontdoor-waf'].includes(mod.id)) {
+            learnHtml = LearningEngine.requestLabLink() + learnHtml;
+        }
         if (Array.isArray(mod.references) && mod.references.length) {
             learnHtml += `
                 <div class="learn-section references-section">
@@ -660,6 +668,7 @@ const app = {
                 <button class="btn-secondary" data-app-action="print-cheat-sheet" title="Print or save a one-page cheat-sheet">🖨️ Cheat-sheet (PDF)</button>
             </div>`;
         document.getElementById('tab-learn').innerHTML = learnHtml;
+        DiagramEngine.renderInline(document.getElementById('tab-learn'));
         LearningEngine.renderCoaching(mod);
         this.initCopyButtons();
         this.injectSectionIds(mod);
@@ -713,6 +722,9 @@ const app = {
             ? 'var(--success)' : '';
         MasteryEngine.renderModulePanel(mod);
         LearningEngine.restoreDrafts(moduleId);
+        BeginnerEngine.renderModule(mod);
+        this.injectSectionIds(mod);
+        this.renderSectionOutline(mod);
 
         // Switch to learn tab
         this.switchTab(route.tab || 'learn');
@@ -779,6 +791,10 @@ const app = {
 
     completeModule() {
         if (!this.currentModule) return;
+        if (BeginnerEngine.isBeginner()) {
+            BeginnerEngine.finishReading(this.currentModule);
+            return;
+        }
         const metadata = MasteryEngine.getMetadata(this.currentModule.id);
         if (metadata) {
             ProgressManager.markContentReviewed(this.currentModule.id);
@@ -971,7 +987,17 @@ const app = {
     printCheatSheet() {
         if (!this.currentModule) return;
         const mod = this.currentModule;
-        const content = document.getElementById('tab-learn').innerHTML;
+        const content = document.getElementById('tab-learn').cloneNode(true);
+        content.querySelectorAll('.visual-diagram').forEach(diagram => {
+            const heading = diagram.querySelector('.diagram-heading');
+            heading.querySelector('.diagram-format-label').remove();
+            const scenario = diagram.querySelector('.diagram-scenario');
+            const transcript = diagram.querySelector('.diagram-transcript');
+            const sources = diagram.querySelector('.diagram-sources');
+            transcript.open = true;
+            sources.open = true;
+            diagram.replaceChildren(heading, scenario, transcript, sources);
+        });
         const win = window.open('', '_blank', 'width=900,height=1000');
         if (!win) { this.showToast('Pop-up blocked — allow pop-ups to print', 'warning'); return; }
         win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${this.escapeHtml(mod.title)} — Cheat Sheet</title>
@@ -988,13 +1014,16 @@ const app = {
                 .warning-box{border-color:#d13438;background:#fdf5f5}
                 .tip-box{border-color:#107c10;background:#f5fcf5}
                 .copy-btn{display:none}
+                .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+                .diagram-connection{margin:8px 0;font-size:13px}
+                .diagram-connection-kind,.diagram-connection small{display:block;color:#555}
                 .references-section{page-break-before:always}
                 footer{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;color:#888;font-size:11px}
                 @media print { a{color:#0078D4} .copy-btn{display:none} }
             </style></head><body>
             <h1>${this.escapeHtml(mod.title)}</h1>
             <p style="color:#666;font-size:12px">Azure Networking Academy — Level ${mod.level} · ~${this.escapeHtml(mod.estimatedTime || '')}</p>
-            ${content}
+            ${content.innerHTML}
             <footer>Generated ${new Date().toLocaleString()} &mdash; Azure Networking Academy</footer>
             </body></html>`);
         win.document.close();

@@ -1,5 +1,7 @@
 # Diagram Audit - July 2026
 
+> Superseded for current release decisions by the [October 2026 visual audit](diagram-audit-2026-10.md). The later review includes 11 additional inline lesson SVGs and finds semantic, step-mapping, motion, ID, and layout defects not captured by the checks below. This document is a historical record, not a current accuracy guarantee.
+
 ## Result
 
 The Azure Networking Academy has 22 diagram instances across 21 modules. Every declared type has an explicit builder, and every builder is used.
