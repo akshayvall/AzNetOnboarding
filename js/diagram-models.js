@@ -42,6 +42,16 @@ const DiagramCatalog = {
         this.models[model.id] = { groups: [], defaults: {}, ...model };
     },
 
+    hasDepth(type, options = {}) {
+        return this.models[type].scenarios.some(scenario => {
+            const signature = level => {
+                const { nodes, edges, steps } = this.resolve(type, { ...options, scenario: scenario.id, level });
+                return JSON.stringify({ nodes, edges, steps });
+            };
+            return signature('basic') !== signature('detailed');
+        });
+    },
+
     resolve(type, options = {}) {
         if (!Object.hasOwn(this.models, type)) throw new Error(`Unknown diagram: ${type}`);
         const definition = this.models[type];
@@ -59,12 +69,16 @@ const DiagramCatalog = {
         const focus = new Set(steps.flatMap(step => step.focus));
         const edges = graph.edges.filter(link => focus.has(link.id));
         edges.forEach(link => { focus.add(link.from); focus.add(link.to); });
-        const selected = graph.nodes.filter(node => focus.has(node.id));
+        const selected = graph.nodes.filter(node => focus.has(node.id) || graph.retainNodes?.includes(node.id));
         const columns = [...new Set(selected.map(node => node.col))].sort((a, b) => a - b);
         const rows = [...new Set(selected.map(node => node.row))].sort((a, b) => a - b);
         return {
             ...definition, ...graph, settings, steps, edges,
-            nodes: selected.map(node => ({ ...node, col: columns.indexOf(node.col), row: rows.indexOf(node.row) })),
+            presentation: typeof definition.presentation === 'function' ? definition.presentation(settings) : definition.presentation,
+            nodes: selected.map(node => ({
+                ...node, col: columns.indexOf(node.col), row: rows.indexOf(node.row),
+                ...(!focus.has(node.id) ? { inactive: true, detail: node.id === 'origin' ? 'Not contacted in this scenario' : 'Not reached in this scenario' } : {})
+            })),
             scenarioLabel: scenario.label, scenarioSummary: scenario.summary || definition.summary
         };
     }
@@ -111,6 +125,7 @@ const DiagramCatalog = {
     ];
     add({
         id: 'tcp-handshake', title: 'TCP: a conversation before the request',
+        presentation: { kind: 'sequence' },
         summary: 'Follow the direction of SYN, SYN-ACK and ACK in an ordinary TCP connection.',
         takeaway: 'Connection establishment and a successful application response are different checks.',
         caveat: 'Sequence numbers are fictional. TCP Fast Open is not shown. HTTP/3 uses QUIC, not this TCP handshake.',
@@ -284,6 +299,20 @@ const DiagramCatalog = {
     ];
     add({
         id: 'nsg-filtering', title: 'Two policy checks, first match in each',
+        presentation: settings => ({
+            kind: 'policy',
+            packet: 'Illustrative new packet: TCP · 198.51.100.20:51514 → 10.0.1.4:443',
+            tables: ['subnet', 'nic'].map(scope => ({
+                caption: `${scope === 'subnet' ? 'Subnet' : 'NIC'} NSG — evaluate top to bottom; stop at the first match`,
+                columns: ['Priority', 'Rule / destination port', 'Matches packet?', 'Decision'],
+                rows: [
+                    { step: scope, cells: ['100', 'HTTPS / TCP 443', 'Yes — first match', scope === 'nic' && settings.scenario === 'deny' ? 'Deny — drop packet' : 'Allow — continue'], winner: true, blocked: scope === 'nic' && settings.scenario === 'deny' },
+                    { step: scope, cells: ['200', 'SSH / TCP 22', 'Not evaluated', 'Lower priority cannot override'] },
+                    { step: scope, cells: ['65500', 'DenyAllInBound / any', 'Not evaluated', 'Default deny'] }
+                ]
+            })),
+            note: 'Selected illustrative rules, not a complete NSG export. Both applicable NSGs must allow this new flow. Return traffic for an allowed connection is stateful.'
+        }),
         summary: 'Use an illustrative new inbound TCP 443 connection to distinguish subnet and NIC policy.',
         takeaway: 'An allow in one NSG cannot overrule a deny in another.',
         caveat: 'NSGs are stateful. Defaults include 65000 AllowVNet, 65001 AllowAzureLoadBalancer (inbound) or AllowInternet (outbound), and 65500 DenyAll. A deny commonly causes timeout, not a guaranteed TCP reset.',
@@ -493,6 +522,31 @@ const DiagramCatalog = {
     ];
     add({
         id: 'natgw', title: 'NAT: translate out, map the reply back',
+        presentation: settings => ({
+            kind: 'translation',
+            packet: settings.scenario === 'mapped'
+                ? 'Illustrative IPv4 mapping · private 10.0.1.4:51514 ⇄ public 203.0.113.10:62001'
+                : settings.scenario === 'exhausted'
+                    ? 'New outbound TCP flow from 10.0.1.4:51514 · no usable mapping available'
+                    : 'New inbound TCP flow to 203.0.113.10:62001 · no existing mapping',
+            tables: [{
+                caption: settings.scenario === 'mapped' ? 'One connection — source translation out, destination translation back' : 'No usable mapping — no forwarded connection',
+                columns: ['Stage', 'Source address:port', 'Destination address:port', 'Mapping result'],
+                rows: settings.scenario === 'mapped' ? [
+                    { step: 'private-flow', cells: ['Before NAT', '10.0.1.4:51514', '198.51.100.80:443', 'VM initiates TCP'] },
+                    { step: 'translate', cells: ['After NAT', '203.0.113.10:62001', '198.51.100.80:443', 'Source IP + port translated'], winner: true },
+                    { step: 'reply', cells: ['Reply before NAT', '198.51.100.80:443', '203.0.113.10:62001', 'Existing mapping found'] },
+                    { step: 'deliver', cells: ['Reply after NAT', '198.51.100.80:443', '10.0.1.4:51514', 'Destination restored to VM'], winner: true }
+                ] : settings.scenario === 'exhausted' ? [
+                    { step: 'private-flow', cells: ['New outbound flow', '10.0.1.4:51514', '198.51.100.80:443', 'Requests mapping'] },
+                    { step: 'exhausted', cells: ['Not forwarded', 'No mapped public port', '198.51.100.80:443', 'Blocked — capacity unavailable'], blocked: true }
+                ] : [
+                    { step: 'attempt', cells: ['New inbound flow', '198.51.100.80:443', '203.0.113.10:62001', 'Not a solicited reply'] },
+                    { step: 'reject', cells: ['Not forwarded', '198.51.100.80:443', 'No private destination', 'Blocked — no existing mapping'], blocked: true }
+                ]
+            }],
+            note: 'Addresses and ports are illustrative, not real resources or guaranteed assigned ports. Public examples use documentation-only address ranges.'
+        }),
         summary: 'NAT Gateway provides explicit outbound connectivity for the applicable subnet egress path.',
         takeaway: 'NAT needs a finite mapping resource and a matching return flow.',
         caveat: 'This is an IPv4 source-NAT example. Capacity, port reuse and destination limits can cause exhaustion. NAT does not admit new unsolicited inbound connections, and it does not override a route to a virtual appliance.',
@@ -526,6 +580,21 @@ const DiagramCatalog = {
 
     add({
         id: 'udr', title: 'Route choice: specificity first, source second',
+        presentation: settings => ({
+            kind: 'routes',
+            packet: 'Illustrative packet destination: 198.51.100.25 · compare effective routes at the source VM',
+            tables: [{
+                caption: 'Matching route table — longest matching prefix, then route-source preference',
+                columns: ['Destination prefix', 'Route source', 'Matches?', 'Next hop / result'],
+                rows: [
+                    { step: settings.scenario === 'route' ? 'prefix' : 'route', cells: ['10.0.1.0/24', 'System', 'No', 'Virtual network — not a candidate'] },
+                    { step: settings.scenario === 'route' ? 'source' : 'route', cells: ['0.0.0.0/0', 'UDR', 'Yes — selected', settings.scenario === 'route' ? 'Virtual appliance 10.0.0.4' : '10.0.0.4 — unreachable'], winner: true },
+                    { step: settings.scenario === 'route' ? 'source' : 'route', cells: ['0.0.0.0/0', 'BGP', 'Yes — equal prefix', 'Lower route-source preference'] },
+                    { step: settings.scenario === 'route' ? 'source' : 'route', cells: ['0.0.0.0/0', 'System', 'Yes — equal prefix', 'Internet — lower preference'] }
+                ]
+            }],
+            note: 'The /24 is more specific but does not match this destination. Among these matching /0 routes, UDR wins. Selecting a route does not prove next-hop reachability or supply source translation.'
+        }),
         summary: 'Compare matching prefixes before comparing route sources. A route is a decision, not an extra appliance.',
         takeaway: 'A next-hop entry is useful only when the next hop and return route work.',
         caveat: 'For equal prefixes the general preference is UDR > BGP > system. Some platform routes have documented exceptions. A route to Internet alone does not provide outbound source translation.',

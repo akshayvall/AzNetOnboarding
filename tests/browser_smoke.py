@@ -16,7 +16,7 @@ from browser_diagrams import DiagramBrowserTests
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE = "2026-10-diagrams-1"
+RELEASE = "2026-10-fieldguide-3"
 MOUNT = "/academy/"
 VIEWPORTS = ((320, 900), (390, 844), (768, 1024), (1440, 1000))
 TIMEOUT = 10000
@@ -166,10 +166,23 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
 
     def navigate(self, destination):
         navigation = ".bottom-nav" if self.page.viewport_size["width"] <= 768 else ".workspace-nav"
+        if destination in ("learn", "practice", "build"):
+            self.page.locator(f'{navigation} [data-destination="more"]').click()
+            self.page.get_by_text("Optional practice and skill records", exact=True).click()
+            self.page.locator(f'#destinationView a[href="#{destination}"]').click()
+            expect(self.page.locator("#destinationView")).to_have_class(re.compile(r"\bactive\b"))
+            expect(self.page.locator("#destinationTitle")).to_have_text({"learn": "Lesson catalog", "practice": "Extra practice", "build": "Case practice"}[destination])
+            return
         self.page.locator(f'{navigation} [data-destination="{destination}"]').click()
         expected_view = "#dashboard" if destination == "today" else "#destinationView"
         expect(self.page.locator(expected_view)).to_have_class(re.compile(r"\bactive\b"))
         expect(self.page.locator(f'{navigation} [data-destination="{destination}"]')).to_have_attribute("aria-current", "page")
+
+    def open_extra(self, selector):
+        self.page.locator('.lesson-steps [data-tab="check"]').click()
+        if not self.page.locator("#furtherStudy").evaluate("element => element.open"):
+            self.page.locator("#furtherStudy > summary").click()
+        self.page.locator(f"#furtherStudy {selector}").click()
 
     def screenshot(self, name):
         if self.screenshots_dir:
@@ -230,9 +243,9 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
             expect(toggle).to_be_focused()
             self.assert_drawer_closed()
         titles = []
-        for destination in ("learn", "practice", "build", "more"):
+        for destination, title in (("learn", "Lesson catalog"), ("practice", "Extra practice"), ("build", "Case practice"), ("more", "Progress")):
             self.navigate(destination)
-            expect(self.page.locator("#destinationTitle")).to_have_text(destination.title())
+            expect(self.page.locator("#destinationTitle")).to_have_text(title)
             expect(self.page.locator("#destinationTitle")).to_be_focused()
             titles.append(self.page.locator("main .view.active h1").inner_text())
             self.assert_drawer_closed()
@@ -243,13 +256,161 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         expect(self.page.locator(".today-primary .btn-primary")).to_be_in_viewport(ratio=1)
         first = self.modules()[0]
         self.load_module(first["id"])
-        expect(self.page.locator("#moduleModeBar")).to_be_visible()
+        expect(self.page.locator(".lesson-steps")).to_be_visible()
         with self.subTest(surface="Guided module"):
             self.assert_no_overflow()
-        self.page.locator('.guided-stepper [data-tab="lab"]').click()
+        self.open_extra('[data-tab="lab"]')
         expect(self.page.locator("#localPractice")).to_be_visible()
         with self.subTest(surface="Local practice"):
             self.assert_no_overflow()
+
+    def test_fieldguide_resume_unfinished_unit(self):
+        self.open_page("#net-fundamentals")
+        self.page.locator("#doneReadingInline").click()
+        expect(self.page.locator('.lesson-steps [data-tab="try"]')).to_have_attribute("aria-current", "step")
+        self.page.locator('[data-app-action="show-dashboard"]').click()
+        self.page.locator('[data-beginner-action="start"]').click()
+        expect(self.page.locator("#moduleTitle")).to_have_text("Networking Fundamentals")
+        expect(self.page.locator('.lesson-steps [data-tab="try"]')).to_have_attribute("aria-current", "step")
+        expect(self.page.locator("#unitTitle")).to_be_visible()
+        self.page.reload()
+        expect(self.page.locator('.lesson-steps [data-tab="try"]')).to_have_attribute("aria-current", "step")
+
+    def test_fieldguide_small_wheel_does_not_lose_the_app(self):
+        self.page.set_viewport_size({"width": 390, "height": 900})
+        self.open_page("#net-fundamentals?tab=try")
+        for tab in ("try", "interactive"):
+            self.page.evaluate("tab => app.switchTab(tab)", tab)
+            self.page.mouse.move(200, 500)
+            for _ in range(22):
+                self.page.mouse.wheel(0, 600)
+                self.page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+            geometry = self.page.evaluate("""() => ({
+                windowY: window.scrollY,
+                top: document.getElementById('content').getBoundingClientRect().top,
+                bottom: document.getElementById('content').getBoundingClientRect().bottom
+            })""")
+            self.assertEqual(geometry["windowY"], 0, geometry)
+            self.assertGreater(geometry["bottom"], 500, geometry)
+
+    def test_fieldguide_mobile_header_contains_its_text(self):
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        self.open_page("#today")
+        geometry = self.page.evaluate("""() => {
+            const header = document.querySelector('.academy-identity').getBoundingClientRect();
+            const text = document.querySelector('.academy-identity p').getBoundingClientRect();
+            return {headerBottom:header.bottom, textBottom:text.bottom, textWidth:text.width,
+                    textLeft:text.left, shadow:getComputedStyle(document.querySelector('.academy-identity')).boxShadow};
+        }""")
+        self.assertLessEqual(geometry["textBottom"], geometry["headerBottom"], geometry)
+        self.assertGreater(geometry["textWidth"], 280, geometry)
+        self.assertGreaterEqual(geometry["textLeft"], 14, geometry)
+        self.assertEqual(geometry["shadow"], "none", geometry)
+
+    def test_fieldguide_concrete_relationship_precedes_the_terms(self):
+        self.open_page("#net-fundamentals")
+        order = self.page.evaluate("""() => {
+            const example = document.querySelector('.unit-example');
+            const visual = document.getElementById('unitVisual');
+            const detail = document.querySelector('.unit-detail');
+            return Boolean(detail && example.compareDocumentPosition(visual) & Node.DOCUMENT_POSITION_FOLLOWING)
+                && Boolean(visual.compareDocumentPosition(detail) & Node.DOCUMENT_POSITION_FOLLOWING);
+        }""")
+        self.assertTrue(order, "Concrete example, then visual, then terminology explanation")
+        self.page.evaluate("app.navigateDestination('start',{lesson:2})")
+        self.assertTrue(self.page.evaluate("""() => Boolean(document.getElementById('starterVisual').compareDocumentPosition(document.getElementById('starterConcept')) & Node.DOCUMENT_POSITION_FOLLOWING)"""))
+
+    def test_fieldguide_starter_visual_changes_a_real_condition(self):
+        self.open_page("#start?lesson=0")
+        expect(self.page.locator("#starterVisual")).to_be_visible()
+        self.page.locator('[data-beginner-action="starter-condition"][data-condition="1"]').click()
+        expect(self.page.locator("#starterVisualOutcome")).to_contain_text("DNS succeeded")
+        expect(self.page.locator("#starterVisual [data-state=unused]")).to_have_count(1)
+        self.page.evaluate("location.hash = '#start?lesson=2'")
+        expect(self.page.locator("#starterPosition")).to_have_text("Lesson 3 of 3")
+        self.page.locator('[data-beginner-action="starter-condition"][data-condition="1"]').click()
+        expect(self.page.locator("#starterVisualOutcome")).to_contain_text("origin is not contacted")
+
+    def test_fieldguide_all_units_complete_without_claiming_mastery(self):
+        self.open_page()
+        catalog = self.page.evaluate("ACADEMY_UNITS")
+        self.assertEqual(len(catalog), 21)
+        for module_id, units in catalog.items():
+            for unit in units:
+                with self.subTest(module=module_id, unit=unit["id"]):
+                    self.page.evaluate("value => app.loadModule(value.module, {unitId:value.unit})", {"module": module_id, "unit": unit["id"]})
+                    expect(self.page.locator("#unitTitle")).to_have_text(unit["title"])
+                    self.assertLess(self.page.locator(".unit-lesson").inner_text().count(" "), 420)
+                    self.page.locator("#doneReadingInline").click()
+                    self.page.locator('input[name="unit-activity"]').nth(unit["activity"]["correct"]).check()
+                    self.page.locator('[data-unit-action="try"]').click()
+                    expect(self.page.locator("#unitActivityFeedback")).to_contain_text("Yes.")
+                    self.page.locator("#nextLessonStep").click()
+                    for index, question in enumerate(unit["checks"]):
+                        self.page.locator(f'input[name="beginner-check-{index}"]').nth(question["correct"]).check()
+                    self.page.locator('[data-unit-action="check"]').click()
+                    expect(self.page.locator("#unitContinue")).to_be_visible()
+                    self.page.locator("#unitExplanation").fill("Synthetic learner explanation for this browser test, not independently assessed skill.")
+                    self.page.locator('[data-unit-action="explain"]').click()
+                    expect(self.page.locator("#unitExplanationStatus")).to_contain_text("self-explanation is saved")
+                    self.assertEqual(self.page.evaluate("UnitEngine.unitStatus(app.currentModule.id, UnitEngine.current, ProgressManager.getProgress())"),
+                                     {"read": True, "practiced": True, "checked": True, "explained": True})
+        progress = self.page.evaluate("ProgressManager.getProgress()")
+        self.assertEqual(progress["quizScores"], {})
+        self.assertEqual(progress["completedLabs"], [])
+        self.assertEqual(progress["completedModules"], [])
+        self.page.evaluate("app.navigateDestination('more')")
+        expect(self.page.locator(".unit-progress")).to_contain_text("63 of 63 short units checked")
+        self.page.reload()
+        expect(self.page.locator(".unit-progress")).to_contain_text("63 of 63 short units checked")
+
+    def test_fieldguide_unit_links_and_history_keep_the_exact_step(self):
+        self.open_page("#net-fundamentals")
+        first_id = self.page.evaluate("UnitEngine.current.id")
+        self.page.locator('.lesson-steps [data-tab="check"]').click()
+        for index, question in enumerate(self.page.evaluate("UnitEngine.current.checks")):
+            self.page.locator(f'input[name="beginner-check-{index}"]').nth(question["correct"]).check()
+        self.page.locator('[data-unit-action="check"]').click()
+        self.page.locator('[data-unit-action="next"]').click()
+        second_id = self.page.evaluate("UnitEngine.current.id")
+        self.assertNotEqual(first_id, second_id)
+        self.page.reload()
+        self.assertEqual(self.page.evaluate("UnitEngine.current.id"), second_id)
+        self.page.go_back()
+        expect(self.page.locator('.lesson-steps [data-tab="check"]')).to_have_attribute("aria-current", "step")
+        self.assertEqual(self.page.evaluate("UnitEngine.current.id"), first_id)
+        self.page.go_forward()
+        expect(self.page.locator('.lesson-steps [data-tab="learn"]')).to_have_attribute("aria-current", "step")
+        self.assertEqual(self.page.evaluate("UnitEngine.current.id"), second_id)
+
+    def test_fieldguide_unsaved_explanation_survives_navigation_and_retry(self):
+        self.open_page("#net-fundamentals?tab=check")
+        self.allowed_storage_errors = True
+        result = self.page.evaluate("""message => {
+            const original = Storage.prototype.setItem;
+            const key = ProgressManager.storageKey();
+            let rejections = 0;
+            try {
+                Storage.prototype.setItem = function(k,v) {
+                    if (k === key) { rejections++; console.error(message); throw new DOMException('quota', 'QuotaExceededError'); }
+                    return original.call(this,k,v);
+                };
+                const input = document.getElementById('unitExplanation');
+                input.value = 'Synthetic draft kept after storage failed.';
+                input.dispatchEvent(new Event('input', {bubbles:true}));
+            } finally { Storage.prototype.setItem = original; }
+            return rejections;
+        }""", STORAGE_ERROR)
+        self.allowed_storage_errors = False
+        self.assertEqual(result, self.expected_storage_errors)
+        expect(self.page.locator("#unitExplanationStatus")).to_contain_text("not saved")
+        self.page.evaluate("app.showDashboard()")
+        expect(self.page.locator("#storageNotice")).to_be_visible()
+        self.page.locator('#storageNotice [data-learning-action="retry-save"]').click()
+        self.page.evaluate("app.loadModule('net-fundamentals',{tab:'check'})")
+        expect(self.page.locator("#unitExplanation")).to_have_value("Synthetic draft kept after storage failed.")
+        self.page.reload()
+        expect(self.page.locator("#unitExplanation")).to_have_value("Synthetic draft kept after storage failed.")
 
     def test_catalog_filters(self):
         self.open_page()
@@ -284,9 +445,95 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         expect(rows.locator("h3")).to_have_text([module["title"] for module in modules if module["id"] in path_ids])
         self.assertIn("path=selected", self.page.url)
 
+    def test_simplified_navigation_and_persisted_full_view(self):
+        self.open_page("#net-fundamentals")
+        expect(self.page.locator(".workspace-nav a")).to_have_text(["Your path", "AFD request lab", "Progress"])
+        expect(self.page.locator(".unit-lesson")).to_be_visible()
+        expect(self.page.locator(".lesson-steps button")).to_have_text(["1 Learn", "2 Try it", "3 Quick check"])
+        expect(self.page.locator("#masteryPanel")).not_to_be_visible()
+        self.page.evaluate("""() => UIStateManager.saveSection('net-fundamentals', 'worked-case-find-the-first-failed-boundary')""")
+        self.page.reload(wait_until="domcontentloaded")
+        expect(self.page.locator(".unit-lesson")).to_be_in_viewport()
+        expect(self.page.locator("#learningWorkedTitle")).not_to_be_visible()
+        self.page.locator('.lesson-steps [data-tab="try"]').click()
+        expect(self.page.locator('.lesson-steps [data-tab="try"]')).to_have_attribute("aria-current", "step")
+        expect(self.page.locator("#tab-diagrams")).to_be_visible()
+        self.page.locator('.lesson-steps [data-tab="check"]').click()
+        expect(self.page.locator("#beginnerCheck")).to_be_visible()
+        expect(self.page.locator("#optionalChallenge")).not_to_have_attribute("open", "")
+        self.page.locator("#furtherStudy > summary").click()
+        before = self.page.evaluate("() => { UIStateManager.setExperience('beginner'); return UIStateManager.get().experience; }")
+        self.page.locator('#furtherStudy [data-evidence-target="transfer"]').click()
+        expect(self.page.locator("#transfer-reflection")).to_be_visible()
+        self.assertEqual(self.page.evaluate("UIStateManager.get().experience"), before)
+
+    def test_simplified_starter_finish_and_continue(self):
+        self.open_page("#start?lesson=2")
+        self.page.get_by_role("button", name="Done reading", exact=True).click()
+        expect(self.page.locator("#destinationTitle")).to_have_text("You have the first pieces of the map")
+        expect(self.page.locator("#starterComplete")).to_be_visible()
+        self.page.reload(wait_until="domcontentloaded")
+        expect(self.page.locator("#starterComplete")).to_be_visible()
+        self.page.get_by_role("link", name="Continue to Networking Fundamentals", exact=True).click()
+        expect(self.page.locator(".unit-lesson")).to_be_visible()
+
+    def test_simplified_all_quick_checks_accept_their_answer_shapes(self):
+        self.open_page()
+        for module in self.modules():
+            self.load_module(module["id"])
+            self.page.locator('.lesson-steps [data-tab="check"]').click()
+            questions = self.page.evaluate("UnitEngine.current.checks")
+            for index, question in enumerate(questions):
+                answers = question["correct"] if isinstance(question["correct"], list) else [question["correct"]]
+                for answer in answers:
+                    self.page.locator("#beginnerCheck fieldset").nth(index).locator("input").nth(answer).check()
+            self.page.get_by_role("button", name="Check my understanding", exact=True).click()
+            expect(self.page.locator("#beginnerCheckFeedback")).to_contain_text("2 of 2")
+        self.assertEqual(self.page.evaluate("Object.keys(ProgressManager.getProgress().quizScores).length"), 0)
+
+    def test_simplified_forward_flow_starts_each_step_at_the_top(self):
+        self.open_page("#net-fundamentals")
+        self.page.locator("#doneReadingInline").click()
+        expect(self.page.locator('.lesson-steps [data-tab="try"]')).to_have_attribute("aria-current", "step")
+        self.assertLessEqual(self.page.locator("#content").evaluate("element => element.scrollTop"), 1)
+        self.page.locator("#nextLessonStep").click()
+        expect(self.page.locator("#beginnerCheck")).to_be_in_viewport()
+        self.assertLessEqual(self.page.locator("#content").evaluate("element => element.scrollTop"), 1)
+
+    def test_simplified_stale_resume_cannot_navigate_away_from_progress(self):
+        self.open_page()
+        route = self.page.evaluate("""async () => {
+            app.loadModule('net-fundamentals', { sectionId: 'why-networking-matters-for-azure' });
+            app.navigateDestination('more');
+            await new Promise(resolve => setTimeout(resolve, 250));
+            return location.hash;
+        }""")
+        self.assertEqual(route, "#more")
+        expect(self.page.locator("#destinationTitle")).to_have_text("Progress")
+
+    def test_simplified_mobile_steps_and_primary_destinations(self):
+        self.open_page()
+        for width, height in VIEWPORTS:
+            self.page.set_viewport_size({"width": width, "height": height})
+            self.page.evaluate("app.showDashboard()")
+            expect(self.page.locator(".level-cards")).to_have_count(0)
+            self.assert_no_overflow()
+            self.screenshot(f"simplified-path-{width}")
+            self.load_module("net-fundamentals")
+            for step in ("learn", "try", "check"):
+                self.page.locator(f'.lesson-steps [data-tab="{step}"]').click()
+                expect(self.page.locator(f'.lesson-steps [data-tab="{step}"]')).to_be_in_viewport()
+                self.assert_no_overflow()
+                self.screenshot(f"simplified-{step}-{width}")
+            if width <= 768:
+                expect(self.page.locator(".bottom-nav button")).to_have_text(["Your path", "AFD lab", "Progress"])
+                self.page.locator('.bottom-nav [data-destination="visual-lab"]').click()
+                expect(self.page.locator('.bottom-nav [data-destination="visual-lab"]')).to_have_attribute("aria-current", "page")
+
     def test_beginner_start_and_three_lessons(self):
         self.open_page()
         expect(self.page.get_by_role("button", name="Start from zero", exact=True)).to_be_visible()
+        self.page.locator(".placement-choice > summary").click()
         expect(self.page.get_by_role("button", name="Take the placement test", exact=True)).to_be_visible()
         self.page.get_by_role("button", name="Start from zero", exact=True).click()
         for index in range(3):
@@ -294,6 +541,8 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
             expect(self.page.locator("#starterLesson")).to_be_visible()
             self.page.locator("#starterLesson summary").click()
             self.page.get_by_role("button", name="Done reading", exact=True).click()
+        expect(self.page.locator("#starterComplete")).to_be_visible()
+        self.page.get_by_role("link", name="Continue to Networking Fundamentals", exact=True).click()
         expect(self.page.locator("#moduleTitle")).to_have_text("Networking Fundamentals")
         self.assertEqual(self.page.evaluate("ProgressManager.getProgress().completedLabs.length"), 0)
         self.assertEqual(self.page.evaluate("Object.keys(ProgressManager.getProgress().quizScores).length"), 0)
@@ -302,42 +551,42 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
 
     def test_beginner_teaches_before_optional_challenge(self):
         self.open_page("#net-fundamentals")
-        expect(self.page.locator("#beginnerOpening")).to_be_visible()
+        expect(self.page.locator(".unit-lesson")).to_be_visible()
         expect(self.page.locator("#masteryPanel")).not_to_be_visible()
         expect(self.page.locator("#optionalChallenge")).not_to_have_attribute("open", "")
         expect(self.page.locator("#learningWorkedTitle")).not_to_be_visible()
-        self.assertTrue(self.page.evaluate("""() => Boolean(document.getElementById('beginnerOpening').compareDocumentPosition(document.getElementById('optionalChallenge')) & Node.DOCUMENT_POSITION_FOLLOWING)"""))
-        expect(self.page.locator("#beginnerCheck fieldset")).to_have_count(3)
+        self.assertTrue(self.page.evaluate("""() => Boolean(document.querySelector('.unit-lesson').compareDocumentPosition(document.getElementById('optionalChallenge')) & Node.DOCUMENT_POSITION_FOLLOWING)"""))
+        expect(self.page.locator("#beginnerCheck fieldset")).to_have_count(2)
+        self.page.locator('.lesson-steps [data-tab="check"]').click()
         self.page.get_by_role("button", name="Check my understanding", exact=True).click()
         expect(self.page.locator("#beginnerCheckFeedback")).to_contain_text("Choose an answer")
-        self.page.locator("#beginnerCheck fieldset").nth(0).locator("input").nth(0).check()
-        self.page.locator("#beginnerCheck fieldset").nth(1).locator("input").nth(1).check()
-        self.page.locator("#beginnerCheck fieldset").nth(2).locator("input").nth(2).check()
+        for index, question in enumerate(self.page.evaluate("UnitEngine.current.checks")):
+            self.page.locator("#beginnerCheck fieldset").nth(index).locator("input").nth(question["correct"]).check()
         self.page.get_by_role("button", name="Check my understanding", exact=True).click()
-        expect(self.page.locator("#beginnerCheckFeedback")).to_contain_text("3 of 3")
+        expect(self.page.locator("#beginnerCheckFeedback")).to_contain_text("2 of 2")
         self.assertEqual(self.page.evaluate("Object.keys(ProgressManager.getProgress().quizScores).length"), 0)
-        self.page.get_by_role("button", name="Use full learning tools", exact=True).click()
+        self.open_extra('[data-evidence-target="transfer"]')
         expect(self.page.locator("#masteryPanel")).to_be_visible()
-        expect(self.page.locator("#optionalChallenge")).to_have_attribute("open", "")
+        expect(self.page.locator("#optionalChallenge")).not_to_have_attribute("open", "")
         self.page.reload(wait_until="domcontentloaded")
-        self.assertEqual(self.page.evaluate("UIStateManager.get().experience"), "full")
+        self.assertEqual(self.page.evaluate("UIStateManager.get().experience"), "beginner")
 
     def test_beginner_all_modules_and_mobile(self):
         self.open_page()
         modules = self.modules()
         for module in modules:
             self.load_module(module["id"])
-            expect(self.page.locator("#beginnerOpening")).to_be_visible()
-            expect(self.page.locator("#beginnerCheck fieldset")).to_have_count(3)
+            expect(self.page.locator(".unit-lesson")).to_be_visible()
+            expect(self.page.locator("#beginnerCheck fieldset")).to_have_count(2)
             expect(self.page.locator("#learningWorkedTitle")).not_to_be_visible()
-            self.page.get_by_role("button", name="Done reading", exact=True).click()
-            self.assertTrue(self.page.evaluate("id => ProgressManager.getProgress().moduleMastery[id].contentReviewed", module["id"]))
+            self.page.locator("#doneReadingInline").click()
+            self.assertTrue(self.page.evaluate("UnitEngine.unitStatus(app.currentModule.id, UnitEngine.current, ProgressManager.getProgress()).read"))
             self.assertNotIn(self.page.evaluate("id => MasteryEngine.getStatus(MODULES.find(m => m.id === id)).state", module["id"]), ["practiced", "demonstrated", "durable"])
         for width, height in VIEWPORTS:
             self.page.set_viewport_size({"width": width, "height": height})
             self.navigate("today")
             self.assert_no_overflow()
-            self.page.locator('a[href="#start?lesson=0"]').click()
+            self.page.locator('#dashboard a[href="#start?lesson=0"]').click()
             self.assert_no_overflow()
             self.screenshot(f"beginner-starter-{width}")
             self.load_module("net-fundamentals")
@@ -361,7 +610,7 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
             if (!withoutDiagram || !activity) return true;
             app.loadModule(withoutDiagram.id);
             app.loadModule(activity.id);
-            return !document.querySelector('.module-tabs [data-tab="diagrams"]').hidden;
+            return document.querySelectorAll('.lesson-steps button').length === 3;
         }""")
         self.assertTrue(result)
 
@@ -376,10 +625,10 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
                     coachingId: document.getElementById('moduleCoaching')?.dataset.moduleId,
                     localPracticeId: document.getElementById('localPractice')?.dataset.moduleId,
                     predictionCount: document.querySelectorAll('#predictionOptions input').length,
-                    guided: app.currentMode === 'guided' && !document.getElementById('moduleModeBar').hidden,
-                    disabledSteps: document.querySelectorAll('.guided-stepper button:not([hidden]):disabled').length,
+                    guided: app.currentMode === 'guided' && document.querySelectorAll('.lesson-steps button').length === 3,
+                    disabledSteps: document.querySelectorAll('.lesson-steps button:not([hidden]):disabled').length,
                     diagramCount: module.diagrams?.length || 0,
-                    svgCount: document.querySelectorAll('#inlineCoreVisual svg, #tab-learn [data-diagram-model] svg').length,
+                    svgCount: document.querySelectorAll('#unitVisual svg').length,
                     quizCount: QuizEngine.questions?.length || 0
                 };
             }) };
@@ -406,9 +655,9 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         self.navigate("learn")
         self.page.get_by_role("link", name=f"Learn: {first['title']}", exact=True).click()
         expect(self.page.locator("#moduleTitle")).to_have_text(first["title"])
-        expect(self.page.locator('[data-module-mode="guided"]')).to_have_attribute("aria-pressed", "true")
+        expect(self.page.locator('.lesson-steps [data-tab="learn"]')).to_have_attribute("aria-current", "step")
         self.screenshot("module")
-        self.page.locator('.guided-stepper [data-tab="lab"]').click()
+        self.open_extra('[data-tab="lab"]')
         expect(self.page.locator("#localPractice")).to_have_attribute("data-module-id", first["id"])
         expect(self.page.locator("#artifactEvidence")).to_be_visible()
         self.screenshot("practice")
@@ -587,7 +836,7 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         self.open_page()
         module = self.modules()[0]
         self.load_module(module["id"])
-        self.page.locator('.guided-stepper [data-evidence-target="transfer"]').click()
+        self.open_extra('[data-evidence-target="transfer"]')
         for criterion in range(1, 4):
             self.page.locator(f"#transfer-score-{criterion}").select_option("4")
         reflection = "Synthetic proof 1234"
@@ -682,6 +931,7 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         module = self.modules()[0]
         self.assertTrue(self.page.evaluate("input => ProgressManager.saveArtifactPractice(input.moduleId, input.evidence)", {"moduleId": module["id"], "evidence": SYNTHETIC_EVIDENCE}))
         self.navigate("more")
+        self.page.locator('details.learning-group').filter(has=self.page.locator('[data-learning-action="export-progress"]')).locator("summary").click()
         with self.page.expect_download() as download_event:
             self.page.locator('[data-learning-action="export-progress"]').click()
         download = download_event.value
@@ -723,17 +973,17 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         expect(self.page.locator("#artifactEvidence")).to_have_value(revised_draft)
         self.page.reload(wait_until="domcontentloaded")
         expect(self.page.locator("#artifactEvidence")).to_have_value(revised_draft)
-        self.page.locator('.guided-stepper [data-evidence-target="transfer"]').click()
+        self.open_extra('[data-evidence-target="transfer"]')
         self.page.locator("#transfer-reflection").fill(first_draft)
         self.page.locator("#transfer-reflection").press("Tab")
         self.navigate("more")
         self.load_module(module["id"])
-        self.page.locator('.guided-stepper [data-evidence-target="transfer"]').click()
+        self.open_extra('[data-evidence-target="transfer"]')
         expect(self.page.locator("#transfer-reflection")).to_have_value(first_draft)
         self.page.locator("#transfer-reflection").fill(revised_draft)
         self.navigate("learn")
         self.load_module(module["id"])
-        self.page.locator('.guided-stepper [data-evidence-target="transfer"]').click()
+        self.open_extra('[data-evidence-target="transfer"]')
         expect(self.page.locator("#transfer-reflection")).to_have_value(revised_draft)
         self.page.reload(wait_until="domcontentloaded")
         expect(self.page.locator("#transfer-reflection")).to_have_value(revised_draft)
@@ -747,17 +997,21 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         self.page.goto("about:blank")
         self.open_page(f"#{module['id']}?tab=quiz&mode=browse")
         expect(self.page.locator("#tab-quiz")).to_be_visible()
-        expect(self.page.locator('[data-module-mode="browse"]')).to_have_attribute("aria-pressed", "true")
+        self.assertEqual(self.page.evaluate("app.currentMode"), "browse")
         self.page.reload(wait_until="domcontentloaded")
         expect(self.page.locator("#tab-quiz")).to_be_visible()
-        expect(self.page.locator('[data-module-mode="browse"]')).to_have_attribute("aria-pressed", "true")
-        self.page.locator('.module-tabs [data-tab="lab"]').click()
+        self.assertEqual(self.page.evaluate("app.currentMode"), "browse")
+        self.open_extra('[data-tab="lab"]')
         expect(self.page.locator("#tab-lab")).to_be_visible()
+        self.page.go_back()
+        expect(self.page.locator("#tab-check")).to_be_visible()
         self.page.go_back()
         expect(self.page.locator("#tab-quiz")).to_be_visible()
         self.page.go_forward()
+        expect(self.page.locator("#tab-check")).to_be_visible()
+        self.page.go_forward()
         expect(self.page.locator("#tab-lab")).to_be_visible()
-        self.page.locator('.module-tabs [data-tab="learn"]').click()
+        self.page.locator('.lesson-steps [data-tab="learn"]').click()
         section = self.page.locator("#sectionOutlineList [data-section-id]").nth(1).get_attribute("data-section-id")
         self.page.goto("about:blank")
         self.open_page(f"#{module['id']}?mode=browse&section={section}")
@@ -769,9 +1023,13 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
         self.assertEqual(self.page.evaluate("() => app.currentMode"), "browse")
         self.navigate("learn")
         self.page.go_back()
+        expect(self.page.locator("#destinationTitle")).to_have_text("Progress")
+        self.page.go_back()
         expect(heading).to_be_in_viewport()
         self.page.go_forward()
-        expect(self.page.locator("#destinationTitle")).to_have_text("Learn")
+        expect(self.page.locator("#destinationTitle")).to_have_text("Progress")
+        self.page.go_forward()
+        expect(self.page.locator("#destinationTitle")).to_have_text("Lesson catalog")
 
 
     def ready_worker(self, page=None):
@@ -849,8 +1107,10 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
             expect(self.page.locator(".today-primary .btn-primary")).to_be_visible()
             self.load_module(module["id"])
             expect(self.page.locator("#moduleCoaching")).to_have_attribute("data-module-id", module["id"])
+            self.page.locator('.lesson-steps [data-tab="check"]').click()
+            self.page.locator("#optionalChallenge > summary").click()
             expect(self.page.locator("#predictionOptions")).to_be_visible()
-            self.page.locator('.guided-stepper [data-tab="lab"]').click()
+            self.open_extra('[data-tab="lab"]')
             expect(self.page.locator("#localPractice")).to_be_visible()
             self.page.locator("#artifactEvidence").fill(SYNTHETIC_EVIDENCE)
             self.page.locator('[data-learning-action="save-artifact-practice"]').click()

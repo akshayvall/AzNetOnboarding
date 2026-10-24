@@ -109,7 +109,7 @@ const MasteryEngine = {
         if (!container) return;
         const progress = ProgressManager.getProgress();
         const realModules = this.getRealModules(modules, ACADEMY_MASTERY);
-        if (typeof BeginnerEngine !== 'undefined' && BeginnerEngine.isBeginner()) {
+        if (typeof BeginnerEngine !== 'undefined') {
             BeginnerEngine.renderHome(container, realModules);
             return;
         }

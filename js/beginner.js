@@ -3,13 +3,13 @@ const BeginnerEngine = {
         {
             id: 'starter-names',
             title: 'How does a name become a destination?',
-            story: 'You know a friend by name, but a delivery driver needs an address. Websites have the same problem. You type a name such as shop.example.test; your device needs a network address before it can contact the website.',
+            story: 'You know a friend by name, but a delivery driver needs an address. Websites have the same problem. You type a name such as shop.example.com; your device needs a network address before it can contact the website.',
             concept: 'DNS means Domain Name System. Think of it as a directory that helps find addresses for names. Your device asks a DNS resolver to find the answer. The resolver can reuse a saved answer or ask other DNS servers. An IP address identifies a network destination; it is not the page itself.',
             steps: ['You enter a website name', 'Your device asks for its address', 'DNS returns an address', 'Your device can now try to connect'],
             limit: 'The directory analogy ends here: DNS can return several answers, and saved answers expire. Finding an address does not prove that the website is working.',
             exercise: 'Say which job belongs to DNS: finding the address of the shop, or sending you the product page. Then imagine the address is correct but the shop server is turned off. Would a successful DNS lookup be enough?',
             answer: 'DNS helps find the address. The web service sends the page. A correct address alone cannot make an unavailable service respond.',
-            afd: 'For Azure Front Door, DNS helps clients reach the edge service. A custom domain is the familiar name you choose for that service, such as shop.example.test.',
+            afd: 'For Azure Front Door, DNS helps clients reach the edge service. A custom domain is the familiar name you choose for that service, such as shop.example.com.',
             question: 'What does DNS help a device find?',
             options: ['A network address for a name', 'The price of a product', 'The password for a website'],
             correct: 0
@@ -90,22 +90,26 @@ const BeginnerEngine = {
         const started = this.lessons.some(lesson => entry(lesson.id)) || progress.lastVisited;
         const next = modules.find(module => !entry(module.id));
         const resume = modules.find(module => module.id === progress.lastVisited && !entry(module.id)) || next;
-        const route = progress.lastVisited && resume ? `#${resume.id}` : starterIndex >= 0 ? `#start?lesson=${starterIndex}` : resume ? `#${resume.id}` : '#learn';
+        const uiState = UIStateManager.get();
+        const unitRoute = typeof UnitEngine !== 'undefined' ? UnitEngine.resumeRoute(modules, progress, uiState) : null;
+        const resumeUnit = unitRoute?.moduleId ? UnitEngine.units(unitRoute.moduleId).find(unit => unit.id === unitRoute.unitId) : null;
+        const choseModule = modules.some(module => module.id === uiState.lastModuleId || module.id === progress.lastVisited);
+        const resumeStarter = starterIndex >= 0 && !choseModule;
+        const route = resumeStarter ? `#start?lesson=${starterIndex}` : unitRoute ? LearningEngine.formatRoute(unitRoute) : resume ? `#${resume.id}` : '#visual-lab';
         container.innerHTML = `<section class="today-primary beginner-welcome">
-            <p class="mastery-eyebrow">One idea at a time</p>
             <h2 id="today-title">${started ? 'Keep learning at your pace' : 'You can start with no networking experience'}</h2>
-            <p>Begin with three short lessons. No Azure account, commands, or test required. Allow about 10 minutes each, including the try-it-yourself prompts.</p>
+            <p>${resumeStarter ? 'Begin with three short lessons. No Azure account, commands, or test required. Allow about 10 minutes each, including the try-it-yourself prompts.' : 'Read an explanation, explore it, then try a quick check. You can stop after one idea and return whenever you like.'}</p>
             <button type="button" class="btn-primary" data-beginner-action="start" data-route="${route}">${started ? 'Continue learning' : 'Start from zero'}</button>
-            <button type="button" class="btn-secondary" data-mastery-action="open-diagnostic">Take the placement test</button>
-            <p class="learning-meta">The placement test is optional. Reading progress is separate from quizzes, labs, and demonstrated skill.</p>
-            <p>${modules.filter(module => entry(module.id)).length} of ${modules.length} module readings done</p>
+            ${!resumeStarter && resumeUnit ? `<p class="resume-detail"><strong>${LearningEngine.escapeHtml(resumeUnit.title)}</strong><br>${LearningEngine.escapeHtml({ learn: 'Learn the idea', try: 'Try it', check: 'Quick check', reference: 'Full reference' }[unitRoute.tab] || 'Extra practice')} · about ${resumeUnit.minutes} min for the full unit</p><p>${LearningEngine.escapeHtml(resumeUnit.outcome)}</p>` : ''}
+            <details class="placement-choice"><summary>Already know some networking?</summary><button type="button" class="btn-secondary" data-mastery-action="open-diagnostic">Take the placement test</button><p>The test suggests a starting point. It is optional and does not lock any lesson.</p></details>
+            <p class="learning-meta">${this.lessons.filter(lesson => entry(lesson.id)).length} of 3 starter lessons read${typeof UnitEngine !== 'undefined' ? ` · ${modules.flatMap(module => UnitEngine.units(module.id).filter(unit => UnitEngine.unitStatus(module.id, unit, progress).checked)).length} short units checked` : ''}</p>
             <section class="beginner-route" aria-label="Your path from zero to applied understanding">
                 <h3>Build one mental model, then add depth</h3>
                 <ol>
                     <li><span class="route-number">01</span><div><a href="#start?lesson=0">Start with a name and a request</a><small>Explain addresses, routes and replies in everyday language.</small></div></li>
                     <li><span class="route-number">02</span><div><a href="#net-fundamentals">Learn the network underneath</a><small>Follow DNS and connections, then explore VNets and filtering.</small></div></li>
-                    <li><span class="route-number">03</span><div><a href="#visual-lab">Follow one Front Door request</a><small>Change a cache hit, a WAF rule or an origin failure. Predict the difference.</small></div></li>
-                    <li><span class="route-number">04</span><div><a href="#capstone-hub-spoke">Explain a complete application path</a><small>Connect edge decisions, private origins, inspection and return traffic.</small></div></li>
+                    <li><span class="route-number">03</span><div><a href="#frontdoor-basics">Understand Front Door</a><small>Learn the edge decisions, then explore them in the <a href="#visual-lab">AFD request lab</a>.</small></div></li>
+                    <li><span class="route-number">04</span><div><a href="#frontdoor-advanced">Add depth when you are ready</a><small>Explore routing, caching, security, and eventually a complete application design.</small></div></li>
                 </ol>
                 <p class="learning-meta">Move on when you can explain the idea without looking. Revisit a scenario after a week; reading a page is not the same as remembering it.</p>
             </section>
@@ -120,25 +124,78 @@ const BeginnerEngine = {
             <p id="starterPosition">Lesson ${this.lessonIndex + 1} of 3</p>
             <h1 id="destinationTitle" tabindex="-1">${escape(lesson.title)}</h1>
             <p class="beginner-story">${escape(lesson.story)}</p>
-            <h2>The idea</h2><p>${escape(lesson.concept)}</p>
+            <section id="starterVisual" class="starter-visual" aria-label="Change one condition in the request journey"></section>
+            <section id="starterConcept"><h2>The idea</h2><p>${escape(lesson.concept)}</p></section>
             <ol class="beginner-path" aria-label="Simplified request journey">${lesson.steps.map(step => `<li>${escape(step)}</li>`).join('')}</ol>
             <p class="learning-meta">${escape(lesson.limit)}</p>
             <h2>Try explaining it</h2><p>${escape(lesson.exercise)}</p>
             <details><summary>Compare your explanation</summary><p>${escape(lesson.answer)}</p></details>
             <h2>How this connects to Front Door</h2><p>${escape(lesson.afd)}</p>
-            ${this.lessonIndex === 2 ? LearningEngine.requestLabLink() : ''}
             <p class="learning-meta">All names here are fictional. You do not need to contact a website or deploy anything.</p>
             <div class="learning-actions">${this.lessonIndex ? `<a class="btn-secondary" href="#start?lesson=${this.lessonIndex - 1}">Previous lesson</a>` : ''}
             <button class="btn-primary" type="button" data-beginner-action="starter-done">Done reading</button>
-            <a href="#net-fundamentals">Go to Networking Fundamentals</a></div>
+            </div>
             <p id="starterFeedback" role="status"></p>
         </article>`;
+        this.renderStarterVisual(0);
+    },
+
+    renderStarterVisual(condition) {
+        const examples = [
+            {
+                choices: ['Working website', 'Server unavailable'],
+                nodes: ['Website name', 'Directory reply (DNS)', 'Connection attempt', 'Web page'],
+                outcomes: [
+                    'The resolver finds an address. A separate connection lets the web service return a page. DNS is not carrying the page.',
+                    'DNS succeeded, but the service cannot be reached. Knowing the correct address does not guarantee a working website.'
+                ],
+                changed: ['Name entered', 'Address found', 'Cannot connect', 'No page returned']
+            },
+            {
+                choices: ['Reply can return', 'Return route missing'],
+                nodes: ['Your device', 'Forward route', 'Web service', 'Reply at your device'],
+                outcomes: [
+                    'The request reaches the service and its reply reaches you. Both directions must work; their exact routes need not be identical.',
+                    'The request reaches the service, but the reply has no working route back. Your device waits and can time out.'
+                ],
+                changed: ['Request sent', 'Request forwarded', 'Reply sent', 'Reply cannot return']
+            },
+            {
+                choices: ['No stored copy', 'Public logo already stored'],
+                nodes: ['Your browser', 'Front Door: the reception desk', 'Application server: the origin', 'Response to your browser'],
+                outcomes: [
+                    'For this allowed request with no reusable copy, Front Door makes a separate request to the origin and returns its response.',
+                    'Front Door can return the fresh, shareable logo from its edge cache. The origin is not contacted for this response; a private account balance needs different cache handling.'
+                ],
+                changed: ['Browser', 'Edge has the logo', 'Origin not contacted', 'Cached response returned']
+            }
+        ];
+        const visual = examples[this.lessonIndex];
+        const escape = value => LearningEngine.escapeHtml(value);
+        document.getElementById('starterVisual').innerHTML = `<h3>See what changes</h3>
+            <div class="starter-conditions">${visual.choices.map((choice, index) => `<button type="button" class="btn-secondary" data-beginner-action="starter-condition" data-condition="${index}" aria-pressed="${condition === index}">${escape(choice)}</button>`).join('')}</div>
+            <ol class="starter-nodes" aria-label="A simplified journey">${(condition ? visual.changed : visual.nodes).map((node, index) =>
+                `<li data-state="${condition && index === (this.lessonIndex === 2 ? 2 : 3) ? 'unused' : 'active'}"><span aria-hidden="true">${index + 1}</span>${escape(node)}</li>`).join('')}</ol>
+            <p id="starterVisualOutcome" role="status" aria-live="polite">${escape(visual.outcomes[condition])}</p>
+            <p class="learning-meta">A teaching sketch, not a live network. Choose the other condition to compare.</p>`;
+        if (document.activeElement === document.body && condition) document.querySelector(`[data-beginner-action="starter-condition"][data-condition="${condition}"]`)?.focus({ preventScroll: true });
     },
 
     finishStarter() {
         const lesson = this.lessons[this.lessonIndex];
         if (!lesson || !this.saveReading(lesson.id)) return;
-        window.location.hash = this.lessonIndex < 2 ? `#start?lesson=${this.lessonIndex + 1}` : '#net-fundamentals';
+        window.location.hash = this.lessonIndex < 2 ? `#start?lesson=${this.lessonIndex + 1}` : '#start?finished=1';
+    },
+
+    renderStarterComplete() {
+        document.getElementById('destinationView').innerHTML = `<article id="starterComplete" class="starter-lesson">
+            <h1 id="destinationTitle" tabindex="-1">You have the first pieces of the map</h1>
+            <p>You have met the ideas behind a web request: find an address, connect, reach the edge, and get a response from a cache or an origin.</p>
+            <p>You do not need to remember every new term yet. Try explaining the journey in your own words. The next lesson adds detail to this same story.</p>
+            <div class="learning-actions"><a class="btn-primary" href="#net-fundamentals">Continue to Networking Fundamentals</a></div>
+            <p>Want to see the story in motion first? <a href="#visual-lab">Explore the AFD request lab</a>, without an Azure account.</p>
+            <a href="#start?lesson=0">Revisit the three starter lessons</a>
+        </article>`;
     },
 
     saveReading(id) {
@@ -157,49 +214,55 @@ const BeginnerEngine = {
     },
 
     renderModule(module) {
-        const beginner = this.isBeginner();
-        document.body.classList.toggle('beginner-mode', beginner);
-        document.getElementById('experienceToggle').textContent = beginner ? 'Use full learning tools' : 'Use beginner view';
-        document.querySelector('.beginner-tabs [data-tab="diagrams"]').hidden = !module.diagrams?.length;
-        document.querySelector('.beginner-tabs [data-tab="interactive"]').hidden = !module.interactive?.length;
-        if (!beginner) return;
         const escape = value => LearningEngine.escapeHtml(value);
         const host = document.getElementById('tab-learn');
         host.insertAdjacentHTML('afterbegin', `<section id="beginnerOpening" class="learn-section beginner-opening">
             <h2>Start with the everyday idea</h2><p>${escape(this.openings[module.id] || module.subtitle)}</p>
-            <p class="learning-meta">Read the explanation, explore a visual, then try three questions. The longer challenge at the end is optional.</p>
+            <p class="learning-meta">Learn the idea here. Then use Try it to explore, and Quick check for three low-pressure questions. No Azure account needed.</p>
         </section>`);
+        const savedSection = UIStateManager.get().lastSectionByModule[module.id];
+        const sections = app.parseSections(module);
+        const section = sections.find((item, index) => index > 1 && item.slug === savedSection);
+        if (section) document.getElementById('beginnerOpening').insertAdjacentHTML('beforeend',
+            `<button type="button" class="btn-secondary resume-section" data-app-action="navigate-section" data-section-id="${escape(section.slug)}">Continue at: ${escape(section.title)}</button>`);
+        host.insertAdjacentHTML('beforeend', `<button id="doneReadingInline" type="button" class="btn-secondary" data-app-action="complete-module">${ProgressManager.getProgress().moduleMastery[module.id]?.contentReviewed ? 'Reading saved - explore again' : 'Done reading'}</button>`);
         const questions = this.checkQuestions(module);
         const markup = `<section id="beginnerCheck" class="learn-section"><h2>Check your understanding</h2>
             <p>Three low-pressure questions. These are practice, not a module quiz or mastery award.</p>
-            ${questions.map((question, index) => `<fieldset><legend>${escape(question.question)}</legend>${question.options.map((option, choice) =>
-                `<label class="learning-choice"><input type="radio" name="beginner-check-${index}" value="${choice}"><span>${escape(option)}</span></label>`).join('')}</fieldset>`).join('')}
+            ${questions.map((question, index) => `<fieldset><legend>${escape(question.question)}${Array.isArray(question.correct) ? ' Choose all that apply.' : ''}</legend>${question.options.map((option, choice) =>
+                `<label class="learning-choice"><input type="${Array.isArray(question.correct) ? 'checkbox' : 'radio'}" name="beginner-check-${index}" value="${choice}"><span>${escape(option)}</span></label>`).join('')}</fieldset>`).join('')}
             <button type="button" class="btn-primary" data-beginner-action="check">Check my understanding</button>
             <div id="beginnerCheckFeedback" role="status" aria-live="polite"></div>
-            <p>When you finish reading, use "Done reading" below. This saves reading progress only.</p>
+            <p>These questions do not award quiz or applied-skill credit. You can revisit the explanation at any time.</p>
         </section>`;
-        document.getElementById('optionalChallenge')?.insertAdjacentHTML('beforebegin', markup);
+        document.getElementById('quickCheckHost').innerHTML = markup;
         document.getElementById('completeModule').textContent = ProgressManager.getProgress().moduleMastery[module.id]?.contentReviewed ? 'Reading done - review again' : 'Done reading';
     },
 
     checkUnderstanding() {
         const questions = this.checkQuestions(app.currentModule);
-        const answers = questions.map((_, index) => document.querySelector(`input[name="beginner-check-${index}"]:checked`)?.value);
+        const answers = questions.map((_, index) => Array.from(document.querySelectorAll(`input[name="beginner-check-${index}"]:checked`), input => Number(input.value)));
         const feedback = document.getElementById('beginnerCheckFeedback');
-        if (answers.some(answer => answer === undefined)) {
+        if (answers.some(answer => answer.length === 0)) {
             feedback.textContent = 'Choose an answer for each question, then try again.';
             return;
         }
-        const correct = questions.filter((question, index) => question.correct === Number(answers[index])).length;
+        const correct = questions.filter((question, index) => {
+            const expected = Array.isArray(question.correct) ? question.correct : [question.correct];
+            return answers[index].length === expected.length && expected.every(value => answers[index].includes(value));
+        }).length;
         feedback.innerHTML = `<p>${correct} of ${questions.length} correct. ${correct === questions.length ? 'You have the main ideas. Keep going.' : 'Use the explanations below and try again. Getting this wrong is part of learning.'}</p>
-            <ol>${questions.map(question => `<li>${LearningEngine.escapeHtml(question.explanation || question.answer)}</li>`).join('')}</ol>`;
+            <ol>${questions.map(question => `<li>${LearningEngine.escapeHtml(question.explanation || question.answer)}</li>`).join('')}</ol>
+            ${correct === questions.length ? `<p>You answered the three questions in ${LearningEngine.escapeHtml(app.currentModule.title)}. Try explaining the ideas without looking. The worked case below is optional.</p>${app.currentModule.id === MODULES[MODULES.length - 1].id ? '<button type="button" class="btn-primary" data-app-action="show-dashboard">Return to your path</button>' : '<button type="button" class="btn-primary" data-app-action="next-module">Continue to the next lesson</button>'}` : '<button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="learn">Revisit the explanation</button>'}`;
     },
 
     finishReading(module) {
         if (!this.saveReading(module.id)) return;
         document.getElementById('completeModule').textContent = 'Reading done - review again';
+        document.getElementById('doneReadingInline').textContent = 'Reading saved - explore again';
         app.updateProgress();
-        app.showToast('Reading done. Quizzes and labs remain separate; continue when you are ready.', 'success');
+        app.switchTab('try');
+        app.showToast('Reading saved. Explore the idea next, or stop here and return later.', 'success');
     },
 
     init() {
@@ -210,6 +273,7 @@ const BeginnerEngine = {
             switch (control.dataset.beginnerAction) {
                 case 'start': window.location.hash = control.dataset.route; break;
                 case 'starter-done': this.finishStarter(); break;
+                case 'starter-condition': this.renderStarterVisual(Number(control.dataset.condition)); break;
                 case 'check': this.checkUnderstanding(); break;
                 case 'toggle': this.setExperience(this.isBeginner() ? 'full' : 'beginner'); break;
             }

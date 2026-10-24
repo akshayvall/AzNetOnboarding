@@ -3,7 +3,7 @@ const UIStateManager = {
     VERSION: 1,
 
     defaultState() {
-        return { version: this.VERSION, experience: 'beginner', lastDestination: 'today', lastModuleId: null, lastSectionByModule: {}, lastTabByModule: {}, lastTouchedAtByModule: {}, activePath: 'afd-diagnosis', sessionMinutes: 25, moduleModeByModule: {}, drafts: {}, savedReferenceIds: [], filterPreferences: {} };
+        return { version: this.VERSION, experience: 'beginner', lastDestination: 'today', lastModuleId: null, lastUnitByModule: {}, lastSectionByModule: {}, lastTabByModule: {}, lastTouchedAtByModule: {}, activePath: 'afd-diagnosis', sessionMinutes: 25, moduleModeByModule: {}, drafts: {}, savedReferenceIds: [], filterPreferences: {} };
     },
     normalize(value, validModuleIds = []) {
         if (!value || typeof value !== 'object' || Array.isArray(value) || value.version !== this.VERSION) return this.defaultState();
@@ -15,8 +15,9 @@ const UIStateManager = {
             experience: value.experience === 'full' ? 'full' : 'beginner',
             lastDestination: ['today', 'learn', 'practice', 'build', 'more', 'start', 'visual-lab'].includes(value.lastDestination) ? value.lastDestination : 'today',
             lastModuleId: accepts(value.lastModuleId) ? value.lastModuleId : null,
+            lastUnitByModule: Object.fromEntries(Object.entries(mapOfStrings(value.lastUnitByModule)).filter(([, id]) => /^[a-z0-9-]+$/.test(id))),
             lastSectionByModule: mapOfStrings(value.lastSectionByModule),
-            lastTabByModule: Object.fromEntries(Object.entries(mapOfStrings(value.lastTabByModule)).filter(([, tab]) => ['learn', 'diagrams', 'interactive', 'quiz', 'lab'].includes(tab))),
+            lastTabByModule: Object.fromEntries(Object.entries(mapOfStrings(value.lastTabByModule)).filter(([, tab]) => ['learn', 'try', 'check', 'reference', 'diagrams', 'interactive', 'quiz', 'lab'].includes(tab))),
             lastTouchedAtByModule: mapOfStrings(value.lastTouchedAtByModule),
             activePath: typeof value.activePath === 'string' ? value.activePath.slice(0, 80) : 'afd-diagnosis',
             sessionMinutes: [10, 25, 60].includes(value.sessionMinutes) ? value.sessionMinutes : 25,
@@ -43,6 +44,14 @@ const UIStateManager = {
         state.lastModuleId = moduleId;
         state.lastTabByModule[moduleId] = tab;
         state.lastTouchedAtByModule[moduleId] = touchedAt;
+        return this.save(state);
+    },
+    touchUnit(moduleId, unitId, tab) {
+        const state = this.get();
+        state.lastModuleId = moduleId;
+        state.lastUnitByModule[moduleId] = unitId;
+        state.lastTabByModule[moduleId] = tab;
+        state.lastTouchedAtByModule[moduleId] = new Date().toISOString();
         return this.save(state);
     },
     saveSection(moduleId, sectionId, touchedAt = new Date().toISOString()) {

@@ -1,6 +1,6 @@
 const LearningEngine = {
     DESTINATIONS: ['today', 'learn', 'practice', 'build', 'more', 'start', 'visual-lab'],
-    TABS: ['learn', 'diagrams', 'interactive', 'quiz', 'lab'],
+    TABS: ['learn', 'try', 'check', 'reference', 'diagrams', 'interactive', 'quiz', 'lab'],
 
     escapeHtml(value) {
         const characters = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -15,24 +15,28 @@ const LearningEngine = {
             destination,
             moduleId: destination ? null : /^[A-Za-z0-9_-]+$/.test(target) ? target : null,
             tab: this.TABS.includes(params.get('tab')) ? params.get('tab') : 'learn',
+            unitId: /^[a-z0-9-]+$/.test(params.get('unit') || '') ? params.get('unit') : null,
             sectionId: /^[A-Za-z0-9_-]+$/.test(params.get('section') || '') ? params.get('section') : null,
             mode: params.get('mode') === 'browse' ? 'browse' : 'guided',
             query: (params.get('query') || '').slice(0, 160),
             level: ['100', '200', '300', '400'].includes(params.get('level')) ? params.get('level') : '',
             state: ['not_started', 'learned', 'practiced', 'demonstrated', 'durable'].includes(params.get('state')) ? params.get('state') : '',
             pathOnly: params.get('path') === 'selected',
-            lesson: /^[0-2]$/.test(params.get('lesson') || '') ? Number(params.get('lesson')) : 0
+            lesson: /^[0-2]$/.test(params.get('lesson') || '') ? Number(params.get('lesson')) : 0,
+            finished: params.get('finished') === '1'
         };
     },
 
     formatRoute(route) {
         const params = new URLSearchParams();
         if (route.moduleId) {
+            if (route.unitId) params.set('unit', route.unitId);
             if (route.tab && route.tab !== 'learn') params.set('tab', route.tab);
             if (route.sectionId) params.set('section', route.sectionId);
             if (route.mode === 'browse') params.set('mode', 'browse');
         } else {
             if (route.destination === 'start') params.set('lesson', route.lesson || 0);
+            if (route.destination === 'start' && route.finished) params.set('finished', '1');
             if (route.query) params.set('query', route.query);
             if (route.level) params.set('level', route.level);
             if (route.state) params.set('state', route.state);
@@ -137,7 +141,8 @@ const LearningEngine = {
     renderDestination(destination, route = {}) {
         const container = document.getElementById('destinationView');
         if (container && destination === 'start') {
-            BeginnerEngine.renderStarter(route.lesson);
+            if (route.finished) BeginnerEngine.renderStarterComplete();
+            else BeginnerEngine.renderStarter(route.lesson);
             return true;
         }
         if (container && destination === 'visual-lab') {
@@ -146,6 +151,7 @@ const LearningEngine = {
         }
         if (!container || !['learn', 'practice', 'build', 'more'].includes(destination)) return false;
         container.innerHTML = this.renderDestinationHtml(destination, this.getContext(route));
+        if (destination === 'more') this.renderPreferences();
         return true;
     },
 
@@ -155,18 +161,16 @@ const LearningEngine = {
         const paths = this.getContent().paths || [];
         const preferences = this._pendingPreferences || this.getUIState();
         const activePath = paths.some(path => path.id === preferences.activePath) ? preferences.activePath : paths[0]?.id;
-        const minutes = [10, 25, 60].includes(preferences.sessionMinutes) ? preferences.sessionMinutes : 25;
-        container.innerHTML = `<div class="learning-surface learning-preferences"><h2 id="learningPreferencesTitle">Learning preferences</h2>
-            <div class="learning-preference-fields"><div class="learning-field"><label for="learningPath">Learning path</label>
-                <select id="learningPath">${paths.map(path => `<option value="${this.escapeHtml(path.id)}" ${path.id === activePath ? 'selected' : ''}>${this.escapeHtml(path.title)}</option>`).join('')}</select></div>
-            <div class="learning-field"><label for="sessionMinutes">Session length</label><select id="sessionMinutes">${[10, 25, 60].map(length => `<option value="${length}" ${length === minutes ? 'selected' : ''}>${length} minutes</option>`).join('')}</select></div></div>
-            ${typeof BeginnerEngine !== 'undefined' ? `<button type="button" class="btn-secondary" data-beginner-action="toggle">${BeginnerEngine.isBeginner() ? 'Use full learning tools' : 'Use beginner view'}</button>` : ''}
+        container.innerHTML = `<div class="learning-surface learning-preferences"><h2 id="learningPreferencesTitle">Catalog preferences</h2>
+            <p>Choose which modules the optional lesson catalog shows when you select its Selected path filter. This does not change the beginner learning sequence.</p>
+            <div class="learning-preference-fields"><div class="learning-field"><label for="learningPath">Catalog path</label>
+                <select id="learningPath">${paths.map(path => `<option value="${this.escapeHtml(path.id)}" ${path.id === activePath ? 'selected' : ''}>${this.escapeHtml(path.title)}</option>`).join('')}</select></div></div>
             <p id="learningPreferencesFeedback" class="learning-feedback" role="status" aria-live="polite"></p></div>`;
         return true;
     },
 
     savePreferences(preferences) {
-        const selected = preferences || { activePath: document.getElementById('learningPath')?.value, sessionMinutes: Number(document.getElementById('sessionMinutes')?.value) };
+        const selected = preferences || { activePath: document.getElementById('learningPath')?.value, sessionMinutes: (this._pendingPreferences || this.getUIState()).sessionMinutes };
         if (!this.getContent().paths.some(path => path.id === selected.activePath) || ![10, 25, 60].includes(selected.sessionMinutes)) return false;
         this._pendingPreferences = selected;
         try {
@@ -183,7 +187,7 @@ const LearningEngine = {
 
     renderCoaching(module) {
         this.currentModuleId = module.id;
-        const container = document.getElementById('tab-learn');
+        const container = document.getElementById('coachingHost') || document.getElementById('tab-learn');
         const content = this.getContent().modules[module.id];
         if (!container || !content) return false;
         const existing = document.getElementById('moduleCoaching');
@@ -506,9 +510,8 @@ const LearningEngine = {
         const transfer = content.transfer;
         const exemplar = content.exemplar;
         const moduleId = this.escapeHtml(module.id);
-        const beginner = typeof BeginnerEngine !== 'undefined' && BeginnerEngine.isBeginner();
         return `<section id="moduleCoaching" class="learning-surface module-coaching" data-module-id="${moduleId}" aria-labelledby="learningWorkedTitle">
-            <details id="optionalChallenge" ${beginner ? '' : 'open'}><summary>Optional challenge: use this idea in a realistic case</summary>
+            <details id="optionalChallenge"><summary>Apply it: a worked case (optional)</summary>
             <h2 id="learningWorkedTitle">Worked case: ${this.escapeHtml(example.title)}</h2>
             <p>${this.escapeHtml(example.scenario)}</p>
             ${this.renderTextList(example.steps, true)}
@@ -587,7 +590,7 @@ const LearningEngine = {
         const modules = (context.modules || []).filter(module => !activityIds.has(module.id));
         const model = { progress: {}, statuses: {}, content: { modules: {}, paths: [] }, preferences: {}, route: {}, ...context, modules };
         model.activities = (context.modules || []).filter(module => activityIds.has(module.id)).slice(0, 10);
-        const title = { learn: 'Learn', practice: 'Practice', build: 'Build', more: 'More' }[destination];
+        const title = { learn: 'Lesson catalog', practice: 'Extra practice', build: 'Case practice', more: 'Progress' }[destination];
         return `<div class="learning-surface learning-destination"><h1 id="destinationTitle" tabindex="-1">${title}</h1>${renderers[destination].call(this, model)}</div>`;
     },
 
@@ -690,14 +693,19 @@ const LearningEngine = {
         const history = this.getEvidenceHistory(modules, progress);
         const counts = Object.fromEntries(Object.keys(this.STATE_LABELS).map(state => [state, modules.filter(module => (statuses[module.id]?.state || 'not_started') === state).length]));
         const sources = [...new Set(modules.map(module => content.modules?.[module.id]?.lab?.status || 'Not recorded'))];
-        return `<section class="learning-group"><h2>Local progress</h2><dl class="learning-scores">${Object.entries(counts).map(([state, count]) => `<div><dt>${this.STATE_LABELS[state]}</dt><dd>${count}</dd></div>`).join('')}</dl></section>
-            <section class="learning-group"><h2>Backups and evidence</h2><div class="learning-actions">
+        const readings = modules.filter(module => progress.moduleMastery?.[module.id]?.contentReviewed).length;
+        return `${typeof UnitEngine !== 'undefined' ? UnitEngine.progressHtml(modules, progress) : `<section class="learning-group"><h2>Your learning so far</h2><p>${readings} of ${modules.length} module readings done. Reading, practice, and applied skill are tracked separately.</p><a href="#today">Continue learning</a></section>`}
+            <details class="learning-group"><summary>Catalog preferences</summary><section id="learningPreferences"></section></details>
+            <details class="learning-group"><summary>Optional practice and skill records</summary>
+            <div class="learning-actions"><a href="#practice">Review and extra practice</a><a href="#build">Case practice</a><a href="#learn">Search the lesson catalog</a></div>
+            <dl class="learning-scores">${Object.entries(counts).map(([state, count]) => `<div><dt>${this.STATE_LABELS[state]}</dt><dd>${count}</dd></div>`).join('')}</dl></details>
+            <details class="learning-group"><summary>Backups and evidence</summary><div class="learning-actions">
                 <button type="button" class="learning-action" data-learning-action="export-progress">Export progress backup</button>
                 <button type="button" class="learning-action" data-learning-action="import-progress">Import progress backup</button>
                 <button type="button" class="learning-action" data-learning-action="download-report">Download evidence report</button>
-            </div><p id="learningExportStatus" class="learning-feedback" role="status" aria-live="polite"></p></section>
-            <section class="learning-group"><h2>Evidence history</h2>${history.length ? `<p class="learning-meta">Showing ${Math.min(history.length, 100)} of ${history.length} records. Dates are UTC.</p><ol class="learning-list learning-history">${history.slice(0, 100).map(item => `<li class="learning-row"><div class="learning-row-body"><h3>${this.escapeHtml(item.title)}: ${this.escapeHtml(item.kind)}</h3><p>${this.escapeHtml(item.result)}</p><p class="learning-meta"><span>${this.escapeHtml(this.formatDate(item.date))}</span><span>${this.escapeHtml(item.provenance)}</span></p>${item.note ? `<details class="learning-disclosure"><summary>Recorded evidence</summary><p class="learning-recorded-text">${this.escapeHtml(item.note)}</p></details>` : ''}</div></li>`).join('')}</ol>` : '<p class="learning-empty">No evidence recorded yet.</p>'}</section>
-            <section class="learning-group"><h2>Source review</h2><dl class="learning-metadata"><dt>Curriculum date</dt><dd>${this.escapeHtml(content.version || 'Not recorded')}</dd><dt>Module source labels</dt><dd>${sources.map(source => this.escapeHtml(source)).join(', ') || 'Not recorded'}</dd><dt>Method</dt><dd>Curriculum and documentation review. Source-reviewed does not mean cloud or provider tests were executed.</dd></dl></section>`;
+            </div><p id="learningExportStatus" class="learningExportStatus learning-feedback" role="status" aria-live="polite"></p></details>
+            <details class="learning-group"><summary>Practice history</summary>${history.length ? `<p class="learning-meta">Showing ${Math.min(history.length, 100)} of ${history.length} records. Dates are UTC.</p><ol class="learning-list learning-history">${history.slice(0, 100).map(item => `<li class="learning-row"><div class="learning-row-body"><h3>${this.escapeHtml(item.title)}: ${this.escapeHtml(item.kind)}</h3><p>${this.escapeHtml(item.result)}</p><p class="learning-meta"><span>${this.escapeHtml(this.formatDate(item.date))}</span><span>${this.escapeHtml(item.provenance)}</span></p>${item.note ? `<details class="learning-disclosure"><summary>Recorded evidence</summary><p class="learning-recorded-text">${this.escapeHtml(item.note)}</p></details>` : ''}</div></li>`).join('')}</ol>` : '<p class="learning-empty">Your practice results will appear here after you try a check.</p>'}</details>
+            <details class="learning-group"><summary>Source review</summary><dl class="learning-metadata"><dt>Curriculum date</dt><dd>${this.escapeHtml(content.version || 'Not recorded')}</dd><dt>Module source labels</dt><dd>${sources.map(source => this.escapeHtml(source)).join(', ') || 'Not recorded'}</dd><dt>Method</dt><dd>Curriculum and documentation review. Source-reviewed does not mean cloud or provider tests were executed.</dd></dl></details>`;
     }
 };
 

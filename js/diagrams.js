@@ -9,17 +9,18 @@ const DiagramEngine = {
     },
 
     transition(state, action, count) {
-        if (action === 'overview' || action === 'reset') return { ...state, step: 0, overview: true, pending: false, answer: null };
+        if (action === 'overview' || action === 'reset') return { ...state, step: 0, overview: true, expandedTrace: action === 'overview', pending: false, answer: null };
         const step = action === 'previous' ? Math.max(0, state.step - 1) : state.overview ? 1 : Math.min(count, state.step + 1);
         return { ...state, step, overview: false, pending: false, answer: null };
     },
 
     geometry(model) {
-        const nodes = model.nodes.map(node => ({ ...node, x: 64 + node.col * 304, y: 96 + node.row * 204, width: 232, height: 112 }));
+        const sequence = model.presentation?.kind === 'sequence';
+        const nodes = model.nodes.map(node => ({ ...node, x: 64 + node.col * 304, y: (sequence ? 40 : 96) + node.row * 204, width: 232, height: 112 }));
         return {
             nodes,
             width: Math.max(...nodes.map(node => node.x + node.width)) + 64,
-            height: Math.max(...nodes.map(node => node.y + node.height)) + 60
+            height: sequence ? 184 + model.edges.length * 64 : Math.max(...nodes.map(node => node.y + node.height)) + 60
         };
     },
 
@@ -35,7 +36,7 @@ const DiagramEngine = {
     nodeSvg(node, focused) {
         const title = this.wrap(node.label, 25);
         const detail = this.wrap(node.detail, 31);
-        return `<g class="trace-node${focused ? ' is-current' : ''}" data-item="${node.id}" transform="translate(${node.x},${node.y})">
+        return `<g class="trace-node${focused ? ' is-current' : ''}${node.inactive ? ' is-inactive' : ''}" data-item="${node.id}" transform="translate(${node.x},${node.y})">
             <rect width="${node.width}" height="${node.height}" rx="10"/>
             <text x="14" y="26" font-size="16" class="trace-node-title">${title.map((line, index) => `<tspan x="14" dy="${index ? 19 : 0}">${this.escapeHtml(line)}</tspan>`).join('')}</text>
             <text x="14" y="${title.length > 1 ? 68 : 56}" font-size="13" class="trace-node-detail">${detail.map((line, index) => `<tspan x="14" dy="${index ? 16 : 0}">${this.escapeHtml(line)}</tspan>`).join('')}</text>
@@ -88,16 +89,24 @@ const DiagramEngine = {
 
     svg(model, instance, state = { overview: true, step: 0 }) {
         const geometry = this.geometry(model);
+        const sequence = model.presentation?.kind === 'sequence';
         const selected = state.overview ? [] : model.steps[state.step - 1]?.focus || [];
         const focus = new Set(selected);
         model.edges.filter(link => focus.has(link.id)).forEach(link => { focus.add(link.from); focus.add(link.to); });
         const markers = Object.keys(this.kinds).map(kind => `<marker id="${instance}-${kind}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 1 1 L 9 5 L 1 9 Z" class="trace-marker-${kind}"/></marker>`).join('');
         return `<svg class="trace-map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${geometry.width} ${geometry.height}" width="${geometry.width}" height="${geometry.height}" role="img" aria-labelledby="${instance}-title ${instance}-description">
             <title id="${instance}-title">${this.escapeHtml(model.title)}</title>
-            <desc id="${instance}-description">${this.escapeHtml(`${model.summary} ${model.scenarioSummary} Arrows show direction. Solid: request; dashed: response; dotted: configuration; cross-dashed: blocked path. The ordered explanation below describes every connection.`)}</desc>
+            <desc id="${instance}-description">${this.escapeHtml(`${model.summary} ${model.scenarioSummary === model.summary ? '' : model.scenarioSummary} Arrows show direction. ${[...new Set(model.edges.map(link => link.kind))].map(kind => `${this.kinds[kind]}: ${{request: 'solid', response: 'long dashed', config: 'short dashed', blocked: 'dash-dot with blocked label'}[kind]}`).join('; ')}. The ordered explanation below describes every connection.`)}</desc>
             <defs>${markers}</defs>
             ${model.groups.map(group => this.boundarySvg(group, geometry.nodes)).join('')}
-            ${model.edges.map((link, index) => `<g class="trace-edge trace-${link.kind}${focus.has(link.id) ? ' is-current' : ''}" data-item="${link.id}" data-from="${link.from}" data-to="${link.to}"><title>${this.escapeHtml(link.label)}</title><path d="${this.edgePath(link, geometry.nodes, index)}" marker-end="url(#${instance}-${link.kind})"/></g>`).join('')}
+            ${sequence ? geometry.nodes.map(node => `<path class="trace-lifeline" d="M ${node.x + node.width / 2} ${node.y + node.height} V ${geometry.height - 24}"/>`).join('') : ''}
+            ${model.edges.map((link, index) => {
+                const from = geometry.nodes.find(node => node.id === link.from);
+                const to = geometry.nodes.find(node => node.id === link.to);
+                const y = 208 + index * 64;
+                const path = sequence ? `M ${from.x + from.width / 2} ${y} H ${to.x + to.width / 2}` : this.edgePath(link, geometry.nodes, index);
+                return `<g class="trace-edge trace-${link.kind}${focus.has(link.id) ? ' is-current' : ''}" data-item="${link.id}" data-from="${link.from}" data-to="${link.to}"><title>${this.escapeHtml(link.label)}</title><path d="${path}" marker-end="url(#${instance}-${link.kind})"/>${sequence ? `<text x="${geometry.width / 2}" y="${y - 14}" text-anchor="middle" class="trace-message">${this.escapeHtml(link.label)}</text>` : ''}</g>`;
+            }).join('')}
             ${geometry.nodes.map(node => this.nodeSvg(node, focus.has(node.id))).join('')}
         </svg>`;
     },
@@ -133,12 +142,30 @@ const DiagramEngine = {
 
     settingsHtml(model, instance, state) {
         return `<div class="diagram-settings">
-            ${this.select(instance, 'level', 'Learning depth', model.settings.level, [{ id: 'basic', label: 'Start simple' }, { id: 'detailed', label: 'Go in depth' }])}
-            ${this.select(instance, 'scenario', 'Change the scenario', model.settings.scenario, model.scenarios, model.scenarios.length === 1)}
+            ${DiagramCatalog.hasDepth(model.id, model.settings) ? this.select(instance, 'level', 'Learning depth', model.settings.level, [{ id: 'basic', label: 'Start simple' }, { id: 'detailed', label: 'Go in depth' }]) : ''}
+            ${model.scenarios.length > 1 ? this.select(instance, 'scenario', 'Change the scenario', model.settings.scenario, model.scenarios) : ''}
             ${(model.controls || []).filter(control => model.settings.level === 'detailed' || !['tier', 'connection'].includes(control.id)).map(control => this.select(instance, control.id, control.label, model.settings[control.id],
                 control.options.map(option => ({ ...option, disabled: control.id === 'connection' && option.id === 'private' && model.settings.tier !== 'premium' })))).join('')}
             <label class="diagram-predict-toggle" for="${instance}-predictions"><input id="${instance}-predictions" type="checkbox" data-diagram-setting="predictions" ${state.predictions ? 'checked' : ''}>Pause to predict</label>
         </div>`;
+    },
+
+    presentationHtml(model, state) {
+        const presentation = model.presentation;
+        if (!presentation?.tables) return '';
+        const current = model.steps[state.step - 1]?.id;
+        const outcome = !state.overview && current && !presentation.tables.some(table => table.rows.some(row => row.step === current));
+        return `<div class="diagram-evidence diagram-${presentation.kind}">
+            <p class="diagram-packet">${this.escapeHtml(presentation.packet)}</p>
+            ${outcome ? `<div class="diagram-result" aria-current="step">${this.connections(model, model.steps[state.step - 1])}</div>` : ''}
+            ${presentation.tables.map(table => `<table><caption>${this.escapeHtml(table.caption)}</caption>
+                <thead><tr>${table.columns.map(column => `<th scope="col">${this.escapeHtml(column)}</th>`).join('')}</tr></thead>
+                <tbody>${table.rows.map(row => {
+                    const active = !state.overview && row.step === current && (row.winner || !table.rows.some(candidate => candidate.step === current && candidate.winner));
+                    return `<tr class="${row.winner ? 'is-winner ' : ''}${row.blocked ? 'is-blocked ' : ''}${active ? 'is-current' : ''}" ${active ? 'aria-current="step"' : ''}>
+                        ${row.cells.map((cell, index) => `<td data-label="${this.escapeHtml(table.columns[index])}">${this.escapeHtml(cell)}</td>`).join('')}</tr>`;
+                }).join('')}</tbody></table>`).join('')}
+            <p class="diagram-evidence-note">${this.escapeHtml(presentation.note)}</p></div>`;
     },
 
     predictionHtml(model, instance, state) {
@@ -151,35 +178,55 @@ const DiagramEngine = {
             <p id="${instance}-prediction-feedback" class="diagram-prediction-feedback" role="status">${this.escapeHtml(feedback)}</p></fieldset>`;
     },
 
+    compactPreviewHtml(model, instance, state) {
+        const first = model.steps[0];
+        const link = model.edges.find(edge => first.focus.includes(edge.id));
+        const node = model.nodes.find(item => item.id === first.focus[0]);
+        const relationship = link
+            ? this.connections(model, { ...first, focus: [link.id] })
+            : `<strong>${this.escapeHtml(node.label)}</strong><p>${this.escapeHtml(node.detail)}</p>`;
+        return `<div class="diagram-compact-relationship">${relationship}</div>
+            <details class="diagram-full-visual" data-disclosure="full-visual"><summary>Full map, explanation and sources</summary>
+                ${this.html(model, instance, { ...state, compact: false })}</details>`;
+    },
+
     html(model, instance, state) {
+        if (state.preview && state.compact) return this.compactPreviewHtml(model, instance, state);
         const current = state.overview ? null : model.steps[state.step - 1];
-        const heading = current?.title || 'See the whole story, then follow one step';
-        const description = current?.text || model.takeaway;
+        const entryStep = current || model.steps[0];
+        const heading = current?.title || 'Follow this request one step at a time';
+        const description = current?.text || model.scenarioSummary;
         const count = state.overview ? `${model.steps.length} steps / overview` : `Step ${state.step} of ${model.steps.length}`;
-        return `<header class="diagram-heading"><div><p class="diagram-eyebrow">Network field guide / ${model.settings.level === 'basic' ? 'start simple' : 'in depth'}</p>
-            <h3>${this.escapeHtml(model.title)}</h3><p>${this.escapeHtml(model.summary)}</p></div>
-            <span class="diagram-format-label">Interactive explanation<br>No Azure account needed</span></header>
-            ${this.settingsHtml(model, instance, state)}
-            <p class="diagram-setting-notice" role="status">${this.escapeHtml(state.notice || '')}</p>
-            <div class="diagram-scenario"><strong>${this.escapeHtml(model.scenarioLabel)}</strong><p>${this.escapeHtml(model.scenarioSummary)}</p></div>
-            <div class="diagram-view-bar"><div class="diagram-view-switch" role="group" aria-label="Diagram presentation">
-                <button type="button" data-diagram-action="map" aria-pressed="${state.layout === 'map'}">Network map</button>
-                <button type="button" data-diagram-action="steps" aria-pressed="${state.layout === 'steps'}">Step list</button></div>
-                <ul class="diagram-key" aria-label="Connection legend">${Object.entries(this.kinds).map(([kind, label]) => `<li><span class="diagram-key-line trace-${kind}" aria-hidden="true"></span>${label}</li>`).join('')}</ul></div>
-            <div class="diagram-coach"><div class="diagram-status" role="status" aria-live="polite" aria-atomic="true"><p class="diagram-eyebrow">${count}</p>
+        return `<header class="diagram-heading"><div><h3>${this.escapeHtml(model.title)}</h3>
+            <p class="diagram-scenario diagram-scenario-label">${this.escapeHtml(model.scenarioLabel)}</p></div>
+            <span class="diagram-format-label">No Azure resources needed</span></header>
+            ${state.preview ? '' : `<div class="diagram-entry"><strong>${this.escapeHtml(entryStep.title)}</strong>
+                <div class="diagram-step-links">${this.connections(model, entryStep)}</div></div>`}
+            ${state.preview ? '' : `<div class="diagram-coach"><div class="diagram-status" role="status" aria-live="polite" aria-atomic="true"><p class="diagram-eyebrow">${count}</p>
                 <h4>${this.escapeHtml(heading)}</h4><p>${this.escapeHtml(description)}</p></div>
                 <nav class="diagram-navigation" aria-label="Walkthrough controls">
                     <button type="button" data-diagram-action="previous" ${state.step === 0 && !state.pending ? 'disabled' : ''}>Previous</button>
-                    <button type="button" class="diagram-next" data-diagram-action="next" ${state.step === model.steps.length && !state.overview ? 'disabled' : ''}>${state.pending ? 'Reveal step' : state.step === model.steps.length && !state.overview ? 'Walkthrough complete' : 'Next step'}</button>
-                    <button type="button" data-diagram-action="overview">Show all</button>
+                    <button type="button" class="diagram-next" data-diagram-action="next" ${state.step === model.steps.length && !state.overview ? 'disabled' : ''}>${state.pending ? 'Reveal step' : state.step === model.steps.length && !state.overview ? 'Walkthrough complete' : state.overview || state.step === 0 ? 'Start tracing' : 'Next step'}</button>
                     <button type="button" data-diagram-action="reset">Reset</button>
-                </nav></div>
+                </nav></div>`}
             ${this.predictionHtml(model, instance, state)}
+            ${this.presentationHtml(model, state)}
             <div class="diagram-map" tabindex="0" aria-label="Network map: ${this.escapeHtml(model.title)}" aria-describedby="${instance}-map-help">${this.svg(model, instance, state)}</div>
-            <p class="diagram-map-help" id="${instance}-map-help">Arrows show direction; outlined regions show service or network boundaries. Scroll the map with arrow keys if needed, or use Step list.</p>
+            <p class="diagram-map-help" id="${instance}-map-help">${model.presentation?.kind === 'sequence' ? 'Read messages from top to bottom. Dashed vertical lines are the two peers over time.' : 'Arrows show direction; outlined regions show boundaries. Ghost nodes are not reached in this scenario.'} Scroll with arrow keys if needed.</p>
             <div class="diagram-list-view">${this.pathList(model, state)}</div>
+            <ul class="diagram-key" aria-label="Connection legend">${Object.entries(this.kinds).filter(([kind]) => model.edges.some(link => link.kind === kind)).map(([kind, label]) => `<li><span class="diagram-key-line trace-${kind}" aria-hidden="true"></span>${label}</li>`).join('')}</ul>
+            ${state.preview ? '' : `<details class="diagram-options" data-disclosure="options"><summary>${model.id === 'afd-request' ? 'Explore other scenarios and diagram options' : 'Diagram options'}</summary>
+                ${this.settingsHtml(model, instance, state)}
+                <p class="diagram-setting-notice" role="status">${this.escapeHtml(state.notice || '')}</p>
+                <div class="diagram-view-bar"><div class="diagram-view-switch" role="group" aria-label="Diagram presentation">
+                    ${model.presentation?.tables ? `<button type="button" data-diagram-action="evidence" aria-pressed="${state.layout === 'evidence'}">Decision table</button>` : ''}
+                    <button type="button" data-diagram-action="map" aria-pressed="${state.layout === 'map'}">${model.presentation?.kind === 'sequence' ? 'Sequence diagram' : 'Network map'}</button>
+                    <button type="button" data-diagram-action="steps" aria-pressed="${state.layout === 'steps'}">Step list</button></div>
+                    <button type="button" data-diagram-action="overview">Show all steps</button></div>
+            </details>`}
             <p class="diagram-takeaway"><strong>Keep this idea:</strong> ${this.escapeHtml(model.takeaway)}</p>
             <details class="diagram-transcript" data-disclosure="transcript"><summary>Full explanation / text alternative</summary>
+                ${model.presentation?.tables ? `<div class="diagram-print-evidence">${this.presentationHtml(model, { step: 0, overview: true })}</div>` : ''}
                 <ol>${model.steps.map(step => `<li><h4>${this.escapeHtml(step.title)}</h4><p>${this.escapeHtml(step.text)}</p><div class="diagram-step-links">${this.connections(model, step)}</div></li>`).join('')}</ol></details>
             <details class="diagram-sources" data-disclosure="sources"><summary>Sources and limits / reviewed ${DiagramCatalog.reviewed}</summary>
                 <p>${this.escapeHtml(model.caveat)}</p><ul>${model.sources.map(key => { const source = DiagramCatalog.sources[key]; return `<li><a href="${this.escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(source.title)}</a></li>`; }).join('')}</ul>
@@ -212,13 +259,21 @@ const DiagramEngine = {
         for (const diagram of diagrams) {
             const host = document.createElement('section');
             wrapper.append(host);
-            this.mount(host, diagram.type);
+            this.mount(host, diagram.type, this.diagramOptions(diagram));
         }
         this.cleanup();
     },
 
     renderPreview(diagram, container) {
-        this.mount(container, diagram.type);
+        this.mount(container, diagram.type, { ...this.diagramOptions(diagram), preview: true, compact: diagram.compact === true });
+    },
+
+    diagramOptions(diagram) {
+        const options = { ...diagram.options };
+        for (const key of ['scenario', 'level', 'tier', 'connection', 'originKind']) {
+            if (diagram[key] !== undefined) options[key] = diagram[key];
+        }
+        return options;
     },
 
     renderInline(container) {
@@ -233,10 +288,11 @@ const DiagramEngine = {
     mount(host, type, options = {}) {
         const model = DiagramCatalog.resolve(type, options);
         const instance = host.dataset.instance || `trace-${++this.serial}`;
-        const state = { step: 0, overview: true, pending: false, answer: null, predictions: true,
-            layout: window.matchMedia('(max-width: 768px)').matches ? 'steps' : 'map', notice: '' };
+        const state = { step: 0, overview: true, pending: false, answer: null, predictions: true, preview: Boolean(options.preview), compact: Boolean(options.compact),
+            layout: window.matchMedia('(max-width: 768px)').matches ? 'steps' : model.presentation?.tables ? 'evidence' : 'map', notice: '' };
         host.dataset.instance = instance;
         host.dataset.diagramType = type;
+        host.dataset.presentation = model.presentation?.kind || 'topology';
         host.classList.add('visual-diagram');
         this.instances.set(instance, { host, type, model, state });
         if (!host.dataset.diagramBound) {
@@ -256,6 +312,7 @@ const DiagramEngine = {
         const scroll = { top: previousMap?.scrollTop || 0, left: previousMap?.scrollLeft || 0 };
         host.dataset.step = String(state.step);
         host.dataset.overview = String(state.overview);
+        host.dataset.previewOnly = String(state.overview && !state.expandedTrace && !state.preview);
         host.dataset.layout = state.layout;
         host.innerHTML = this.html(model, instance, state);
         disclosures.forEach(name => { const disclosure = host.querySelector(`[data-disclosure="${name}"]`); if (disclosure) disclosure.open = true; });
@@ -263,7 +320,7 @@ const DiagramEngine = {
         map.scrollTop = state.overview ? 0 : scroll.top;
         map.scrollLeft = state.overview ? 0 : scroll.left;
         if (state.layout === 'map' && !state.pending && /next|previous/.test(focusSelector || '')) {
-            const current = map.querySelector('.trace-node.is-current');
+            const current = map.querySelector(model.presentation?.kind === 'sequence' ? '.trace-edge.is-current' : '.trace-node.is-current');
             if (current) {
                 const item = current.getBoundingClientRect();
                 const frame = map.getBoundingClientRect();
@@ -292,7 +349,10 @@ const DiagramEngine = {
             return;
         }
         const action = button.dataset.diagramAction;
-        if (['map', 'steps'].includes(action)) state.layout = action;
+        if (['map', 'steps', 'evidence'].includes(action)) {
+            state.layout = action;
+            if (action === 'steps') state.expandedTrace = true;
+        }
         else if (action === 'next' && !state.pending && state.predictions && entry.model.steps[state.overview ? 0 : state.step]?.predict) {
             if (state.overview) state.step = 0;
             state.overview = false;
@@ -379,9 +439,7 @@ const DiagramLab = {
         const escape = value => DiagramEngine.escapeHtml(value);
         container.innerHTML = `<article class="request-lab">
             <header class="request-lab-header"><p class="diagram-eyebrow">Practice without a subscription</p><h1 id="destinationTitle" tabindex="-1">Follow one request. Understand Front Door.</h1>
-                <p>No commands or Azure resources. Follow a request at your pace, then change one condition and explain the difference.</p>
-                <button type="button" class="btn-primary" data-lab-action="start">Start tracing</button></header>
-            <ol class="request-lab-method"><li><strong>Trace</strong><span>Follow a normal request.</span></li><li><strong>Change</strong><span>Try a hit, block or failure.</span></li><li><strong>Explain</strong><span>Check five new cases.</span></li></ol>
+                <p>Start with a normal cache miss. Trace it, then open the diagram options to explore a hit, block or failure. No Azure resources needed.</p></header>
             <div id="requestLabDiagram"></div>
             <section class="request-lab-check" aria-labelledby="requestLabCheckTitle"><p class="diagram-eyebrow">Can you explain the path?</p><h2 id="requestLabCheckTitle">Five-case trace check</h2>
                 <p>Try these without opening the explanation. Aim for at least four correct, then say why the fifth differs. This is practice, not certification or demonstrated mastery.</p>

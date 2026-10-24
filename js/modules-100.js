@@ -1034,13 +1034,13 @@ az network vnet subnet list \\
     <h3>Dynamic vs Static Private IPs</h3>
     <table class="content-table">
         <tr><th>Type</th><th>Behavior</th><th>Use Case</th></tr>
-        <tr><td><strong>Dynamic</strong> (default)</td><td>Azure assigns from subnet range. May change on VM restart</td><td>Most VMs, dev/test environments</td></tr>
-        <tr><td><strong>Static</strong></td><td>You pick the IP, it never changes</td><td>DNS servers, domain controllers, apps that require fixed IPs</td></tr>
+        <tr><td><strong>Dynamic</strong> (default)</td><td>Azure selects an available subnet address and retains it with the network interface</td><td>Most VMs, dev/test environments</td></tr>
+        <tr><td><strong>Static</strong></td><td>You select an available subnet address; interface deletion or reconfiguration can still release or change it</td><td>DNS servers, domain controllers, apps that require a specific IP</td></tr>
     </table>
 
     <div class="concept-box">
         <h4>🔑 Key Concept</h4>
-        <p>Dynamic private IPs are "sticky" in Azure — they typically only change when the VM is <strong>deallocated</strong> (stopped/deallocated), not when simply restarted. But don't rely on this — if you need a fixed IP, use static.</p>
+        <p>Dynamic private IPs stay assigned to a retained network interface through VM restart and deallocation. The assignment can be released when the interface is deleted, moved to another subnet, or changed to static allocation with a different address. Use static allocation when you require a specific available address. See <a href="https://learn.microsoft.com/azure/virtual-network/ip-services/private-ip-addresses" target="_blank" rel="noopener">private IP allocation and lifecycle</a>.</p>
     </div>
 </div>
 
@@ -1136,10 +1136,10 @@ az network public-ip create \\
             explanation: 'NAT Gateway supplies explicit, scalable outbound translation for eligible internet flows. Its capacity is finite: monitor SNAT usage and connection reuse. More-specific routes and a UDR to a virtual appliance can select a different path.'
         },
         {
-            question: 'When does a Dynamic private IP address change in Azure?',
-            options: ['Every time the VM restarts', 'When the VM is deallocated (stopped)', 'Never — dynamic IPs are permanent', 'Every 24 hours'],
+            question: 'Which change can release or change a dynamic private IP address in Azure?',
+            options: ['Every ordinary VM restart', 'Deleting the network interface or moving it to another subnet', 'Deallocating the VM while retaining its unchanged interface', 'Waiting exactly 24 hours'],
             correct: 1,
-            explanation: 'Dynamic private IPs may change when a VM is deallocated (stopped/deallocated from the portal). They typically persist through regular restarts, but the only guarantee for a permanent IP is using Static allocation.'
+            explanation: 'Private addresses belong to the network interface. VM restart or deallocation alone does not release the retained interface address. Interface deletion, a subnet move, or selecting a different static address can release or change the assignment.'
         },
         {
             question: 'Standard SKU public IPs are ____ by default.',

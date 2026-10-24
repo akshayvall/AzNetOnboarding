@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### October full field-guide redesign (release `2026-10-fieldguide-3`)
+- Applied the approved small-unit learning model across all 21 modules: 63 authored outcomes, explanations, examples, visuals, predictions, paired checks and teach-back prompts. Preserved full technical references and optional advanced exercises.
+- Added stable unit URLs, exact unit/step resume, recoverable explanation drafts and separate read/prediction/check/self-explanation records. Reading does not skip unfinished practice or grant skill mastery.
+- Reworked Path, lessons, Progress and Level 0 into the restrained field-guide design; reduced navigation weight and collapsed maintenance. Repaired mobile header clipping and accessibility live-region overflow that let wheel scrolling move the entire app offscreen.
+- Made diagrams primary, removed ineffective depth and single-scenario controls, preserved stable AFD context, and introduced appropriate TCP, NSG, UDR and NAT presentations. Added condition-changing Level 0 sketches without autoplay.
+- Corrected tightly related reference and assessment contradictions; retained legacy section bookmarks, evidence, full quizzes, labs, print and offline compatibility.
+- Final review corrections put concrete examples and compact model-owned relationships before explanation, preserve explicitly chosen modules over unread starters, unify the DNS hostname, and remove repeated mobile connections and the Path header stripe.
+- Passed 230 Node and 52 browser tests; final independent review resolved all six material findings. Rechecked release/cache contracts and atomic offline upgrades after the final cache-generation change, including a guard against browser fixture version drift.
+- Publication approved October 24 with "implement and push"; release targets `main` through the gated GitHub Pages workflow. No Azure execution. Human retention, screen-reader and physical-touch evaluation remain separate gates.
+
+### October learning-flow simplification (local release `2026-10-simple-1`)
+- Replaced competing Today/Learn/Practice/Build navigation with Your path, AFD request lab, and Progress on desktop and mobile. Collapsed the full curriculum, placement test, backup controls, and optional advanced destinations.
+- Replaced module mode/tool bars with Learn -> Try it -> Quick check. Moved collapsed worked cases after teaching and practice, with full quizzes, Azure labs, and mastery evidence under Go deeper (optional).
+- Made the calm beginner entrance and plain-language openings independent of persisted full-tools preferences. Removed automatic saved-section restore; explicit bookmarks and optional resume links remain supported.
+- Added a Level 0 completion screen before foundations. Reset scroll and focus on forward lesson steps, and prevented delayed section callbacks from overriding a destination after leaving a module.
+- Fixed multi-select quick checks in five modules without granting quiz or mastery credit. Narrowed preferences to the optional catalog filter and removed the inactive session-length control while preserving stored settings.
+- Preserved existing progress, drafts, evidence, deep links, and offline upgrade behavior. Advanced technical lesson bodies are not rewritten. No commit, push, or deployment is authorized for this local pass.
+- Passed all 205 Node tests, 38 browser tests, JavaScript syntax checks, and diff whitespace checks on October 24. Confirmed the simplified desktop/mobile reading and practice views; learner retention and manual screen-reader review remain separate checks.
+
 ### October diagram and learning upgrade (release `2026-10-diagrams-1`)
 - Replaced the 22 diagram definitions and 11 separately authored lesson SVGs with 26 shared semantic models. Maps, narration, predictions, and transcripts now use the same nodes, connections, steps, and scenario data.
 - Added simple/detailed views, Previous/Next/Show all/Reset, prediction pauses, explicit failure scenarios, mobile step lists, locally scrolling maps, per-instance SVG IDs, sources, and complete print transcripts. Removed the old automatic animations and renderer styles.

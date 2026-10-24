@@ -764,7 +764,7 @@ az network private-dns link vnet show \\
         • WAF (Web Application Firewall) protection<br>
         • SSL offloading at the edge<br>
         • URL-based routing with global reach<br>
-        • Fast failover between regions (< 30 seconds)</p>
+        • Health-based failover between regions; recovery time depends on probe settings, observed health, connections, and application behavior</p>
     </div>
 </div>
 
@@ -2100,7 +2100,7 @@ echo "✅ Cleanup complete — no more VPN Gateway charges!"</div>`,
 
     <h3>Key Properties</h3>
     <ul>
-        <li><strong>Non-transitive:</strong> If VNet A peers with B, and B peers with C, A and C cannot communicate (unless you also peer A↔C)</li>
+        <li><strong>Non-transitive:</strong> A↔B and B↔C peerings alone do not connect A to C. Add direct A↔C peering or deliberately configured routed transit with a forwarding appliance, routes, and permissions.</li>
         <li><strong>No IP overlap:</strong> Peered VNets cannot have overlapping address spaces</li>
         <li><strong>Bidirectional setup:</strong> Both sides must configure peering</li>
         <li><strong>Gateway transit:</strong> A spoke can use a hub's VPN or ExpressRoute gateway for on-premises routes. It does not make peering transitive or route traffic between spokes.</li>

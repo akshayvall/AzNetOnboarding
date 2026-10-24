@@ -3,18 +3,18 @@
    ============================================ */
 
 :root {
-    --azure-blue: #0078d4;
+    --azure-blue: #0067b8;
     --azure-dark: #004578;
     --azure-light: #deecf9;
     --azure-accent: #00bcf2;
     --l100-color: #107c10;
     --l200-color: #ff8c00;
     --l300-color: #d13438;
-    --bg-primary: #f5f5f5;
+    --bg-primary: #f6f8fa;
     --bg-secondary: #ffffff;
-    --bg-sidebar: #1b1b1f;
-    --text-primary: #323130;
-    --text-secondary: #605e5c;
+    --bg-sidebar: #122638;
+    --text-primary: #172f42;
+    --text-secondary: #4f6372;
     --text-sidebar: #d2d0ce;
     --border-color: #e1dfdd;
     --success: #107c10;
@@ -37,6 +37,8 @@
 
 .sr-only {
     position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 1px !important;
     height: 1px !important;
     padding: 0 !important;
@@ -65,6 +67,7 @@ html, body {
 #app {
     display: flex;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 
@@ -279,8 +282,11 @@ html, body {
 
 /* ============ MAIN CONTENT ============ */
 #content {
+    position: relative;
     flex: 1;
     min-width: 0;
+    min-height: 0;
+    overscroll-behavior-y: contain;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0;
@@ -1894,7 +1900,7 @@ html, body {
 .today-evidence button { margin-left: auto; border: 0; background: transparent; color: var(--azure-blue); font: inherit; font-weight: 700; cursor: pointer; }
 
 @media (max-width: 768px) {
-    .academy-identity { min-height: 72px; height: 72px; margin: 0 -14px; padding: 8px 14px; grid-template-columns: minmax(130px, 0.9fr) minmax(0, 1.1fr); gap: 8px; }
+    .academy-identity { min-height: 72px; height: auto; margin: 0 -14px; padding: 18px 14px; grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .academy-identity h1 { font-size: 17px; }
     .identity-kicker { margin-bottom: 3px; font-size: 8px; }
     .identity-rail { min-width: 0; overflow: hidden; }

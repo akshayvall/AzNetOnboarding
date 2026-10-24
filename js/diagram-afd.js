@@ -65,12 +65,12 @@
         const edges = [
             e('dns-query', 'client', 'dns', 'Resolve the application name', 'config'),
             e('dns-answer', 'dns', 'client', 'Front Door edge address', 'config'),
-            e('client-edge', 'client', 'edge', 'Client HTTPS connection'),
+            e('client-edge', 'client', 'edge', scenario === 'waf-block' ? 'Request blocked by edge policy' : 'Client HTTPS connection', scenario === 'waf-block' ? 'blocked' : 'request'),
             e('edge-origin', 'edge', 'origin', 'Separate origin HTTPS connection'),
             e('origin-edge', 'origin', 'edge', 'Origin response', 'response'),
             e('edge-client', 'edge', 'client', 'Client HTTPS response', 'response'),
             e('client-tls', 'client', 'tls', 'Client TLS handshake and HTTPS'),
-            e('tls-waf', 'tls', 'waf', 'Decrypted HTTP request'),
+            e('tls-waf', 'tls', 'waf', scenario === 'waf-block' ? 'Decrypted request — blocked by WAF' : 'Decrypted HTTP request', scenario === 'waf-block' ? 'blocked' : 'request'),
             e('waf-route', 'waf', 'route', 'Permitted request'),
             e('route-rules', 'route', 'rules', 'Associated route rules'),
             e('rules-cache', 'rules', 'cache', 'Resulting cache configuration'),
@@ -164,6 +164,9 @@
             : 'Front Door returns the result on your client connection. Your browser did not connect directly to the origin.', ['edge-client']));
         return {
             nodes, edges, steps: detailed, simpleSteps: simple,
+            retainNodes: basic
+                ? ['client', 'dns', 'edge', 'origin', ...(privateOrigin ? ['managed-pe', 'pls', 'ilb'] : [])]
+                : ['client', 'dns', 'tls', 'waf', 'route', 'rules', 'cache', 'selection', 'origin-tls', 'origin', ...(privateOrigin ? ['managed-pe', 'pls', 'ilb'] : [])],
             groups: [
                 { id: 'edge', label: 'Selected Front Door edge / distributed service' },
                 { id: 'connection', label: 'Origin-side connection / not the client TLS session' },

@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T13:36:59.788+11:00",
+  "title": "Design System: Azure Networking Academy",
+  "extensions": {
+    "colorMeta": {
+      "azure-blue": {
+        "role": "primary",
+        "displayName": "Azure blue",
+        "tonalRamp": ["oklch(15% 0.15 250)", "oklch(26% 0.15 250)", "oklch(38% 0.15 250)", "oklch(49% 0.15 250)", "oklch(61% 0.15 250)", "oklch(72% 0.15 250)", "oklch(84% 0.15 250)", "oklch(95% 0.15 250)"]
+      },
+      "azure-dark": {
+        "role": "primary",
+        "displayName": "Deep Azure",
+        "tonalRamp": ["oklch(15% 0.1 248)", "oklch(26% 0.1 248)", "oklch(38% 0.1 248)", "oklch(49% 0.1 248)", "oklch(61% 0.1 248)", "oklch(72% 0.1 248)", "oklch(84% 0.1 248)", "oklch(95% 0.1 248)"]
+      },
+      "azure-light": {
+        "role": "primary",
+        "displayName": "Pale Azure",
+        "tonalRamp": ["oklch(15% 0.025 248)", "oklch(26% 0.025 248)", "oklch(38% 0.025 248)", "oklch(49% 0.025 248)", "oklch(61% 0.025 248)", "oklch(72% 0.025 248)", "oklch(84% 0.025 248)", "oklch(95% 0.025 248)"]
+      },
+      "bg-primary": {
+        "role": "neutral",
+        "displayName": "Cool paper",
+        "tonalRamp": ["oklch(15% 0.004 248)", "oklch(26% 0.004 248)", "oklch(38% 0.004 248)", "oklch(49% 0.004 248)", "oklch(61% 0.004 248)", "oklch(72% 0.004 248)", "oklch(84% 0.004 248)", "oklch(95% 0.004 248)"]
+      },
+      "bg-secondary": {
+        "role": "neutral",
+        "displayName": "White page",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(26% 0 0)", "oklch(38% 0 0)", "oklch(49% 0 0)", "oklch(61% 0 0)", "oklch(72% 0 0)", "oklch(84% 0 0)", "oklch(95% 0 0)"]
+      },
+      "bg-sidebar": {
+        "role": "neutral",
+        "displayName": "Navigation navy",
+        "tonalRamp": ["oklch(15% 0.042 247)", "oklch(26% 0.042 247)", "oklch(38% 0.042 247)", "oklch(49% 0.042 247)", "oklch(61% 0.042 247)", "oklch(72% 0.042 247)", "oklch(84% 0.042 247)", "oklch(95% 0.042 247)"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Reading ink",
+        "tonalRamp": ["oklch(15% 0.045 243)", "oklch(26% 0.045 243)", "oklch(38% 0.045 243)", "oklch(49% 0.045 243)", "oklch(61% 0.045 243)", "oklch(72% 0.045 243)", "oklch(84% 0.045 243)", "oklch(95% 0.045 243)"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Supporting slate",
+        "tonalRamp": ["oklch(15% 0.035 240)", "oklch(26% 0.035 240)", "oklch(38% 0.035 240)", "oklch(49% 0.035 240)", "oklch(61% 0.035 240)", "oklch(72% 0.035 240)", "oklch(84% 0.035 240)", "oklch(95% 0.035 240)"]
+      },
+      "text-sidebar": {
+        "role": "neutral",
+        "displayName": "Navigation text",
+        "tonalRamp": ["oklch(15% 0.004 67)", "oklch(26% 0.004 67)", "oklch(38% 0.004 67)", "oklch(49% 0.004 67)", "oklch(61% 0.004 67)", "oklch(72% 0.004 67)", "oklch(84% 0.004 67)", "oklch(95% 0.004 67)"]
+      },
+      "border-color": {
+        "role": "neutral",
+        "displayName": "Quiet rule",
+        "tonalRamp": ["oklch(15% 0.004 67)", "oklch(26% 0.004 67)", "oklch(38% 0.004 67)", "oklch(49% 0.004 67)", "oklch(61% 0.004 67)", "oklch(72% 0.004 67)", "oklch(84% 0.004 67)", "oklch(95% 0.004 67)"]
+      },
+      "success": {
+        "role": "secondary",
+        "displayName": "Success green",
+        "tonalRamp": ["oklch(15% 0.16 143)", "oklch(26% 0.16 143)", "oklch(38% 0.16 143)", "oklch(49% 0.16 143)", "oklch(61% 0.16 143)", "oklch(72% 0.16 143)", "oklch(84% 0.16 143)", "oklch(95% 0.16 143)"]
+      },
+      "error": {
+        "role": "secondary",
+        "displayName": "Error red",
+        "tonalRamp": ["oklch(15% 0.195 25)", "oklch(26% 0.195 25)", "oklch(38% 0.195 25)", "oklch(49% 0.195 25)", "oklch(61% 0.195 25)", "oklch(72% 0.195 25)", "oklch(84% 0.195 25)", "oklch(95% 0.195 25)"]
+      },
+      "trace-response": {
+        "role": "secondary",
+        "displayName": "Response teal",
+        "tonalRamp": ["oklch(15% 0.09 208)", "oklch(26% 0.09 208)", "oklch(38% 0.09 208)", "oklch(49% 0.09 208)", "oklch(61% 0.09 208)", "oklch(72% 0.09 208)", "oklch(84% 0.09 208)", "oklch(95% 0.09 208)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Academy identity", "purpose": "Opening identity; mobile uses 28px. Not a marketing hero scale." },
+      "headline": { "displayName": "Unit headline", "purpose": "One small idea, with a 32ch maximum title measure." },
+      "title": { "displayName": "Learning section", "purpose": "Section headings on learning destinations; module and example headings retain local sizes." },
+      "body": { "displayName": "Reading text", "purpose": "Unit prose. Local learning destinations and activities retain their observed line-height variants." },
+      "label": { "displayName": "Supporting metadata", "purpose": "Supporting status and context, not primary instruction." },
+      "diagram-label": { "displayName": "Diagram metadata", "purpose": "Local technical eyebrows, not a global uppercase-label rule." }
+    },
+    "shadows": [
+      { "name": "reading-surfaces", "value": "none", "purpose": "Field-guide learning groups, progress sections and diagram frames are flat." },
+      { "name": "shadow", "value": "0 2px 8px rgba(0,0,0,0.1)", "purpose": "Retained global CSS token for secondary surfaces; not the default for new reading sections." },
+      { "name": "shadow-hover", "value": "0 4px 16px rgba(0,0,0,0.15)", "purpose": "Retained global hover token, not a requirement to lift field-guide content." },
+      { "name": "mobile-drawer", "value": "3px 0 12px rgba(0,0,0,0.15)", "purpose": "Separates the off-canvas navigation from content." },
+      { "name": "mobile-bottom-navigation", "value": "0 -8px 24px rgba(0,64,112,0.08)", "purpose": "Separates fixed navigation from the scrolling page." },
+      { "name": "global-focus-separation", "value": "0 0 0 2px #fff", "purpose": "White separation behind the global focus outline, not surface elevation." }
+    ],
+    "motion": [
+      { "name": "transition", "value": "all 0.2s ease", "purpose": "Observed global button transition; records existing behavior rather than prescribing animation of every property." },
+      { "name": "mobile-drawer", "value": "transform 0.2s ease", "purpose": "Moves the navigation drawer in and out." },
+      { "name": "reduced-motion-global", "value": "0.01ms", "purpose": "Under prefers-reduced-motion: reduce, global animations and transitions are shortened, animation iteration count is 1, delay is 0ms, and scrolling is automatic." },
+      { "name": "reduced-motion-diagram", "value": "none", "purpose": "Diagram animations and transitions are disabled under prefers-reduced-motion: reduce; scrolling is automatic." }
+    ],
+    "breakpoints": [
+      { "name": "learning-filters-two-columns-max", "value": "1000px" },
+      { "name": "compact-desktop-sidebar-min", "value": "900px" },
+      { "name": "mobile-shell-and-reading-max", "value": "768px" },
+      { "name": "starter-path-single-column-max", "value": "480px" },
+      { "name": "learning-filters-single-column-max", "value": "420px" },
+      { "name": "diagram-view-switch-full-width-max", "value": "390px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The unit's forward action, from styles.css and UnitEngine. The specimen retains the native button font fallback; that incidental fallback is not a typography token.",
+      "html": "<button class=\"ds-primary\" type=\"button\">Got the idea · Try it</button>",
+      "css": ".ds-primary{background:var(--azure-blue,#0067b8);color:var(--bg-secondary,#fff);border:none;padding:10px 20px;border-radius:var(--radius,8px);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition,all .2s ease)}.ds-primary:hover{background:var(--azure-dark,#004578)}.ds-primary:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}@media(prefers-reduced-motion:reduce){.ds-primary{transition-duration:.01ms;transition-delay:0ms}}"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Prediction comparison and saving an explanation, from styles.css and UnitEngine. The visible label explains the action.",
+      "html": "<button class=\"ds-secondary\" type=\"button\">Compare my prediction</button>",
+      "css": ".ds-secondary{background:transparent;color:var(--azure-blue,#0067b8);border:2px solid var(--azure-blue,#0067b8);padding:8px 18px;border-radius:var(--radius,8px);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition,all .2s ease)}.ds-secondary:hover{background:var(--azure-light,#deecf9)}.ds-secondary:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}@media(prefers-reduced-motion:reduce){.ds-secondary{transition-duration:.01ms;transition-delay:0ms}}"
+    },
+    {
+      "name": "Learning action",
+      "kind": "button",
+      "refersTo": "learning-action",
+      "description": "The compact, wrapping learning-surface action from learning.css. Its minimum target differs from the legacy general buttons.",
+      "html": "<a class=\"ds-learning-action\" href=\"#today\">Continue learning</a>",
+      "css": ".ds-learning-action{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;max-width:100%;padding:10px 14px;border:1px solid var(--learning-accent,var(--azure-blue,#0067b8));border-radius:4px;background:var(--bg-secondary,#fff);color:var(--learning-accent,var(--azure-blue,#0067b8));font:600 16px/1.35 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;text-align:center;text-decoration:none;white-space:normal;cursor:pointer}.ds-learning-action:hover{background:var(--bg-primary,#f6f8fa);text-decoration:underline}.ds-learning-action:focus-visible{outline:3px solid var(--learning-accent,var(--azure-blue,#0067b8));outline-offset:3px;box-shadow:none}"
+    },
+    {
+      "name": "Workspace destinations",
+      "kind": "nav",
+      "refersTo": "workspace-navigation",
+      "description": "The three real destinations from index.html. This isolated specimen shows the desktop rail; responsive shell behavior remains in the application.",
+      "html": "<nav class=\"ds-workspace\" aria-label=\"Learning destinations\"><a class=\"ds-destination\" href=\"#today\" aria-current=\"page\">Your path</a><a class=\"ds-destination\" href=\"#visual-lab\">AFD request lab</a><a class=\"ds-destination\" href=\"#more\">Progress</a></nav>",
+      "css": ".ds-workspace{display:grid;gap:4px;padding:12px 16px;background:var(--bg-sidebar,#122638);color:var(--text-sidebar,#d2d0ce);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-destination{display:flex;align-items:center;min-height:44px;padding:10px 12px;border-left:3px solid transparent;border-radius:4px;color:var(--text-sidebar,#d2d0ce);font-size:15px;font-weight:600;text-decoration:none;overflow-wrap:anywhere}.ds-destination:hover{text-decoration:underline;color:var(--bg-secondary,#fff)}.ds-destination[aria-current=page]{border-left-color:var(--learning-accent,var(--azure-blue,#0067b8));background:var(--bg-secondary,#fff);color:var(--text-primary,#172f42)}.ds-destination:focus-visible{outline:2px solid var(--text-sidebar,#d2d0ce);outline-offset:2px;box-shadow:none}"
+    },
+    {
+      "name": "Lesson steps",
+      "kind": "nav",
+      "refersTo": "lesson-step",
+      "description": "The Learn / Try it / Quick check controls from index.html and the final field-guide cascade. Current state is a bottom rule, not a filled tab. Buttons are visual specimens; routing is not embedded.",
+      "html": "<nav class=\"ds-steps\" aria-label=\"Lesson steps\"><button class=\"ds-step\" type=\"button\" aria-current=\"step\" aria-pressed=\"true\">1 Learn</button><button class=\"ds-step\" type=\"button\" aria-pressed=\"false\">2 Try it</button><button class=\"ds-step\" type=\"button\" aria-pressed=\"false\">3 Quick check</button></nav>",
+      "css": ".ds-steps{display:flex;justify-content:center;padding:0 36px;border-bottom:1px solid var(--border-color,#e1dfdd);background:var(--bg-secondary,#fff);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-step{flex:0 1 200px;min-width:0;min-height:48px;padding:12px 6px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--text-secondary,#4f6372);font:600 16px 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer}.ds-step:hover{background:var(--azure-light,#deecf9)}.ds-step[aria-current=step]{background:transparent;color:var(--azure-dark,#004578);border-bottom-color:var(--azure-blue,#0067b8)}.ds-step:focus-visible{outline:3px solid var(--azure-blue,#0067b8);outline-offset:2px}@media(max-width:768px){.ds-steps{padding-inline:12px}.ds-step{flex:1;font-size:14px}}"
+    },
+    {
+      "name": "Self-explanation field",
+      "kind": "input",
+      "refersTo": "explanation-field",
+      "description": "UnitEngine's labeled, resizable explanation area. The static specimen accepts text but does not claim to save or assess it. Replace the specimen label with the unit's actual teach-back prompt.",
+      "html": "<div class=\"ds-explanation\"><label class=\"ds-explanation-label\" for=\"ds-explanation-input\">Say it in your own words</label><textarea class=\"ds-explanation-input\" id=\"ds-explanation-input\" rows=\"3\" maxlength=\"4000\" placeholder=\"A few plain-language sentences are enough.\"></textarea><details class=\"ds-example\"><summary class=\"ds-example-summary\">Compare with an example explanation</summary><p class=\"ds-example-note\">This is an illustration, not an automatic grade of your answer.</p></details></div>",
+      "css": ".ds-explanation{font:16px/1.7 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--text-primary,#172f42)}.ds-explanation-label{line-height:1.7}.ds-explanation-input{display:block;width:100%;font:16px/1.7 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;padding:14px;border:1px solid #8a9eae;border-radius:4px;margin-block:16px;resize:vertical}.ds-explanation-input:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}.ds-example{line-height:1.7;margin-bottom:18px}.ds-example-summary{cursor:pointer;min-height:44px;padding-block:10px}.ds-example-summary:focus-visible{outline:3px solid var(--azure-blue,#0067b8);outline-offset:2px}.ds-example-note{margin:0 0 18px;line-height:1.7}"
+    },
+    {
+      "name": "Diagram node chip",
+      "kind": "chip",
+      "refersTo": "diagram-node-chip",
+      "description": "Noninteractive node labels from DiagramEngine.connections when a step focuses on a node rather than an edge. Example label only; no synthetic hover or pressed state.",
+      "html": "<span class=\"ds-node-chip\">Client</span>",
+      "css": ".ds-node-chip{padding:5px 8px;background:var(--bg-primary,#f6f8fa);color:var(--text-primary,#172f42);border:1px solid var(--border-color,#e1dfdd);border-radius:4px;font:13px 'Segoe UI',Aptos,Calibri,sans-serif}"
+    },
+    {
+      "name": "Compact relationship frame",
+      "kind": "card",
+      "refersTo": "diagram-frame",
+      "description": "The compact model-owned relationship inside the unshadowed diagram frame, translated from diagrams.css and DiagramEngine. DNS specimen content illustrates the existing ask step. The full engine-rendered map is intentionally not fabricated in this style specimen.",
+      "html": "<section class=\"ds-diagram\" aria-label=\"The idea at a glance\"><div class=\"ds-compact\"><div class=\"ds-connection\"><span class=\"ds-connection-kind\">Request</span><span class=\"ds-connection-path\">Client <span aria-hidden=\"true\">→</span><span class=\"ds-visually-hidden\">to</span> Recursive resolver</span><small class=\"ds-connection-detail\">shop.example.com</small></div></div></section>",
+      "css": ".ds-diagram{margin-block:20px;border:1px solid var(--border-color,#e1dfdd);border-radius:16px;overflow:hidden;max-width:100%;min-width:0;box-shadow:none;background:var(--bg-secondary,#fff);color:var(--text-primary,#172f42);text-align:left;font-family:'Segoe UI',Aptos,Calibri,sans-serif}.ds-compact{padding:12px 16px}.ds-connection{display:grid;gap:3px;width:100%;border:0;padding:0;font-size:16px;line-height:1.5}.ds-connection-kind,.ds-connection-detail{font-size:12px;color:var(--text-secondary,#4f6372)}.ds-connection-kind{font-weight:650}.ds-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}"
+    },
+    {
+      "name": "Prediction choices",
+      "kind": "custom",
+      "refersTo": "answer-choice",
+      "description": "Native radio rows from UnitEngine.questionHtml. Example wording comes from the TCP model. Selection works without JavaScript; feedback and persistence remain application responsibilities.",
+      "html": "<fieldset class=\"ds-question\"><legend class=\"ds-question-legend\">Who sends SYN-ACK?</legend><label class=\"ds-choice\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-syn-ack\" value=\"0\"><span class=\"ds-choice-text\">The client again</span></label><label class=\"ds-choice\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-syn-ack\" value=\"1\" checked><span class=\"ds-choice-text\">The server</span></label><label class=\"ds-choice\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-syn-ack\" value=\"2\"><span class=\"ds-choice-text\">A DNS resolver</span></label><p class=\"ds-choice-feedback\" role=\"status\" aria-live=\"polite\"></p></fieldset>",
+      "css": ".ds-question{border:0;border-top:1px solid #ccd9e2;margin-block:26px;padding:20px 0 0;min-width:0;color:var(--text-primary,#172f42);font:16px/1.6 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-question-legend{float:left;width:100%;margin-bottom:16px;font-weight:600;line-height:1.6}.ds-question-legend+.ds-choice{clear:both}.ds-choice{display:flex;align-items:flex-start;gap:12px;border:1px solid #c4d2dd;border-radius:4px;padding:12px 14px;min-height:48px;margin-block:8px;background:#fff;line-height:1.55;cursor:pointer}.ds-choice:has(.ds-radio:checked){background:#eaf3fa;border-color:var(--azure-blue,#0067b8)}.ds-radio{accent-color:var(--azure-blue,#0067b8);width:18px;height:18px;flex:0 0 18px;margin-top:3px}.ds-radio:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}.ds-choice-feedback{line-height:1.7;margin-top:14px;color:var(--azure-dark,#004578)}.ds-choice-feedback:empty{margin:0}"
+    },
+    {
+      "name": "Learning activity counts",
+      "kind": "custom",
+      "refersTo": "progress-counts",
+      "description": "UnitEngine.progressHtml's four separate evidence categories and disclaimer. Zero counts are specimen data, not a report of the learner's stored progress.",
+      "html": "<section class=\"ds-progress\"><h2 class=\"ds-progress-title\">Your learning so far</h2><dl class=\"ds-counts\"><div class=\"ds-count\"><dt class=\"ds-count-label\">Read</dt><dd class=\"ds-count-value\">0</dd></div><div class=\"ds-count\"><dt class=\"ds-count-label\">Prediction correct</dt><dd class=\"ds-count-value\">0</dd></div><div class=\"ds-count\"><dt class=\"ds-count-label\">Checks passed</dt><dd class=\"ds-count-value\">0</dd></div><div class=\"ds-count\"><dt class=\"ds-count-label\">Self-explained</dt><dd class=\"ds-count-value\">0</dd></div></dl><p class=\"ds-progress-note\">These are learning activities, not proof of mastery. Try explaining a familiar request tomorrow without opening the example.</p></section>",
+      "css": ".ds-progress{max-width:70ch;line-height:1.7;margin-block:26px 36px;color:var(--text-primary,#172f42);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;font-size:16px}.ds-progress-title{margin:0 0 14px;font-size:20px;line-height:1.35}.ds-counts{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--border-color,#e1dfdd);padding-block:20px;gap:16px;margin-block:24px}.ds-count-label{font-size:13px;color:var(--text-secondary,#4f6372)}.ds-count-value{font-size:30px;font-weight:600;margin:0;line-height:1.65}.ds-progress-note{margin-block:18px;line-height:1.65}@media(max-width:768px){.ds-counts{grid-template-columns:repeat(2,1fr)}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Networking Field Guide",
+    "overview": "The academy feels like a readable field guide, not a decorative dashboard. A light page, navy navigation and Azure-blue actions give the learner a steady place to read. Headings, generous line spacing and restrained rules establish hierarchy without turning every idea into a card.\n\nThe visual language makes complexity available without making it compulsory. Concrete examples and compact, model-owned relationships introduce an idea; full graphs, evidence and references remain separately disclosed. This is a reusable treatment for learning content, not a requirement that every utility screen use a lesson composition.",
+    "keyCharacteristics": [
+      "Light reading surfaces with navy structure and Azure-blue actions.",
+      "System typography, comfortable measures and restrained section rules.",
+      "Compact relationships before optional full visual detail.",
+      "Explicit current states, native controls and visible keyboard focus.",
+      "Progress described as learning activity, not proof of mastery."
+    ],
+    "rules": [],
+    "dos": [
+      "**Do** keep reading surfaces light, navigation navy and actions Azure blue.",
+      "**Do** use readable measures, whitespace and section rules before adding containers.",
+      "**Do** preserve native controls, explicit current states and visible keyboard focus.",
+      "**Do** pair diagram color with labels and line patterns.",
+      "**Do** keep compact relationships model-owned and full detail separately accessible.",
+      "**Do** distinguish reading, practice, checks and self-explanation from mastery."
+    ],
+    "donts": [
+      "**Don't** turn the field guide back into a decorative dashboard of raised cards.",
+      "**Don't** make full graphs, references or optional assessments compete with the core reading.",
+      "**Don't** use small technical metadata as the main teaching text.",
+      "**Don't** treat legacy CSS, incidental browser defaults or one-off values as new brand rules.",
+      "**Don't** present these documentation specimens as proof of accessibility or learning effectiveness."
+    ]
+  }
+}

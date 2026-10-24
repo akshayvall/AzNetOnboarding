@@ -38,6 +38,64 @@ const text = model => [model.summary, model.caveat, ...model.steps.map(step => s
 const ids = model => Array.from(model.steps, step => step.id);
 const edge = (model, id) => model.edges.find(item => item.id === id);
 
+test('depth is offered only when some scenario has distinct resolved learning content', () => {
+    const { catalog } = system();
+    assert.equal(typeof catalog.hasDepth, 'function');
+    for (const type of expectedTypes) {
+        const distinct = catalog.models[type].scenarios.some(scenario => {
+            const signature = level => {
+                const { nodes, edges, steps } = catalog.resolve(type, { scenario: scenario.id, level });
+                return JSON.stringify({ nodes, edges, steps });
+            };
+            return signature('basic') !== signature('detailed');
+        });
+        assert.equal(catalog.hasDepth(type), distinct, type);
+    }
+    assert.equal(catalog.hasDepth('tcp-handshake'), false);
+    assert.equal(catalog.hasDepth('afd-request'), true);
+});
+
+test('AFD early responses retain stable topology with a clearly uncontacted origin', () => {
+    const { catalog, engine } = system();
+    for (const level of ['basic', 'detailed']) for (const connection of ['public', 'private']) {
+        const baseline = catalog.resolve('afd-request', { level, connection, scenario: 'miss' });
+        const positions = new Map(engine.geometry(baseline).nodes.map(node => [node.id, [node.x, node.y]]));
+        for (const scenario of ['hit', 'waf-block', 'redirect']) {
+            const branch = catalog.resolve('afd-request', { level, connection, scenario });
+            for (const node of engine.geometry(branch).nodes) assert.deepEqual([node.x, node.y], positions.get(node.id), `${scenario}/${node.id}`);
+            const origin = branch.nodes.find(node => node.id === 'origin');
+            assert.ok(origin?.inactive);
+            assert.match(origin.detail, /not contacted/i);
+            assert.ok(!branch.edges.some(link => link.from === 'origin' || link.to === 'origin'));
+        }
+    }
+});
+
+test('diagram models own concrete sequence, first-match, route and NAT evidence', () => {
+    const { catalog } = system();
+    assert.equal(catalog.resolve('tcp-handshake').presentation.kind, 'sequence');
+    for (const [type, kind] of [['nsg-filtering', 'policy'], ['udr', 'routes'], ['natgw', 'translation']]) {
+        const model = catalog.resolve(type);
+        assert.equal(model.presentation.kind, kind);
+        assert.ok(model.presentation.tables.length);
+        for (const table of model.presentation.tables) {
+            assert.ok(table.columns.length > 1);
+            for (const row of table.rows) {
+                assert.equal(row.cells.length, table.columns.length);
+                assert.ok(model.steps.some(step => step.id === row.step), `${type}/${row.step}`);
+            }
+        }
+    }
+    assert.match(JSON.stringify(catalog.resolve('natgw').presentation), /10\.0\.1\.4:51514/);
+    assert.match(JSON.stringify(catalog.resolve('natgw').presentation), /203\.0\.113\.10:62001/);
+    assert.match(JSON.stringify(catalog.resolve('udr').presentation), /0\.0\.0\.0\/0/);
+    for (const scenario of ['exhausted', 'unsolicited']) {
+        const blocked = catalog.resolve('natgw', { scenario });
+        assert.match(blocked.presentation.packet, /no.*mapping/i);
+        assert.doesNotMatch(blocked.presentation.packet, /⇄/);
+    }
+});
+
 test('all audited concepts have a shared model, including the AFD request lab', () => {
     const { catalog, modules } = system();
     assert.deepEqual(Object.keys(catalog.models).sort(), expectedTypes.slice().sort());

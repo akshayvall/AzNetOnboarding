@@ -2,25 +2,155 @@
     --learning-accent: var(--azure-blue);
 }
 
-.beginner-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 24px;
+.field-guide { font-size: 16px; }
+.field-guide [hidden] { display: none !important; }
+.field-guide .logo-icon { flex: 0 0 32px; color: #9dccf0; }
+.field-guide .sidebar-header { padding: 32px 22px 24px; border-bottom: 1px solid #30495d; }
+.field-guide .workspace-nav { padding-block: 14px; }
+.field-guide .workspace-nav a { min-height: 48px; padding: 14px 22px; font-size: 15px; }
+.field-guide .curriculum-nav { margin-top: 4px; }
+.field-guide .module-icon, .field-guide .search-icon { display: none; }
+.field-guide .nav-level { letter-spacing: 0; }
+.field-guide .module-header { padding: 22px 36px 14px; border-bottom: 0; background: #fff; gap: 12px; }
+.field-guide #moduleTitle { font-size: 18px; font-weight: 600; line-height: 1.35; }
+.field-guide :is(#moduleTitle, #unitTitle, #destinationTitle):focus { outline: none; box-shadow: none; }
+.field-guide .module-level-badge { color: var(--text-secondary); background: transparent !important; padding: 0; }
+.field-guide .module-progress-indicator { font-size: 13px; color: var(--text-secondary); }
+.field-guide .unit-heading { max-width: 70ch; margin-inline: auto; padding: 12px 0 22px; }
+.field-guide .unit-managed .module-progress-indicator { display: none; }
+.field-guide .unit-heading:empty { display: none; }
+.field-guide #unitTitle { max-width: 32ch; font-size: clamp(24px, 3vw, 34px); line-height: 1.2; letter-spacing: -.025em; font-weight: 650; }
+.field-guide .unit-picker { margin-top: 14px; max-width: 650px; font-size: 14px; }
+.field-guide .unit-picker summary { cursor: pointer; min-height: 36px; padding-block: 8px; color: var(--text-secondary); }
+.field-guide .unit-picker ol { list-style: none; padding: 8px 0; border-top: 1px solid var(--border-color); }
+.field-guide .unit-picker button { border: 0; background: none; text-align: left; font: inherit; color: var(--azure-dark); padding: 12px 4px; min-height: 44px; cursor: pointer; }
+.field-guide .unit-picker [aria-current] { font-weight: 700; text-decoration: underline; text-underline-offset: 5px; }
+.field-guide .lesson-steps { padding-inline: 36px; justify-content: center; }
+.field-guide .lesson-steps button { flex: 0 1 200px; }
+.field-guide .lesson-steps button[aria-current] { background: transparent; }
+.field-guide .module-content { max-width: 960px; margin-inline: auto; padding: 32px 40px 64px; }
+.field-guide .unit-lesson, .field-guide .unit-check, .field-guide .unit-activity { max-width: 70ch; margin-inline: auto; }
+.field-guide .unit-lesson > p, .field-guide .unit-example p, .field-guide .unit-detail p { margin-bottom: 18px; line-height: 1.8; }
+.field-guide .unit-detail { margin-top: 28px; }
+.field-guide .unit-detail h3 { margin-bottom: 14px; }
+.field-guide .unit-outcome { font-size: 19px; line-height: 1.6; font-weight: 600; }
+.field-guide .unit-example { border-block: 1px solid #ccd9e2; padding-block: 22px 8px; margin-block: 28px; }
+.field-guide .unit-example h3 { font-size: 18px; margin-bottom: 10px; }
+.field-guide .unit-takeaway { margin-block: 24px; }
+.field-guide .unit-lesson #doneReadingInline { margin: 4px 0 16px; }
+.field-guide .unit-lesson .learning-meta { font-size: 13px; max-width: 64ch; }
+.field-guide .unit-managed .module-navigation { display: none; }
+.unit-reference-access { display: none; }
+.field-guide .unit-managed .unit-reference-access { display: block; margin-top: 40px; border-top: 1px solid var(--border-color); }
+.field-guide .unit-reference-access > summary, .field-guide .unit-records > summary { min-height: 48px; padding-block: 16px; cursor: pointer; }
+.field-guide .unit-reference-access > p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+.field-guide .unit-question { border: 0; border-top: 1px solid #ccd9e2; margin-block: 26px; padding-top: 20px; min-width: 0; }
+.field-guide .unit-question legend { float: left; width: 100%; margin-bottom: 16px; font-weight: 600; line-height: 1.6; }
+.field-guide .unit-question legend + label { clear: both; }
+.field-guide .unit-question .learning-choice { border: 1px solid #c4d2dd; border-radius: 4px; padding: 12px 14px; min-height: 48px; margin-block: 8px; background: #fff; line-height: 1.55; cursor: pointer; }
+.field-guide .unit-question .learning-choice:has(input:checked) { background: #eaf3fa; border-color: var(--azure-blue); }
+.field-guide .unit-question input { accent-color: var(--azure-blue); width: 18px; height: 18px; flex: 0 0 18px; margin-top: 3px; }
+.field-guide .unit-feedback { line-height: 1.7; margin-top: 14px; color: var(--azure-dark); }
+.field-guide .unit-feedback:empty { margin: 0; }
+.field-guide .unit-explanation { margin-block: 40px; border-block: 1px solid var(--border-color); padding-block: 24px; }
+.field-guide .unit-explanation h3 { margin-bottom: 16px; }
+.field-guide .unit-explanation label { line-height: 1.7; }
+.field-guide .unit-explanation textarea { display: block; width: 100%; font: inherit; line-height: 1.7; padding: 14px; border: 1px solid #8a9eae; border-radius: 4px; margin-block: 16px; resize: vertical; }
+.field-guide .unit-explanation details { line-height: 1.7; margin-bottom: 18px; }
+.field-guide .unit-explanation summary { cursor: pointer; min-height: 44px; padding-block: 10px; }
+.field-guide #unitContinue .btn-primary { margin-top: 18px; }
+.field-guide .unit-check > p, .field-guide .unit-activity > p { line-height: 1.7; margin-top: 12px; }
+.field-guide .unit-activity { margin-block: 32px; }
+.field-guide .academy-identity { display: block; height: auto; min-height: 0; padding: 40px 0 24px; border: 0; background: none; box-shadow: none; max-width: 52rem; margin-inline: auto; }
+.field-guide .academy-identity h1 { font-size: 32px; line-height: 1.2; letter-spacing: -.025em; margin-bottom: 10px; }
+.field-guide .academy-identity p { font: inherit; line-height: 1.7; max-width: 65ch; }
+.field-guide .beginner-welcome { padding: 24px 0; }
+.field-guide .beginner-welcome h2 { font-size: 24px; line-height: 1.35; }
+.field-guide .beginner-welcome > p { max-width: 65ch; margin-block: 16px; }
+.field-guide .resume-detail { border-top: 1px solid var(--border-color); padding-top: 22px; }
+.field-guide .beginner-route { border-top: 1px solid var(--border-color); margin-top: 32px; padding-top: 26px; }
+.field-guide .beginner-route ol { list-style: none; padding-left: 0; }
+.field-guide .beginner-route li { padding-block: 18px; border-bottom: 1px solid var(--border-color); border-radius: 0; background: none; }
+.field-guide .beginner-route a { font-size: 17px; }
+.field-guide .beginner-route small { font-size: 14px; line-height: 1.6; }
+.field-guide .route-number { background: transparent; color: var(--text-secondary); font: inherit; font-size: 15px; font-weight: 500; line-height: 1.6; }
+.field-guide .unit-progress { max-width: 70ch; line-height: 1.7; margin-block: 26px 36px; }
+.field-guide .unit-progress > p { margin-block: 18px; }
+.field-guide .unit-counts { display: grid; grid-template-columns: repeat(4, 1fr); border-block: 1px solid var(--border-color); padding-block: 20px; gap: 16px; margin-block: 24px; }
+.field-guide .unit-counts dt { font-size: 13px; color: var(--text-secondary); }
+.field-guide .unit-counts dd { font-size: 30px; font-weight: 600; margin: 0; }
+.field-guide .starter-visual { margin-block: 28px; padding-block: 24px; border-block: 1px solid var(--border-color); }
+.field-guide .starter-visual h3 { margin-bottom: 18px; }
+.field-guide .starter-conditions { display: flex; flex-wrap: wrap; gap: 10px; }
+.field-guide .starter-conditions [aria-pressed=true] { background: var(--azure-dark); color: #fff; }
+.field-guide .starter-nodes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; list-style: none; padding: 0; margin-block: 24px; }
+.field-guide .starter-nodes li { min-width: 0; padding: 14px; border: 1px solid #9fb7c9; background: #fff; line-height: 1.5; }
+.field-guide .starter-nodes span { display: block; color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
+.field-guide .starter-nodes [data-state=unused] { border-style: dashed; color: var(--text-secondary); background: transparent; }
+.field-guide #starterVisualOutcome { font-weight: 500; }
+.field-guide .unit-records { margin-top: 24px; }
+.field-guide .unit-records ol { list-style: none; padding: 0; }
+.field-guide .unit-records li { padding-block: 14px; border-top: 1px solid var(--border-color); }
+.field-guide .unit-records small { display: block; }
+.field-guide .learning-group { border-radius: 0; box-shadow: none; }
+.field-guide .learning-group > summary { cursor: pointer; }
+.field-guide .concept-box, .field-guide .warning-box, .field-guide .tip-box,
+.field-guide .quiz-explanation, .field-guide .review-evidence { border-left: 0; border-radius: 4px; }
+.field-guide .learning-feedback[data-state] { border-left: 0; padding: 10px 0; }
+
+@media (min-width: 900px) {
+    .field-guide #sidebar { width: 248px; min-width: 248px; }
 }
-.beginner-tabs { display: none; gap: 8px; flex-wrap: wrap; }
-.beginner-mode .beginner-tabs { display: flex; }
-.beginner-mode #masteryPanel,
-.beginner-mode #moduleModeBar,
-.beginner-mode .module-tabs,
-.beginner-mode #sectionOutline,
-.beginner-mode .level-cards,
-.beginner-mode #progressTracker,
-.beginner-mode .progress-overview,
-.beginner-mode .identity-rail { display: none !important; }
-.beginner-mode .module-workspace { display: block; }
+@media (max-width: 768px) {
+    .field-guide .module-header { padding: 22px 18px 12px; flex-wrap: wrap; }
+    .field-guide .module-progress-indicator { width: 100%; text-align: left; }
+    .field-guide .unit-heading { padding: 12px 18px 18px; }
+    .field-guide .lesson-steps { padding-inline: 12px; }
+    .field-guide .lesson-steps button { flex: 1; font-size: 14px; }
+    .field-guide .module-content { padding: 24px 18px 96px; }
+    .field-guide .academy-identity { padding: 24px 14px 18px; margin: 0; }
+    .field-guide .academy-identity h1 { font-size: 28px; }
+    .field-guide .beginner-welcome { padding: 18px 0; }
+    .field-guide .beginner-welcome h2 { font-size: 23px; }
+    .field-guide .unit-counts { grid-template-columns: repeat(2, 1fr); }
+    .field-guide .starter-nodes { grid-template-columns: repeat(2, 1fr); }
+    .field-guide .unit-lesson > p { line-height: 1.75; }
+}
+@media print {
+    .field-guide #app { height: auto; overflow: visible; }
+    .field-guide #content { overflow: visible; }
+    .field-guide .unit-reference-access, .field-guide .unit-picker { display: none; }
+}
+
+.progress-overview { display: none; }
+.curriculum-nav { margin: 18px 0; }
+.curriculum-nav > summary, .starter-link { display: block; padding: 14px 24px; cursor: pointer; color: #d6e6f5; }
+.curriculum-nav > summary { display: list-item; margin-inline: 24px; padding-inline: 0; }
+.curriculum-nav .nav-level { color: #b9cddd; font-size: 14px; }
+#sidebar .nav-time { font-size: 12px; color: #c1c1cb; }
+.lesson-steps { display: flex; padding: 0 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); }
+.lesson-steps button { flex: 1; min-width: 0; min-height: 48px; padding: 12px 6px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--text-secondary); font: inherit; font-weight: 600; cursor: pointer; }
+.lesson-steps button[aria-current="step"] { color: var(--azure-dark); border-bottom-color: var(--azure-blue); background: var(--azure-light); }
+.lesson-steps button:hover { background: var(--azure-light); }
+.lesson-steps button:focus-visible, .learning-actions button:focus-visible, summary:focus-visible { outline: 3px solid var(--azure-blue); outline-offset: 2px; }
+.workflow-prototype .module-workspace { display: block; }
+.workflow-prototype .module-content { max-width: 80ch; margin-inline: auto; padding: 24px; }
+.workflow-prototype .section-outline { position: static; max-height: none; margin: 20px 24px 0; }
+.workflow-prototype .module-navigation { position: static; display: flex; height: auto; flex-wrap: wrap; padding: 20px 24px; }
+.workflow-prototype #prevModule, .workflow-prototype #nextModule { width: auto; height: auto; min-height: 44px; padding: 10px 14px; font-size: 14px; white-space: normal; }
+.workflow-prototype #prevModule::before, .workflow-prototype #nextModule::before { content: none; }
+.module-navigation #completeModule { display: none; }
+#tab-learn.active ~ #nextLessonStep { margin-top: 24px; }
+.further-study { margin-block: 32px; padding-block: 20px; border-block: 1px solid var(--border-color); }
+.further-study > summary, .learning-group > summary, .placement-choice > summary { min-height: 44px; padding-block: 12px; font-weight: 600; cursor: pointer; }
+.further-study .learning-actions { margin-block: 16px; }
+.bottom-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.placement-choice { margin-top: 20px; }
+.placement-choice p { margin-block: 12px; }
+.backup-controls > summary { min-height: 44px; padding-block: 12px; color: #d6e6f5; cursor: pointer; }
+.beginner-welcome.today-primary { border-right: 0; }
+.beginner-opening .resume-section { display: inline-block; margin-block: 12px; }
+#doneReadingInline { margin-block: 24px; }
 .beginner-welcome { max-width: 52rem; margin-inline: auto; }
 .beginner-welcome .btn-secondary { margin-top: 12px; }
 .beginner-welcome p, .starter-lesson p { line-height: 1.75; }
@@ -32,7 +162,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     padding: 16px 16px 16px 36px;
-    border-left: 3px solid var(--azure-blue);
     background: var(--bg-secondary);
     line-height: 1.6;
 }
@@ -44,10 +173,14 @@
 }
 #beginnerCheck fieldset { margin: 18px 0; padding: 12px; border: 1px solid var(--border-color); }
 #beginnerCheck legend { padding: 0 8px; font-weight: 600; }
-.beginner-toolbar button { min-height: 44px; white-space: normal; }
 @media (max-width: 480px) {
     .beginner-path { grid-template-columns: 1fr; }
-    .beginner-toolbar { padding-inline: 14px; }
+    .lesson-steps { padding-inline: 6px; }
+    .lesson-steps button { font-size: 14px; }
+    .workflow-prototype .module-content { padding: 24px 20px; }
+    .workflow-prototype #moduleTitle { font-size: 20px; line-height: 1.3; white-space: normal; }
+    .workflow-prototype .module-progress-indicator { font-size: 12px; }
+    .workflow-prototype .module-header { padding: 16px 20px; }
 }
 
 #masteryDashboard {

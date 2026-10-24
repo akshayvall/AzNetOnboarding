@@ -74,7 +74,7 @@ test('destination renderers distinguish empty catalog, due queue, builds, and ev
     assert.ok(!practice.includes('Review now'));
     assert.match(LearningEngine.renderDestinationHtml('learn', context), /No modules match these filters\./);
     assert.match(LearningEngine.renderDestinationHtml('build', context), /No unfinished build tasks\./);
-    assert.match(LearningEngine.renderDestinationHtml('more', context), /No evidence recorded yet\./);
+    assert.match(LearningEngine.renderDestinationHtml('more', context), /Your practice results will appear here after you try a check\./);
     assert.match(practice, /id="destinationTitle" tabindex="-1"/);
 });
 
@@ -215,11 +215,11 @@ test('filters apply only on submit and preferences use the agreed setters', () =
     assert.equal(runtime.calls.navigation[1].filters.pathOnly, false);
     runtime.engine.renderPreferences();
     assert.match(runtime.nodes.get('learningPreferences').innerHTML, /Core path/);
-    assert.match(runtime.nodes.get('learningPreferences').innerHTML, /value="10"/);
+    assert.match(runtime.nodes.get('learningPreferences').innerHTML, /Catalog preferences/);
+    assert.doesNotMatch(runtime.nodes.get('learningPreferences').innerHTML, /Session length|id="sessionMinutes"/);
     runtime.addNode('learningPath', 'core');
-    runtime.addNode('sessionMinutes', '60');
-    runtime.dispatch('change', runtime.nodes.get('sessionMinutes'));
-    assert.equal(runtime.state.ui.sessionMinutes, 60);
+    runtime.dispatch('change', runtime.nodes.get('learningPath'));
+    assert.equal(runtime.state.ui.sessionMinutes, 25);
     assert.equal(runtime.calls.dashboard, 1);
     assert.deepEqual(runtime.state.progress.completedLabs, []);
 });

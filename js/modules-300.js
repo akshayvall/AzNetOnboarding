@@ -180,13 +180,13 @@ Action: Modify Response Header → Overwrite
     <h3>TLS Certificate Options</h3>
     <table class="content-table">
         <tr><th>Option</th><th>Description</th><th>Best For</th></tr>
-        <tr><td><strong>AFD Managed</strong></td><td>Front Door provisions and auto-renews certs from DigiCert</td><td>Simplest option — recommended</td></tr>
+        <tr><td><strong>AFD Managed</strong></td><td>Front Door manages certificate provisioning and renewal; apex domains require ownership revalidation for renewal</td><td>Managed lifecycle with domain-validation monitoring</td></tr>
         <tr><td><strong>Bring Your Own (BYOC)</strong></td><td>Upload your cert to Key Vault, Front Door pulls it</td><td>Custom/EV certs, compliance requirements</td></tr>
     </table>
 
     <div class="concept-box">
         <h4>🔑 Zone Apex (Naked Domain) with Front Door</h4>
-        <p>To use contoso.com (no www), you need an <strong>Alias record</strong> in Azure DNS pointing to the Front Door endpoint. Standard CNAME cannot be used at zone apex. TLS validation at zone apex uses a TXT record at <span class="code-inline">_dnsauth.contoso.com</span>.</p>
+        <p>To use contoso.com (no www), use an <strong>Alias record</strong> in Azure DNS or another DNS provider with suitable CNAME flattening. An ordinary CNAME cannot be used at the zone apex, and a discovered Front Door IP must not be pinned in an A record. Domain ownership validation uses a TXT record at <span class="code-inline">_dnsauth.contoso.com</span>. Managed apex certificates require ownership revalidation for renewal: when the domain shows Pending revalidation, regenerate the TXT token and update it at your DNS provider. See <a href="https://learn.microsoft.com/azure/frontdoor/apex-domain" target="_blank" rel="noopener">apex-domain routing and certificate renewal</a>.</p>
     </div>
 </div>
 
@@ -287,7 +287,7 @@ Action: Modify Response Header → Overwrite
             title: 'Advanced Front Door Concepts',
             cards: [
                 { front: 'What is the difference between URL Redirect and URL Rewrite?', back: 'Redirect: Client sees the new URL (browser URL bar changes). Returns 301/302 to client.\nRewrite: Client never sees the change (transparent). Front Door modifies the URL before forwarding to origin.' },
-                { front: 'Can Front Door Managed certs cover zone apex domains?', back: 'Yes, but the domain must use Azure DNS with an Alias record. Managed certs from DigiCert cover both www and naked domains.' },
+                { front: 'Can Front Door Managed certs cover zone apex domains?', back: 'Yes. Use Azure DNS alias support or suitable provider CNAME flattening, not a pinned Front Door IP. Apex managed certificates require ownership revalidation for renewal; regenerate and update the TXT token when Pending revalidation appears.' },
                 { front: 'What is the _dnsauth TXT record?', back: 'A DNS TXT record Front Door uses to validate domain ownership. Create it at _dnsauth.[yourdomain] with the value provided by Azure. This proves you control the domain.' },
                 { front: 'How does Private Link origin approval work?', back: 'When you configure a Private Link origin, the origin resource shows a pending Private Endpoint connection. You must approve this connection on the origin resource side before traffic flows.' },
                 { front: 'How do you protect a public Front Door origin?', back: 'Allow AzureFrontDoor.Backend sources and validate X-Azure-FDID against your profile ID. Then prove the Front Door URL succeeds and the direct origin URL fails.' }
@@ -1204,7 +1204,7 @@ az network vnet subnet update \\
         <tr><td>AzureFirewallSubnet min size</td><td><strong>/26</strong></td><td>Required for Azure Firewall</td></tr>
         <tr><td>Max VNets per subscription</td><td><strong>1000</strong></td><td>Soft limit, can be increased</td></tr>
         <tr><td>Max peerings per VNet</td><td><strong>500</strong></td><td>Hard limit</td></tr>
-        <tr><td>Standard LB default</td><td><strong>Closed</strong></td><td>Requires NSG to allow ANY traffic</td></tr>
+        <tr><td>Standard LB inbound policy</td><td><strong>Secure by default</strong></td><td>NSGs must permit intended inbound flows; evaluate effective rules for the actual source</td></tr>
     </table>
 </div>
 
@@ -1248,7 +1248,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
         <li><strong>Check DNS:</strong> Can the VM resolve the destination hostname? Test with <code>nslookup</code></li>
         <li><strong>Check service configuration:</strong> Is the destination service actually listening on that port?</li>
         <li><strong>Check subnet delegation:</strong> Some services require dedicated subnets (App Service, Container Instances)</li>
-        <li><strong>Check SKU compatibility:</strong> Standard LB needs Standard PIP, Standard NSG</li>
+        <li><strong>Check SKU compatibility:</strong> A public Standard LB needs a Standard public IP; an internal frontend uses a private IP. NSGs have no Basic/Standard SKU distinction.</li>
     </ol>
 </div>
 
@@ -1272,7 +1272,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
 
     <div class="warning-box">
         <h4>⚠️ Trap #4: Standard vs Basic SKU</h4>
-        <p>Basic Load Balancer retired on September 30, 2025. Use Standard Load Balancer with Standard Public IPs and explicit NSG rules for current deployments.</p>
+        <p>Basic Load Balancer retired on September 30, 2025. Use Standard Load Balancer with a Standard public IP for a public frontend, or a private IP for an internal frontend. Validate effective NSG permissions for intended inbound traffic.</p>
     </div>
 
     <div class="warning-box">
@@ -1323,14 +1323,14 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
         {
             question: 'Scenario: Your NSG has: Priority 100 — Allow TCP 443 from Internet. Priority 200 — Deny TCP 443 from 10.0.1.0/24. A request comes from 10.0.1.5 to port 443. Is it allowed?',
             options: ['Denied — the Deny rule for 10.0.1.0/24 blocks it', 'Allowed — Priority 100 matches first (Internet includes all IPs)', 'Depends on the source — 10.0.1.0/24 is private, not Internet', 'Denied — Deny rules always override Allow rules'],
-            correct: 2,
-            explanation: 'Tricky! The "Internet" service tag does NOT include private/VNet IPs. 10.0.1.5 comes from within the VNet, so it matches the "VirtualNetwork" tag, not "Internet". Priority 100 won\'t match. Priority 200 (Deny) will match. The request is denied.'
+            correct: 0,
+            explanation: 'The Internet-source rule does not match the private source 10.0.1.5. Priority 200 matches 10.0.1.0/24 and denies the request. This follows first-match evaluation, not a rule that every Deny overrides every Allow.'
         },
         {
-            question: 'You need to deploy a Standard Load Balancer. Which public IP SKU must you use?',
+            question: 'You need to deploy a public Standard Load Balancer. Which public IP SKU must you use?',
             options: ['Basic', 'Standard', 'Either Basic or Standard', 'No public IP needed'],
             correct: 1,
-            explanation: 'Standard Load Balancer requires Standard SKU Public IP. You cannot mix Basic and Standard SKUs. This is a common real-world gotcha — remember: Standard goes with Standard.'
+            explanation: 'A public Standard Load Balancer frontend requires a Standard SKU public IP. An internal Standard Load Balancer frontend uses a private IP instead. Public IP and Load Balancer SKUs must be compatible; NSGs do not have a matching SKU requirement.'
         },
         {
             question: 'You want to point the naked domain "contoso.com" to your Azure Front Door. What do you configure?',
@@ -1445,7 +1445,7 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
                 title: 'Create an Azure Load Balancer',
                 subtitle: 'Deploy a Standard Load Balancer — the recommended production SKU',
                 type: 'confirm',
-                explanation: 'The Standard Load Balancer is required for zone-redundancy, NSG-required backends, and SLA-backed availability. You\'ll create one with a frontend IP, backend pool, health probe, and load balancing rule. Remember: Standard LB requires Standard Public IP — you cannot mix SKUs.',
+                explanation: 'This lab creates a public Standard Load Balancer with a Standard public IP, backend pool, health probe, and balancing rule. An internal Standard frontend would use a private IP. Validate zone configuration, backend health, and NSG permissions rather than treating SKU selection alone as proof of availability.',
                 portal: `<ol><li>Search for <strong>"Load balancers"</strong> → <strong>+ Create</strong></li><li>SKU: <strong>Standard</strong></li><li>Type: <strong>Public</strong></li><li>Name: <strong>lb-frontend</strong></li><li>Region: <strong>East US</strong></li><li>Frontend IP: Create new → Name: <strong>pip-lb</strong> (Standard SKU auto-selected)</li><li>Backend pool: <strong>bp-web</strong> → Associated to <strong>vnet-lab</strong></li><li>Health probe: <strong>hp-http</strong> → Protocol: HTTP, Port: <strong>80</strong>, Path: /</li><li>Load balancing rule: <strong>rule-http</strong> → Frontend port: <strong>80</strong>, Backend port: <strong>80</strong>, Backend pool: bp-web, Health probe: hp-http</li><li>Click <strong>Review + Create</strong> → <strong>Create</strong></li></ol>`,
                 cli: `<div class="lab-code-block"># Create Standard Public IP\naz network public-ip create \\\n    --resource-group rg-net-lab \\\n    --name pip-lb \\\n    --sku Standard \\\n    --allocation-method Static\n\n# Create Standard Load Balancer\naz network lb create \\\n    --resource-group rg-net-lab \\\n    --name lb-frontend \\\n    --sku Standard \\\n    --frontend-ip-name fe-ip \\\n    --public-ip-address pip-lb \\\n    --backend-pool-name bp-web\n\n# Create health probe\naz network lb probe create \\\n    --resource-group rg-net-lab \\\n    --lb-name lb-frontend \\\n    --name hp-http \\\n    --protocol Http \\\n    --port 80 \\\n    --path /\n\n# Create LB rule\naz network lb rule create \\\n    --resource-group rg-net-lab \\\n    --lb-name lb-frontend \\\n    --name rule-http \\\n    --frontend-ip-name fe-ip \\\n    --backend-pool-name bp-web \\\n    --probe-name hp-http \\\n    --protocol Tcp \\\n    --frontend-port 80 \\\n    --backend-port 80</div>`,
                 tip: 'Key rule: Standard LB requires Standard Public IP. Basic LB uses Basic Public IP. You CANNOT mix SKUs. This bites people frequently in production.',
@@ -1475,8 +1475,8 @@ az afd endpoint create --profile-name fd-prod --endpoint-name ep-prod</div>
                 title: 'Review: Load Balancer SKU Matching',
                 subtitle: 'Key takeaway',
                 type: 'confirm',
-                explanation: 'A Standard Load Balancer requires a Standard SKU Public IP address and explicit NSG allowance. Basic Load Balancer retired on September 30, 2025, so it is migration history rather than a current alternative.',
-                portal: `<ol><li><strong>Standard LB requires Standard Public IP</strong></li><li>Standard LB is <strong>secure by default</strong> — add explicit NSG rules for intended traffic</li><li>Basic Load Balancer retired on September 30, 2025</li><li>Use migration guidance when you encounter Basic resources</li><li>Validate availability-zone and backend requirements against the current Standard SKU documentation</li></ol>`
+                explanation: 'A public Standard Load Balancer requires a Standard SKU public IP; an internal frontend uses a private IP. In both cases, validate effective NSG permissions for intended traffic. Basic Load Balancer retired on September 30, 2025 and is migration history rather than a current alternative.',
+                portal: `<ol><li><strong>Public Standard LB requires Standard public IP; internal uses a private IP</strong></li><li>Standard LB is <strong>secure by default</strong> — validate effective NSG rules for intended inbound traffic</li><li>Basic Load Balancer retired on September 30, 2025</li><li>Use migration guidance when you encounter Basic resources</li><li>Validate availability-zone and backend requirements against the current Standard SKU documentation</li></ol>`
             }
         ]
     }

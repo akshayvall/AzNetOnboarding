@@ -12,7 +12,33 @@ A pure-HTML / CSS / JavaScript study site (no build step, no frameworks) designe
 
 Progress is saved in your browser's `localStorage` — you can export/import it as JSON.
 
-## October learning upgrade
+## Networking field guide (local, unpublished)
+
+**Status:** Active. Field-guide release `2026-10-fieldguide-3`, approved for publication on October 24, 2026. GitHub Pages deployment runs after the automated validation gates pass.
+
+The primary curriculum is now **63 short units across all 21 modules**, after three Level 0 starter lessons. Each unit has one outcome, a short explanation, a concrete example, a shared-model visual, a changed-condition prediction, two relevant checks, and a self-explanation prompt. The suggested 8-12 minutes includes exploration and practice; it is an estimate, not a measured completion target.
+
+Use **Your path -> Learn -> Try it -> Quick check**. Continue learning returns to the saved unit and step, including unfinished practice after reading. The full technical lesson, extra exercises, full quiz and optional Azure lab remain under **Reference and extra practice**. Old section bookmarks open the matching full reference instead of silently moving a beginner into it.
+
+**Progress** distinguishes units read, correct predictions, checks passed and self-explanations. Level 0 reading counts are visible too. These records are local practice, not certification or demonstrated mastery. Existing quiz results, applied evidence, lab records, drafts and backups remain separate and compatible.
+
+Diagram configuration is secondary to the explanation. Redundant depth/scenario choices are omitted; AFD scenarios keep stable positions and show when an origin is not contacted. TCP uses lifelines, NSG/UDR use decision tables, and NAT includes the before/after mapping. Level 0 offers small condition-changing sketches. Movement is learner-controlled, with readable mobile alternatives.
+
+For the content/runtime boundary, see `js\unit-content.js` and `js\unit-engine.js`. Unit IDs are durable navigation and storage keys: renaming them requires a migration. Navigation adds `?unit=<id>&tab=<step>`; progress uses namespaced entries in the existing version-2 backup schema, not a replacement data store. Explanation drafts use the existing recoverable progress storage.
+
+The design principle is **one complete idea before the next layer of complexity**. Functional browser checks cannot establish learning retention. A real learner should still complete a unit, explain its changed-condition example without the page, and repeat that explanation later before this is called an effective course.
+
+## Earlier navigation simplification (superseded locally)
+
+Release candidate `2026-10-simple-1` replaces the competing navigation systems with **Your path**, **AFD request lab**, and **Progress** on desktop and mobile. These changes are local; the live site still serves the previously published diagram upgrade until a new publication is approved.
+
+Each technical module follows **1 Learn -> 2 Try it -> 3 Quick check**. Read the plain-language opening and lesson, explore the diagrams and activities, then answer three low-pressure practice questions. Worked cases are collapsed after the quick check; full quizzes, Azure labs, and skill evidence remain under **Go deeper (optional)**. Reading and practice do not award demonstrated mastery.
+
+The three Level 0 lessons finish with a completion screen and an explicit choice to continue into foundations. Saved sections are offered as optional resume links, never automatic jumps into advanced content. Existing progress, drafts, evidence, bookmarks, and offline support are retained. The optional catalog still supports path filtering; its preferences no longer advertise a session length that the beginner sequence does not use.
+
+The learning principle is **teach first, explore second, check third**: the interface should reveal depth as it becomes useful, rather than ask a beginner to organize the entire course. This release simplifies the flow; it does not rewrite the technical L100-L300 lesson bodies or establish measured learning outcomes.
+
+## Published October diagram upgrade
 
 Release `2026-10-diagrams-1` combines the beginner-first entrance with rebuilt diagrams and an AFD request lab. Publication was approved on October 23; GitHub Pages serves it only after the deployment workflow's validation gates pass.
 
@@ -31,7 +57,7 @@ The AFD lab includes a five-question practice check with a four-correct target. 
 
 See the [October audit and implementation record](docs/diagram-audit-2026-10.md) for the corrected findings, evidence, and remaining human-learning checks. The upgrade does not claim that every advanced lesson has been rewritten or that completing a visual lab proves production skills.
 
-## September learning release
+## September learning release (historical)
 
 Release `2026-09-learning-1` includes the changes below. GitHub Pages publishes `main` only after the Node and browser gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
 
@@ -149,9 +175,10 @@ The subscription-free AFD request lab connects these modules through one reusabl
 - **Installable and offline after first load** — service-worker-cached app shell, no external CDNs or trackers, strict script CSP
 - **Honest mastery states** — Learned → Practiced → Demonstrated → Durable, with 80% retrieval checks, lab evidence, transfer rubrics, and spaced review
 - **Diagnostic learning route** — ten questions recommend the earliest networking competency worth practicing
-- **Today workspace** — one deterministic next action, due evidence, and the next three milestones
-- **Mobile study shell** — five-item bottom navigation plus an accessible, focus-managed module drawer
-- **Guided Front Door learning** — guided/browse modes, exact-section resume, compact evidence, and shared request-path visuals
+- **Your path** — one clear starting action, three introductory lessons, and a readable path into deeper networking
+- **Mobile study shell** — three destinations matching desktop, plus an accessible, focus-managed module drawer
+- **Three-step lessons** — Learn, Try it, and Quick check; worked cases and deeper evidence tools are optional
+- **Explicit resume** — choose a saved reading section without being automatically dropped into advanced content
 
 ---
 

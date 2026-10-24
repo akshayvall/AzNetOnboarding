@@ -3,6 +3,18 @@ const test = require('node:test');
 
 const UIStateManager = require('../js/ui-state.js');
 
+test('unit position and explanation drafts survive normalization without losing legacy state', () => {
+    const state = UIStateManager.normalize({
+        version: 1, lastModuleId: 'dns', lastUnitByModule: { dns: 'cached-answer' },
+        lastTabByModule: { dns: 'reference' }, lastSectionByModule: { dns: 'old-section' },
+        drafts: { dns: { reflection: 'My own explanation' } }
+    }, ['dns']);
+    assert.equal(state.lastUnitByModule?.dns, 'cached-answer');
+    assert.equal(state.lastTabByModule.dns, 'reference');
+    assert.equal(state.lastSectionByModule.dns, 'old-section');
+    assert.equal(state.drafts.dns.reflection, 'My own explanation');
+});
+
 test('beginner presentation is the default and switching never deletes other UI state', () => {
     global.localStorage = makeStorage();
     assert.equal(UIStateManager.get().experience, 'beginner');

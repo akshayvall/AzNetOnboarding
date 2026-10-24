@@ -13,7 +13,7 @@ const runtimeFiles = [
 test('learner workspace loads coaching and exposes real destinations', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
-    ['destinationView', 'learningPreferences', 'storageNotice'].forEach(id => assert.ok(html.includes(`id="${id}"`), id));
+    ['destinationView', 'quickCheckHost', 'storageNotice'].forEach(id => assert.ok(html.includes(`id="${id}"`), id));
     assert.ok(html.includes('css/learning.css'));
     assert.ok(html.indexOf('js/learning-content.js') < html.indexOf('js/quiz-engine.js'));
     assert.ok(html.includes('js/learning-engine.js'));
@@ -45,7 +45,7 @@ test('runtime files contain no executable inline event attributes', () => {
     });
 });
 
-test('mobile shell provides an accessible zero-width drawer and five destinations', () => {
+test('mobile shell provides an accessible zero-width drawer and three destinations', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const css = fs.readFileSync(path.join(root, 'css/styles.css'), 'utf8');
     const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
@@ -53,7 +53,7 @@ test('mobile shell provides an accessible zero-width drawer and five destination
     assert.match(html, /id="navBackdrop"/);
     assert.match(html, /id="mobileNavClose"/);
     assert.match(html, /class="bottom-nav"/);
-    ['today', 'learn', 'practice', 'build', 'more'].forEach(destination => {
+    ['today', 'visual-lab', 'more'].forEach(destination => {
         assert.match(html, new RegExp(`data-destination="${destination}"`));
     });
     assert.match(css, /#sidebar\s*\{[^}]*transform:\s*translateX\(-100%\)/s);
@@ -67,18 +67,16 @@ test('mobile shell provides an accessible zero-width drawer and five destination
     assert.match(css, /#sidebar \.nav-time\s*\{\s*display:\s*none/s);
 });
 
-test('workflow prototype exposes guided mode, section resume, compact evidence, and an inline core visual', () => {
+test('lesson shell exposes three steps, optional evidence, and an inline core visual', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
     const mastery = fs.readFileSync(path.join(root, 'js/mastery-engine.js'), 'utf8');
     const diagrams = fs.readFileSync(path.join(root, 'js/diagrams.js'), 'utf8');
 
-    assert.match(html, /id="moduleModeBar"/);
+    assert.match(html, /class="lesson-steps"/);
     assert.match(html, /id="sectionOutline"/);
-    assert.match(html, /data-module-mode="guided"/);
-    assert.match(html, /data-module-mode="browse"/);
-    assert.match(app, /frontdoor-advanced/);
-    assert.match(app, /lastSectionByModule/);
+    assert.match(html, /id="furtherStudy"/);
+    assert.doesNotMatch(html, /class="guided-stepper"|class="module-tabs"|id="experienceToggle"/);
     assert.match(app, /renderSectionOutline/);
     assert.match(app, /hashchange/);
     assert.match(app, /syncHashRoute/);
@@ -87,11 +85,13 @@ test('workflow prototype exposes guided mode, section resume, compact evidence, 
 });
 
 test('runtime assets and offline cache share the learning release', () => {
-    const release = '2026-10-diagrams-1';
+    const release = '2026-10-fieldguide-3';
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const serviceWorker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+    const browser = fs.readFileSync(path.join(root, 'tests/browser_smoke.py'), 'utf8');
     const assets = Array.from(html.matchAll(/(?:src|href)="((?:css|js)\/[^"?]+)(?:\?v=[^"]+)?"/g), match => match[1]);
 
+    assert.ok(browser.includes(`RELEASE = "${release}"`), 'Browser upgrade fixtures must use the runtime release');
     assert.match(serviceWorker, new RegExp(`CACHE_NAME = .*${release}`));
     assert.ok(assets.length > 10);
     assets.forEach(asset => {

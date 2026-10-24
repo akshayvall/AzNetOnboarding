@@ -4,15 +4,130 @@ from playwright.sync_api import expect
 
 
 class DiagramBrowserTests:
-    def test_diagram_controls_predictions_and_keyboard(self):
+    def diagram_options(self, host):
+        host.locator('[data-disclosure="options"]').evaluate("details => details.open = true")
+
+    def test_diagram_scenario_api_and_static_preview(self):
+        self.open_page("#visual-lab")
+        result = self.page.evaluate("""() => {
+            const host = document.getElementById('requestLabDiagram');
+            const definition = {id:'unit-cache', type:'afd-request', scenario:'hit'};
+            DiagramEngine.renderPreview(definition, host);
+            const preview = {scenario:DiagramEngine.instances.get(host.dataset.instance).model.settings.scenario,
+                controls:host.querySelectorAll('[data-diagram-action], [data-diagram-setting]').length,
+                origin:host.querySelector('[data-item="origin"]').textContent};
+            DiagramEngine.render([definition]);
+            const rendered = document.querySelector('#tab-diagrams .visual-diagram');
+            return {preview, scenario:DiagramEngine.instances.get(rendered.dataset.instance).model.settings.scenario};
+        }""")
+        self.assertEqual(result["scenario"], "hit")
+        self.assertEqual(result["preview"]["scenario"], "hit")
+        self.assertEqual(result["preview"]["controls"], 0)
+        self.assertIn("Not contacted", result["preview"]["origin"])
+
+    def test_diagram_first_view_keeps_configuration_optional(self):
+        self.open_page("#visual-lab")
+        for width in (390, 1440):
+            self.page.set_viewport_size({"width": width, "height": 1000})
+            self.page.evaluate("DiagramEngine.mount(document.getElementById('requestLabDiagram'), 'afd-request')")
+            host = self.page.locator("#requestLabDiagram")
+            expect(host.locator('[data-disclosure="options"]')).not_to_have_attribute("open", "")
+            expect(host.locator('[data-diagram-setting="scenario"]')).to_be_hidden()
+            expect(host.locator('[data-diagram-action="next"]')).to_have_text("Start tracing")
+            result = host.evaluate("""host => ({
+                coach:host.querySelector('.diagram-coach').getBoundingClientRect().top,
+                visual:host.querySelector(host.dataset.layout === 'steps' ? '.diagram-list-view' : '.diagram-map').getBoundingClientRect().top,
+                options:host.querySelector('.diagram-options').getBoundingClientRect().top
+            })""")
+            self.assertLess(result["coach"], result["options"])
+            self.assertLess(result["visual"], result["options"])
+            self.assert_no_overflow()
+
+    def test_diagram_mobile_unit_opens_with_a_concrete_connection(self):
+        self.page.set_viewport_size({"width": 390, "height": 844})
         self.open_page("#net-fundamentals?tab=diagrams")
-        diagram = self.page.locator("#tab-diagrams .visual-diagram").first
+        host = self.page.locator("#tab-diagrams .visual-diagram").first
+        entry = host.locator(".diagram-entry")
+        expect(entry).to_contain_text("Your device")
+        expect(entry).to_contain_text("Recursive resolver")
+        expect(entry.locator(".diagram-connection")).to_be_in_viewport(ratio=1)
+        bounds = host.evaluate("""host => ({
+            connection:host.querySelector('.diagram-entry .diagram-connection').getBoundingClientRect().bottom,
+            entry:host.querySelector('.diagram-entry').getBoundingClientRect().top,
+            controls:host.querySelector('.diagram-coach').getBoundingClientRect().top,
+            unobscuredBottom:innerHeight - 64
+        })""")
+        self.assertLess(bounds["entry"], bounds["controls"])
+        self.assertLessEqual(bounds["connection"], bounds["unobscuredBottom"])
+        self.assert_no_overflow()
+
+    def test_diagram_mobile_preview_does_not_duplicate_the_initial_connection(self):
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        self.open_page("#net-fundamentals?tab=diagrams")
+        host = self.page.locator("#tab-diagrams .visual-diagram").first
+        initial_connections = host.locator(".diagram-connection:visible").filter(has_text="Find shop.example.com")
+        expect(initial_connections).to_have_count(1)
+        expect(host.locator(".diagram-list-view")).to_be_hidden()
+        host.locator('[data-diagram-action="next"]').click()
+        expect(host.locator(".diagram-list-view")).to_be_visible()
+        expect(host.locator(".diagram-path-list [aria-current='step']")).to_contain_text("Find shop.example.com")
+        host.locator('[data-diagram-action="reset"]').click()
+        expect(initial_connections).to_have_count(1)
+        self.diagram_options(host)
+        host.locator('[data-diagram-action="steps"]').click()
+        expect(host.locator(".diagram-list-view")).to_be_visible()
+        host.locator('[data-diagram-action="reset"]').click()
+        expect(initial_connections).to_have_count(1)
+        host.locator('[data-diagram-action="overview"]').click()
+        expect(host.locator(".diagram-list-view")).to_be_visible()
+        host.evaluate("host => DiagramEngine.renderPreview({type:'dns-resolution'}, host)")
+        expect(host.locator(".diagram-entry")).to_have_count(0)
+        expect(host.locator(".diagram-list-view")).to_be_visible()
+
+    def test_diagram_unit_learn_compact_relationship_fits_the_opening_viewport(self):
+        self.open_page("#net-fundamentals")
+        for width, height in ((390, 844), (1440, 1000)):
+            self.page.set_viewport_size({"width": width, "height": height})
+            self.page.reload(wait_until="domcontentloaded")
+            host = self.page.locator("#unitVisual")
+            relationship = host.locator(".diagram-compact-relationship")
+            expect(relationship).to_contain_text("Your device")
+            expect(relationship).to_contain_text("Recursive resolver")
+            expect(relationship.locator(".diagram-connection")).to_have_count(1)
+            expect(relationship).to_be_in_viewport(ratio=1)
+            bottom = relationship.evaluate("element => element.getBoundingClientRect().bottom")
+            self.assertLessEqual(bottom, height - (64 if width <= 768 else 0))
+            expect(host.locator(".diagram-map")).to_be_hidden()
+            expect(host.locator("[data-diagram-action], [data-diagram-setting]")).to_have_count(0)
+            host.locator('[data-disclosure="full-visual"] > summary').click()
+            expect(host.locator(".diagram-map")).to_be_visible()
+            expect(host.locator(".diagram-transcript")).to_have_count(1)
+            expect(host.locator(".diagram-sources")).to_have_count(1)
+            self.assert_no_overflow()
+
+    def test_diagram_sequence_keeps_every_message_and_current_step_visible(self):
+        self.open_page("#visual-lab")
+        self.page.evaluate("DiagramEngine.mount(document.getElementById('requestLabDiagram'), 'tcp-handshake')")
+        result = self.page.locator("#requestLabDiagram").evaluate("""host => {
+            const frame = host.querySelector('.diagram-map').getBoundingClientRect();
+            return [...host.querySelectorAll('.trace-message')].every(message => {
+                const box = message.getBoundingClientRect();
+                return box.top >= frame.top && box.bottom <= frame.bottom;
+            });
+        }""")
+        self.assertTrue(result, "The entire ordinary TCP exchange should fit without losing the return message")
+
+    def test_diagram_controls_predictions_and_keyboard(self):
+        self.open_page("#visual-lab")
+        self.page.evaluate("DiagramEngine.mount(document.getElementById('requestLabDiagram'), 'osi-model')")
+        diagram = self.page.locator("#requestLabDiagram")
         expect(diagram.locator('[data-diagram-action="previous"]')).to_be_disabled()
         next_button = diagram.locator('[data-diagram-action="next"]')
         next_button.focus()
         self.page.keyboard.press("Enter")
         expect(diagram).to_have_attribute("data-step", "1")
         expect(diagram.locator('[data-diagram-action="next"]')).to_be_focused()
+        self.diagram_options(diagram)
         diagram.locator('[data-diagram-action="overview"]').click()
         expect(diagram).to_have_attribute("data-overview", "true")
         diagram.locator('[data-diagram-action="next"]').click()
@@ -26,7 +141,9 @@ class DiagramBrowserTests:
         diagram.locator('[data-diagram-action="reset"]').click()
         expect(diagram).to_have_attribute("data-step", "0")
 
-        dns = self.page.locator('#tab-diagrams [data-diagram-type="dns-resolution"]')
+        self.page.evaluate("DiagramEngine.mount(document.getElementById('requestLabDiagram'), 'dns-resolution')")
+        dns = self.page.locator("#requestLabDiagram")
+        self.diagram_options(dns)
         dns.locator('[data-diagram-setting="level"]').select_option("detailed")
         for _ in range(4):
             dns.locator('[data-diagram-action="next"]').click()
@@ -88,11 +205,12 @@ class DiagramBrowserTests:
                         self.assertEqual(result["running"], 0)
                         self.assertTrue(all(size >= 12 for size in result["fontSizes"]))
                         self.assertGreaterEqual(result["listFont"], 12)
-                        self.assertEqual(result["layout"], "steps" if width <= 768 else "map")
+                        self.assertEqual(result["layout"], "steps" if width <= 768 else "evidence" if diagram_type in ("nsg-filtering", "udr", "natgw") else "map")
                         self.assert_no_overflow()
         self.page.set_viewport_size({"width": 320, "height": 900})
         self.page.evaluate("DiagramEngine.mount(document.getElementById('requestLabDiagram'), 'afd-request', {level:'detailed'})")
         host = self.page.locator("#requestLabDiagram")
+        self.diagram_options(host)
         host.locator('[data-diagram-action="map"]').click()
         expect(host.locator(".diagram-map")).to_be_visible()
         host.locator(".diagram-map").focus()
@@ -120,6 +238,7 @@ class DiagramBrowserTests:
         self.assertEqual(result["failures"], [])
         self.page.evaluate("DiagramEngine.mount(document.getElementById('requestLabDiagram'), 'afd-request', {level:'detailed'})")
         host = self.page.locator("#requestLabDiagram")
+        self.diagram_options(host)
         host.locator('[data-diagram-setting="connection"]').select_option("private")
         expect(host.locator('[data-item="pls"]')).to_have_count(1)
         host.locator('[data-diagram-setting="tier"]').select_option("standard")
@@ -133,15 +252,24 @@ class DiagramBrowserTests:
         expect(host.locator(".diagram-transcript")).to_contain_text(re.compile(r"round.robin"))
 
     def test_diagram_inline_lessons_share_models_without_duplicate_ids(self):
-        self.open_page()
+        self.open_page("#visual-lab")
         result = self.page.evaluate("""() => {
             const failures = [];
             let inlineCount = 0;
             for (const module of MODULES) {
-                app.loadModule(module.id);
+                const container = document.getElementById('requestLabDiagram');
+                container.replaceChildren();
+                const source = document.createElement('div');
+                source.innerHTML = module.learn;
+                source.querySelectorAll('[data-diagram-model]').forEach(original => {
+                    const host = document.createElement('section');
+                    for (const [key, value] of Object.entries(original.dataset)) host.dataset[key] = value;
+                    container.append(host);
+                });
+                DiagramEngine.renderInline(container);
                 const ids = [...document.querySelectorAll('[id]')].map(el => el.id);
                 if (new Set(ids).size !== ids.length) failures.push(module.id + ': duplicate IDs');
-                for (const host of document.querySelectorAll('#tab-learn [data-diagram-model]')) {
+                for (const host of container.querySelectorAll('[data-diagram-model]')) {
                     inlineCount++;
                     if (!host.querySelector('svg[role="img"]') || !host.querySelector('.diagram-transcript')) failures.push(module.id + ': missing shared visual');
                 }
@@ -200,6 +328,7 @@ class DiagramBrowserTests:
 
     def test_diagram_navigation_stays_close_to_the_map(self):
         self.open_page("#visual-lab")
+        self.diagram_options(self.page.locator("#requestLabDiagram"))
         self.page.locator('[data-diagram-setting="level"]').select_option("detailed")
         position = self.page.evaluate("""() => {
             const host = document.getElementById('requestLabDiagram');
@@ -266,10 +395,19 @@ class DiagramBrowserTests:
 
     def test_diagram_prints_complete_scenario_without_dead_controls(self):
         self.open_page("#frontdoor-basics")
-        host = self.page.locator("#tab-learn .visual-diagram").first
+        source_tab = self.page.evaluate("UnitEngine.current ? 'reference' : 'learn'")
+        self.page.evaluate("tab => app.switchTab(tab)", source_tab)
+        source = self.page.locator(f"#tab-{source_tab}")
+        host = source.locator(".visual-diagram").first
+        host.evaluate("host => DiagramEngine.mount(host, 'afd-request')")
+        self.diagram_options(host)
         host.locator('[data-diagram-setting="level"]').select_option("detailed")
         host.locator('[data-diagram-setting="scenario"]').select_option("hit")
-        titles = host.locator(".diagram-transcript h4").all_text_contents()
+        titles = source.locator(".diagram-transcript h4").all_text_contents()
+        transcript_count = source.locator(".diagram-transcript").count()
+        host_titles = host.locator(".diagram-transcript h4").all_text_contents()
+        self.assertGreater(transcript_count, 0)
+        self.assertTrue(titles)
         with self.page.expect_popup() as pending:
             self.page.evaluate("""() => {
                 const original = window.open;
@@ -283,9 +421,11 @@ class DiagramBrowserTests:
         sheet = pending.value
         try:
             expect(sheet.locator("[data-diagram-action], [data-diagram-setting], .diagram-map")).to_have_count(0)
-            expect(sheet.locator(".diagram-transcript")).to_have_attribute("open", "")
-            for title in titles:
-                expect(sheet.get_by_role("heading", name=title, exact=True)).to_be_visible()
+            expect(sheet.locator(".diagram-transcript")).to_have_count(transcript_count)
+            expect(sheet.locator(".diagram-transcript[open]")).to_have_count(transcript_count)
+            expect(sheet.locator(".diagram-transcript h4")).to_have_text(titles)
+            for heading in sheet.locator(".diagram-transcript h4").all():
+                expect(heading).to_be_visible()
         finally:
             sheet.close()
         try:
@@ -293,7 +433,7 @@ class DiagramBrowserTests:
             self.page.emulate_media(media="print")
             expect(host.locator(".diagram-transcript")).to_have_attribute("open", "")
             expect(host.locator(".diagram-navigation")).to_be_hidden()
-            for title in titles:
+            for title in host_titles:
                 expect(host.get_by_role("heading", name=title, exact=True)).to_be_visible()
         finally:
             self.page.emulate_media(media="screen")

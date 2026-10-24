@@ -25,6 +25,7 @@ const app = {
 
     init() {
         BeginnerEngine.init();
+        UnitEngine.init();
         this.buildNavigation();
         this.updateProgress();
         this.bindEvents();
@@ -48,7 +49,8 @@ const app = {
 
     parseSections(module) {
         if (this.currentModule?.id === module.id && document.getElementById('moduleCoaching')) {
-            return Array.from(document.querySelectorAll('#tab-learn h2')).map(heading => ({ slug: this.slugify(heading.textContent), title: heading.textContent.trim() }));
+            const host = UnitEngine.units(module.id).length ? '#tab-reference' : '#tab-learn';
+            return Array.from(document.querySelectorAll(`${host} h2`)).filter(heading => !heading.closest('#moduleCoaching')).map(heading => ({ slug: this.slugify(heading.textContent), title: heading.textContent.trim() }));
         }
         if (_sectionCache[module.id]) return _sectionCache[module.id];
         const sections = [];
@@ -64,7 +66,7 @@ const app = {
 
     injectSectionIds(module) {
         const sections = this.parseSections(module);
-        document.querySelectorAll('#tab-learn h2').forEach(heading => {
+        document.querySelectorAll('#tab-learn h2, #tab-reference h2').forEach(heading => {
             const slug = this.slugify(heading.textContent);
             if (!sections.some(section => section.slug === slug)) return;
             heading.dataset.sectionId = slug;
@@ -84,12 +86,12 @@ const app = {
         this.pendingSection = sectionId;
         if (this.sectionObserver) this.sectionObserver.disconnect();
         if (this.currentModule?.id === moduleId) {
-            this.switchTab('learn');
+            this.switchTab(UnitEngine.units(moduleId).length ? 'reference' : 'learn');
             this.scrollToSection(sectionId);
             this.observeAfterScroll(moduleId);
             return;
         }
-        this.loadModule(moduleId);
+        this.loadModule(moduleId, { sectionId, tab: 'reference' });
     },
 
     scrollToSection(sectionId) {
@@ -100,10 +102,14 @@ const app = {
         }
         const target = document.getElementById(`section-${sectionId}`) || document.getElementById(sectionId === 'worked-example' ? 'learningWorkedTitle' : sectionId);
         if (!target) return;
+        if (target.closest('#tab-reference') && this.currentTab !== 'reference') this.switchTab('reference');
         const challenge = target.closest('#optionalChallenge');
-        if (challenge) challenge.open = true;
+        if (challenge) {
+            this.switchTab('check');
+            challenge.open = true;
+        }
         target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
-        if (this.currentModule) UIStateManager.saveSection(this.currentModule.id, sectionId);
+        if (this.currentModule && !challenge) UIStateManager.saveSection(this.currentModule.id, sectionId);
         this.currentSection = sectionId;
         this.setRoute(this.moduleRoute(), true);
         this.updateOutlinePosition(sectionId);
@@ -120,7 +126,8 @@ const app = {
                 this.updateOutlinePosition(sectionId);
             });
         }, { root: document.getElementById('content'), rootMargin: '0px 0px -60% 0px', threshold: 0.1 });
-        document.querySelectorAll('#tab-learn h2[data-section-id]').forEach(heading => this.sectionObserver.observe(heading));
+        const sectionHost = UnitEngine.units(moduleId).length ? '#tab-reference' : '#tab-learn';
+        document.querySelectorAll(`${sectionHost} h2[data-section-id]`).forEach(heading => this.sectionObserver.observe(heading));
     },
 
     observeAfterScroll(moduleId) {
@@ -128,6 +135,7 @@ const app = {
         let started = false;
         const start = () => {
             if (started) return;
+            if (this.currentModule?.id !== moduleId) return;
             started = true;
             this.observeSections(moduleId);
         };
@@ -408,6 +416,7 @@ const app = {
     },
 
     updateDestinationState(destination) {
+        if (['start', 'learn', 'practice', 'build'].includes(destination)) destination = 'today';
         document.querySelectorAll('[data-destination]').forEach(item => {
             const active = item.dataset.destination === destination;
             item.classList.toggle('active', active);
@@ -424,7 +433,7 @@ const app = {
     },
 
     moduleRoute() {
-        return { moduleId: this.currentModule?.id, tab: this.currentTab, sectionId: this.currentSection, mode: this.currentMode };
+        return { moduleId: this.currentModule?.id, unitId: UnitEngine.current?.id, tab: this.currentTab, sectionId: this.currentSection, mode: this.currentMode };
     },
 
     isWorkflowPrototype(moduleId) {
@@ -444,7 +453,8 @@ const app = {
     },
 
     openEvidence(target) {
-        if (BeginnerEngine.isBeginner() && !BeginnerEngine.setExperience('full')) return;
+        this.switchTab('check');
+        document.getElementById('furtherStudy').open = true;
         const disclosure = document.querySelector('#masteryPanel .evidence-disclosure');
         if (!disclosure) return;
         disclosure.open = true;
@@ -465,7 +475,7 @@ const app = {
             return;
         }
         list.innerHTML = sections.map(section => `<li><button type="button" data-app-action="navigate-section" data-section-id="${this.escapeAttr(section.slug)}">${this.escapeHtml(section.title)}</button></li>`).join('');
-        outline.open = !window.matchMedia('(max-width: 1023px)').matches;
+        outline.open = false;
     },
 
     renderInlineCoreVisual(module) {
@@ -485,21 +495,14 @@ const app = {
     configureModuleExperience(module) {
         const enabled = this.isWorkflowPrototype(module.id);
         const moduleView = document.getElementById('moduleView');
-        document.getElementById('moduleModeBar').hidden = !enabled;
         moduleView.classList.toggle('workflow-prototype', enabled);
         moduleView.classList.remove('guided-mode', 'browse-mode');
         this.renderSectionOutline(module);
-        document.querySelectorAll('.guided-stepper [data-tab], .module-tabs [data-tab]').forEach(control => {
-            control.hidden = control.dataset.tab === 'diagrams' ? !module.diagrams?.length :
-                control.dataset.tab === 'interactive' ? !module.interactive?.length :
-                control.dataset.tab === 'quiz' ? !module.quiz?.length :
-                control.dataset.tab === 'lab' ? !module.lab && !enabled : false;
-        });
+        document.getElementById('furtherStudy').open = false;
         if (!enabled) return;
         const uiState = UIStateManager.get(MODULES.map(item => item.id));
-        if (!BeginnerEngine.isBeginner() && !this.pendingSection && uiState.lastSectionByModule[module.id]) this.pendingSection = uiState.lastSectionByModule[module.id];
         this.setModuleMode(this.requestedMode || uiState.moduleModeByModule[module.id] || 'guided');
-        this.renderInlineCoreVisual(module);
+        if (!UnitEngine.units(module.id).length) this.renderInlineCoreVisual(module);
     },
 
     registerServiceWorker() {
@@ -581,7 +584,8 @@ const app = {
         try {
             if (module) {
                 const explicitMode = /[?&]mode=/.test(window.location.hash) ? route.mode : null;
-                if (!document.getElementById('moduleView').classList.contains('active') || this.currentModule?.id !== module.id) {
+                if (!document.getElementById('moduleView').classList.contains('active') || this.currentModule?.id !== module.id ||
+                    (route.unitId && route.unitId !== UnitEngine.current?.id)) {
                     this.loadModule(module.id, { ...route, mode: explicitMode });
                 } else {
                     this.switchTab(route.tab);
@@ -624,9 +628,12 @@ const app = {
         this.closeMobileNav(false);
         this.sectionObserver?.disconnect();
         this.currentSection = route.sectionId || null;
-        this.pendingSection = route.sectionId || this.pendingSection;
+        this.pendingSection = route.sectionId || null;
         this.requestedMode = route.mode;
         this.currentModule = mod;
+        UnitEngine.current = null;
+        document.getElementById('moduleView').classList.remove('unit-managed');
+        document.getElementById('unitHeading').innerHTML = '';
         this.currentTab = 'learn';
 
         // Switch view
@@ -650,9 +657,6 @@ const app = {
 
         // Load content (learn + optional references block + cheat-sheet button)
         let learnHtml = mod.learn || '<p>Content coming soon.</p>';
-        if (['frontdoor-basics', 'frontdoor-advanced', 'frontdoor-caching', 'frontdoor-waf'].includes(mod.id)) {
-            learnHtml = LearningEngine.requestLabLink() + learnHtml;
-        }
         if (Array.isArray(mod.references) && mod.references.length) {
             learnHtml += `
                 <div class="learn-section references-section">
@@ -667,14 +671,16 @@ const app = {
             <div class="learn-section" style="text-align:right;background:transparent;border:0;padding:0">
                 <button class="btn-secondary" data-app-action="print-cheat-sheet" title="Print or save a one-page cheat-sheet">🖨️ Cheat-sheet (PDF)</button>
             </div>`;
-        document.getElementById('tab-learn').innerHTML = learnHtml;
-        DiagramEngine.renderInline(document.getElementById('tab-learn'));
+        const shortUnits = UnitEngine.units(mod.id).length > 0;
+        document.getElementById('tab-learn').innerHTML = shortUnits ? '' : learnHtml;
+        document.getElementById('tab-reference').innerHTML = shortUnits ? learnHtml : '';
+        document.getElementById('coachingHost').innerHTML = '';
         LearningEngine.renderCoaching(mod);
         this.initCopyButtons();
         this.injectSectionIds(mod);
 
         // Initialize diagrams
-        if (mod.diagrams) {
+        if (!shortUnits && mod.diagrams) {
             DiagramEngine.cleanup();
             DiagramEngine.render(mod.diagrams);
         } else {
@@ -715,19 +721,19 @@ const app = {
         const completeBtn = document.getElementById('completeModule');
         const metadata = MasteryEngine.getMetadata(moduleId);
         const mastery = metadata ? MasteryEngine.getStatus(mod) : null;
-        completeBtn.textContent = mastery
-            ? `${MasteryEngine.STATE_LABELS[mastery.state]} · Check my progress`
-            : status.completed ? '✓ Activity complete' : 'Mark activity complete';
+        completeBtn.textContent = ProgressManager.getProgress().moduleMastery[moduleId]?.contentReviewed
+            ? 'Reading done - review again' : 'Done reading';
         completeBtn.style.background = mastery && MasteryEngine.STATE_RANK[mastery.state] >= MasteryEngine.STATE_RANK.practiced
             ? 'var(--success)' : '';
         MasteryEngine.renderModulePanel(mod);
         LearningEngine.restoreDrafts(moduleId);
-        BeginnerEngine.renderModule(mod);
+        if (!UnitEngine.render(mod, route.unitId)) BeginnerEngine.renderModule(mod);
+        DiagramEngine.renderInline(document.getElementById(shortUnits ? 'tab-reference' : 'tab-learn'));
         this.injectSectionIds(mod);
         this.renderSectionOutline(mod);
 
         // Switch to learn tab
-        this.switchTab(route.tab || 'learn');
+        this.switchTab(route.sectionId && shortUnits && (!route.tab || route.tab === 'learn') ? 'reference' : route.tab || 'learn');
 
         // Set hash for bookmarking
         this.loadingModule = false;
@@ -741,6 +747,7 @@ const app = {
         if (this.pendingSection) {
             const sectionId = this.pendingSection;
             setTimeout(() => {
+                if (this.currentModule?.id !== moduleId || this.pendingSection !== sectionId) return;
                 this.scrollToSection(sectionId);
                 this.observeAfterScroll(moduleId);
             }, 120);
@@ -754,25 +761,46 @@ const app = {
     switchTab(tabName) {
         if (!LearningEngine.TABS.includes(tabName)) return;
         if (this.currentModule) LearningEngine.saveDrafts(this.currentModule.id);
+        if (!this.loadingModule) this.currentSection = null;
         this.currentTab = tabName;
-        if (this.currentModule) UIStateManager.touchModule(this.currentModule.id, tabName);
+        if (this.currentModule) {
+            const saved = UnitEngine.current
+                ? UIStateManager.touchUnit(this.currentModule.id, UnitEngine.current.id, tabName)
+                : UIStateManager.touchModule(this.currentModule.id, tabName);
+            if (!saved) this.showToast('Your resume position could not be saved. Keep this page open or bookmark its address.', 'error');
+        }
         
         // Update tab buttons
         document.querySelectorAll('.module-tabs .tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
         });
 
-        // Update tab content
+        const primaryStep = ['diagrams', 'interactive'].includes(tabName) ? 'try' : ['quiz', 'lab'].includes(tabName) ? 'check' : tabName === 'reference' ? 'learn' : tabName;
+        // Legacy deep links retain their own panels; Try it combines visuals and exercises.
         document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.toggle('active', content.id === `tab-${tabName}`);
+            content.classList.toggle('active', content.id === `tab-${tabName}` ||
+                (tabName === 'try' && ['tab-diagrams', UnitEngine.current ? 'tab-try' : 'tab-interactive'].includes(content.id)));
         });
-        document.querySelectorAll('.guided-stepper [data-tab]').forEach(button => {
-            const active = button.dataset.tab === tabName;
+        document.querySelectorAll('.lesson-steps [data-tab]').forEach(button => {
+            const active = button.dataset.tab === primaryStep;
             button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', String(active));
             if (active) button.setAttribute('aria-current', 'step');
             else button.removeAttribute('aria-current');
         });
-        this.updateDestinationState(tabName === 'quiz' || tabName === 'interactive' ? 'practice' : tabName === 'lab' ? 'build' : 'learn');
+        this.updateDestinationState('today');
+        const advance = { learn: ['try', 'Continue to Try it'], try: ['check', 'Continue to Quick check'], diagrams: ['check', 'Continue to Quick check'], interactive: ['check', 'Continue to Quick check'] }[tabName];
+        document.getElementById('sectionOutline').hidden = tabName !== (UnitEngine.current ? 'reference' : 'learn') || !this.parseSections(this.currentModule).length;
+        const nextStep = document.getElementById('nextLessonStep');
+        nextStep.hidden = !advance || (Boolean(UnitEngine.current) && tabName === 'learn');
+        if (advance) {
+            nextStep.dataset.tab = advance[0];
+            nextStep.textContent = advance[1];
+        }
+        document.getElementById('content').scrollTop = 0;
+        if (document.activeElement?.closest('.tab-content') || document.activeElement === nextStep) {
+            document.querySelector(`.lesson-steps [data-tab="${primaryStep}"]`)?.focus({ preventScroll: true });
+        }
         if (this.currentModule) this.setRoute(this.moduleRoute());
     },
 
@@ -791,57 +819,8 @@ const app = {
 
     completeModule() {
         if (!this.currentModule) return;
-        if (BeginnerEngine.isBeginner()) {
-            BeginnerEngine.finishReading(this.currentModule);
-            return;
-        }
-        const metadata = MasteryEngine.getMetadata(this.currentModule.id);
-        if (metadata) {
-            ProgressManager.markContentReviewed(this.currentModule.id);
-            const mastery = MasteryEngine.getStatus(this.currentModule);
-            const nextTab = mastery.missing.includes('quiz') ? 'quiz' : mastery.missing.includes('lab') ? 'lab' : 'learn';
-            const message = mastery.missing.length
-                ? `Next evidence: ${mastery.missing.join(', ')}`
-                : `${MasteryEngine.STATE_LABELS[mastery.state]} mastery recorded`;
-            this.switchTab(nextTab);
-            if (mastery.missing.includes('transfer') && nextTab === 'learn') this.openEvidence('transfer');
-            this.showToast(message, mastery.missing.length ? 'warning' : 'success');
-            MasteryEngine.renderModulePanel(this.currentModule);
-            this.buildNavigation();
-            this.updateProgress();
-            document.querySelectorAll('#sidebar li').forEach(li => {
-                li.classList.toggle('active', li.dataset.module === this.currentModule.id);
-            });
-            return;
-        }
-        const status = ProgressManager.getModuleStatus(this.currentModule.id);
-        
-        if (status.completed) {
-            ProgressManager.uncompleteModule(this.currentModule.id);
-            this.showToast('Module unmarked', 'warning');
-        } else {
-            ProgressManager.completeModule(this.currentModule.id);
-            this.showToast('Module completed! 🎉', 'success');
-        }
-        
-        this.buildNavigation();
-        this.updateProgress();
-        
-        // Re-highlight active
-        document.querySelectorAll('#sidebar li').forEach(li => {
-            li.classList.toggle('active', li.dataset.module === this.currentModule.id);
-        });
-
-        // Update button
-        const newStatus = ProgressManager.getModuleStatus(this.currentModule.id);
-        const completeBtn = document.getElementById('completeModule');
-        if (newStatus.completed) {
-            completeBtn.textContent = '✓ Completed';
-            completeBtn.style.background = 'var(--success)';
-        } else {
-            completeBtn.textContent = '✓ Mark Complete';
-            completeBtn.style.background = '';
-        }
+        if (UnitEngine.current) { UnitEngine.finishReading(this.currentModule); return; }
+        BeginnerEngine.finishReading(this.currentModule);
     },
 
     startLevel(level) {
@@ -983,20 +962,20 @@ const app = {
         });
     },
 
-    // Simple browser-native print-to-PDF cheat-sheet of the current module's Learn tab.
+    // Print the full reference, not just the currently selected short unit.
     printCheatSheet() {
         if (!this.currentModule) return;
         const mod = this.currentModule;
-        const content = document.getElementById('tab-learn').cloneNode(true);
+        const content = document.getElementById(UnitEngine.current ? 'tab-reference' : 'tab-learn').cloneNode(true);
         content.querySelectorAll('.visual-diagram').forEach(diagram => {
             const heading = diagram.querySelector('.diagram-heading');
-            heading.querySelector('.diagram-format-label').remove();
+            heading.querySelector('.diagram-format-label')?.remove();
             const scenario = diagram.querySelector('.diagram-scenario');
             const transcript = diagram.querySelector('.diagram-transcript');
             const sources = diagram.querySelector('.diagram-sources');
             transcript.open = true;
             sources.open = true;
-            diagram.replaceChildren(heading, scenario, transcript, sources);
+            diagram.replaceChildren(...[heading, scenario, transcript, sources].filter(Boolean));
         });
         const win = window.open('', '_blank', 'width=900,height=1000');
         if (!win) { this.showToast('Pop-up blocked — allow pop-ups to print', 'warning'); return; }
@@ -1010,7 +989,7 @@ const app = {
                 th{background:#f3f8fd}
                 .code-block,.lab-code-block{background:#f5f5f5;border:1px solid #ddd;padding:10px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:11.5px;border-radius:4px;page-break-inside:avoid}
                 .code-inline{background:#f0f0f0;padding:1px 4px;border-radius:3px;font-family:Consolas,monospace;font-size:12px}
-                .concept-box,.warning-box,.tip-box{border-left:4px solid #0078D4;padding:8px 12px;margin:12px 0;background:#f8fbfe;page-break-inside:avoid}
+                .concept-box,.warning-box,.tip-box{border:1px solid #ccd9e2;padding:8px 12px;margin:12px 0;background:#f8fbfe;page-break-inside:avoid}
                 .warning-box{border-color:#d13438;background:#fdf5f5}
                 .tip-box{border-color:#107c10;background:#f5fcf5}
                 .copy-btn{display:none}
