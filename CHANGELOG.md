@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### October 26 full-module restoration (release `2026-10-modules-2`)
+- Restored the original module-first learning structure: all 21 full L100-L300 chapters, diagrams, exercises, quizzes, and labs. Added prerequisite-aware module order, complete syllabus, last-module/activity resume, and brief beginner orientation without truncating the source chapters.
+- Restored detailed, service-specific illustrated architectures using the corrected diagram catalog. Kept labelled directional connections, explicit scenarios and keyboard-operated steps, reduced motion, and text explanations. Wide diagrams retain readable labels on mobile with explicit panning guidance; controls sit above the architecture.
+- Moved worked cases after the teaching. Reading completion does not award quiz or lab credit. Preserved all earlier short lessons, answers, backups, and bookmarks in the separate `guided.html` entry, with distinct offline document caching.
+- Added full-module content/activity, mobile-layout, saved-reading, offline, and illustrated-diagram regression gates. Fixed duplicate short-course redirect navigation and inherited sidebar/mobile-header spacing.
+- Publication approved October 26 after local review. Fresh checks passed 253 Node tests, 70 main browser tests, and four illustrated browser tests; GitHub Pages must pass its complete validation job before deployment. The earlier failure notifications for `948c991` and `a677d90` correspond to runs already corrected by subsequent successful deployments.
+
 ### October 26 course navigation refinement (release `2026-10-course-4`)
 - Restored course contents across the overview, Progress, lessons, references, and sandbox. Desktop widths of 900px and above show a persistent sidebar; smaller screens have an outlined, keyboard-operable Contents disclosure.
 - Replaced Up next/Upcoming with Start here/Continue here only on the recommended lesson and an accessible checkmark for passed checks. Saved work changes the action to Continue without falsely awarding completion.

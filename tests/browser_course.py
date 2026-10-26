@@ -53,10 +53,10 @@ class GuidedCourseBrowserTests:
         expect(control).to_be_visible()
 
     def open_course(self, suffix=""):
-        response = self.page.goto(self.base_url + "index.html" + suffix)
+        response = self.page.goto(self.base_url + "guided.html" + suffix)
         if response is not None:
             self.assertTrue(response.ok)
-        self.assertEqual(self.page.url.split("#")[0], self.base_url + "index.html")
+        self.assertEqual(self.page.url.split("#")[0], self.base_url + "guided.html")
         expect(self.page.locator("#course")).to_be_visible()
         self.page.wait_for_function("() => typeof CourseApp !== 'undefined' && CourseApp.lessons.length > 66")
         if suffix.startswith("#lesson="):
@@ -95,14 +95,14 @@ class GuidedCourseBrowserTests:
         self.assertEqual(p["completedModules"], ["net-fundamentals"])
         self.assertEqual(p["lastVisited"], "frontdoor-advanced")
         self.assertEqual(p["quizScores"], {})
-        self.assertIn("index.html", self.page.url)
+        self.assertIn("guided.html", self.page.url)
 
     def test_guided_course_resume_preview_reference_and_draft(self):
         self.open_course("#lesson=request")
         self.answer_course_lesson()
         self.page.locator(".course-back").click()
         expect(self.page.locator(".course-start")).to_contain_text("How does your browser find")
-        self.page.goto(self.base_url + "index.html#lesson=frontdoor-caching--cache-keys-define-sharing")
+        self.page.goto(self.base_url + "guided.html#lesson=frontdoor-caching--cache-keys-define-sharing")
         self.page.locator("#condition").check()
         self.page.locator("#explanation").fill("<script>my explanation is plain text</script>")
         self.page.locator('input[name="answer-0"][value="0"]').check()
@@ -215,25 +215,25 @@ class GuidedCourseBrowserTests:
     def test_guided_course_old_bookmarks_and_pilot_link(self):
         self.open_course("#frontdoor-basics?unit=edge-is-not-the-origin&tab=try")
         expect(self.page.locator("#lesson-title")).to_have_text("Where does Front Door meet the shopper?")
-        self.page.goto(self.base_url + "index.html#net-fundamentals?section=dns-domain-name-system")
+        self.page.goto(self.base_url + "guided.html#net-fundamentals?section=dns-domain-name-system")
         expect(self.page.locator(".course-reference-body")).to_be_visible()
         self.page.goto(self.base_url + "course.html#lesson=address")
-        self.page.wait_for_url("**/index.html#lesson=address")
+        self.page.wait_for_url("**/guided.html#lesson=address")
         expect(self.page.locator("#lesson-title")).to_have_text("How does your browser find the website?")
-        self.page.goto(self.base_url + "index.html#lesson=unknown")
+        self.page.goto(self.base_url + "guided.html#lesson=unknown")
         expect(self.page.get_by_role("alert")).to_contain_text("Your progress is unchanged")
 
     def test_guided_course_backup_and_safe_import(self):
         self.open_course("#lesson=request")
         self.page.locator("#explanation").fill("A request and its reply both need a working path.")
-        self.page.goto(self.base_url + "index.html#progress")
+        self.page.goto(self.base_url + "guided.html#progress")
         with self.page.expect_download() as downloaded:
             self.page.get_by_role("button", name="Download backup", exact=True).last.click()
         self.assertTrue(downloaded.value.suggested_filename.endswith(".json"))
         self.page.once("dialog", lambda dialog: dialog.accept())
         self.page.locator("#course-import").set_input_files({"name": "bad.json", "mimeType": "application/json", "buffer": b'{"completedModules":[]}'})
         expect(self.page.locator("#import-status")).to_contain_text("Import failed")
-        self.page.goto(self.base_url + "index.html#lesson=request")
+        self.page.goto(self.base_url + "guided.html#lesson=request")
         expect(self.page.locator("#explanation")).to_have_value("A request and its reply both need a working path.")
 
     def test_offline_guided_course_main_and_reference_are_separate(self):
@@ -248,5 +248,5 @@ class GuidedCourseBrowserTests:
         self.page.goto(self.base_url + "reference.html#frontdoor-basics?tab=quiz")
         expect(self.page.locator("#moduleView")).to_be_visible()
         self.assertTrue(self.page.evaluate("() => typeof app !== 'undefined'"))
-        self.page.goto(self.base_url + "index.html#continue")
+        self.page.goto(self.base_url + "guided.html#continue")
         expect(self.page.locator("#lesson-title")).to_have_text("How does your browser find the website?")

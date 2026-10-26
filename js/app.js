@@ -13,10 +13,15 @@ const MODULES = [
     ...MODULES_300,
     ..._EXTRAS.filter(m => m.level === 300),
 ];
+if (typeof ModuleAcademy !== 'undefined' && ModuleAcademy.enabled()) {
+    MODULES.sort((a, b) => ModuleAcademy.order.indexOf(a.id) - ModuleAcademy.order.indexOf(b.id));
+}
 const WORKFLOW_PROTOTYPE_ID = 'frontdoor-advanced';
 const _sectionCache = {};
 
 const app = {
+    fullModules: typeof ModuleAcademy !== 'undefined' && ModuleAcademy.enabled(),
+    get diagrams() { return this.fullModules ? IllustratedDiagrams : DiagramEngine; },
     currentModule: null,
     currentTab: 'learn',
     mobileNavOpener: null,
@@ -24,6 +29,7 @@ const app = {
     sectionObserver: null,
 
     init() {
+        if (this.fullModules && !ModuleAcademy.init(MODULES)) return;
         BeginnerEngine.init();
         UnitEngine.init();
         this.buildNavigation();
@@ -49,7 +55,7 @@ const app = {
 
     parseSections(module) {
         if (this.currentModule?.id === module.id && document.getElementById('moduleCoaching')) {
-            const host = UnitEngine.units(module.id).length ? '#tab-reference' : '#tab-learn';
+            const host = !this.fullModules && UnitEngine.units(module.id).length ? '#tab-reference' : '#tab-learn';
             return Array.from(document.querySelectorAll(`${host} h2`)).filter(heading => !heading.closest('#moduleCoaching')).map(heading => ({ slug: this.slugify(heading.textContent), title: heading.textContent.trim() }));
         }
         if (_sectionCache[module.id]) return _sectionCache[module.id];
@@ -86,12 +92,12 @@ const app = {
         this.pendingSection = sectionId;
         if (this.sectionObserver) this.sectionObserver.disconnect();
         if (this.currentModule?.id === moduleId) {
-            this.switchTab(UnitEngine.units(moduleId).length ? 'reference' : 'learn');
+            this.switchTab(!this.fullModules && UnitEngine.units(moduleId).length ? 'reference' : 'learn');
             this.scrollToSection(sectionId);
             this.observeAfterScroll(moduleId);
             return;
         }
-        this.loadModule(moduleId, { sectionId, tab: 'reference' });
+        this.loadModule(moduleId, { sectionId, tab: this.fullModules ? 'learn' : 'reference' });
     },
 
     scrollToSection(sectionId) {
@@ -287,6 +293,9 @@ const app = {
                 break;
             case 'close-search':
                 this.closeSearch();
+                break;
+            case 'open-search':
+                this.openSearch();
                 break;
             case 'set-module-mode':
                 this.setModuleMode(control.dataset.moduleMode);
@@ -489,7 +498,7 @@ const app = {
         preview.className = 'inline-core-visual';
         preview.setAttribute('aria-label', 'Core visual');
         firstSection.insertAdjacentElement('afterend', preview);
-        DiagramEngine.renderPreview(module.diagrams[0], preview);
+        this.diagrams.renderPreview(module.diagrams[0], preview);
     },
 
     configureModuleExperience(module) {
@@ -500,6 +509,11 @@ const app = {
         this.renderSectionOutline(module);
         document.getElementById('furtherStudy').open = false;
         if (!enabled) return;
+        if (this.fullModules) {
+            this.setModuleMode('browse');
+            this.renderInlineCoreVisual(module);
+            return;
+        }
         const uiState = UIStateManager.get(MODULES.map(item => item.id));
         this.setModuleMode(this.requestedMode || uiState.moduleModeByModule[module.id] || 'guided');
         if (!UnitEngine.units(module.id).length) this.renderInlineCoreVisual(module);
@@ -578,6 +592,7 @@ const app = {
     },
 
     syncHashRoute() {
+        if (this.fullModules && !ModuleAcademy.normalizeRoute(MODULES)) return;
         const route = LearningEngine.parseRoute(window.location.hash);
         const module = MODULES.find(item => item.id === route.moduleId);
         this.routing = true;
@@ -671,7 +686,7 @@ const app = {
             <div class="learn-section" style="text-align:right;background:transparent;border:0;padding:0">
                 <button class="btn-secondary" data-app-action="print-cheat-sheet" title="Print or save a one-page cheat-sheet">🖨️ Cheat-sheet (PDF)</button>
             </div>`;
-        const shortUnits = UnitEngine.units(mod.id).length > 0;
+        const shortUnits = !this.fullModules && UnitEngine.units(mod.id).length > 0;
         document.getElementById('tab-learn').innerHTML = shortUnits ? '' : learnHtml;
         document.getElementById('tab-reference').innerHTML = shortUnits ? learnHtml : '';
         document.getElementById('coachingHost').innerHTML = '';
@@ -681,8 +696,8 @@ const app = {
 
         // Initialize diagrams
         if (!shortUnits && mod.diagrams) {
-            DiagramEngine.cleanup();
-            DiagramEngine.render(mod.diagrams);
+            this.diagrams.cleanup();
+            this.diagrams.render(mod.diagrams);
         } else {
             document.getElementById('tab-diagrams').innerHTML = '<p class="no-content">No visual diagrams for this module yet.</p>';
         }
@@ -727,8 +742,9 @@ const app = {
             ? 'var(--success)' : '';
         MasteryEngine.renderModulePanel(mod);
         LearningEngine.restoreDrafts(moduleId);
-        if (!UnitEngine.render(mod, route.unitId)) BeginnerEngine.renderModule(mod);
-        DiagramEngine.renderInline(document.getElementById(shortUnits ? 'tab-reference' : 'tab-learn'));
+        if (this.fullModules) ModuleAcademy.prepareModule(mod);
+        else if (!UnitEngine.render(mod, route.unitId)) BeginnerEngine.renderModule(mod);
+        this.diagrams.renderInline(document.getElementById(shortUnits ? 'tab-reference' : 'tab-learn'));
         this.injectSectionIds(mod);
         this.renderSectionOutline(mod);
 
@@ -760,6 +776,9 @@ const app = {
 
     switchTab(tabName) {
         if (!LearningEngine.TABS.includes(tabName)) return;
+        if (this.fullModules) {
+            tabName = tabName === 'reference' ? 'learn' : tabName === 'try' ? 'diagrams' : tabName;
+        }
         if (this.currentModule) LearningEngine.saveDrafts(this.currentModule.id);
         if (!this.loadingModule) this.currentSection = null;
         this.currentTab = tabName;
@@ -773,6 +792,8 @@ const app = {
         // Update tab buttons
         document.querySelectorAll('.module-tabs .tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
+            if (tab.dataset.tab === tabName) tab.setAttribute('aria-current', 'page');
+            else tab.removeAttribute('aria-current');
         });
 
         const primaryStep = ['diagrams', 'interactive'].includes(tabName) ? 'try' : ['quiz', 'lab'].includes(tabName) ? 'check' : tabName === 'reference' ? 'learn' : tabName;
@@ -792,14 +813,14 @@ const app = {
         const advance = { learn: ['try', 'Continue to Try it'], try: ['check', 'Continue to Quick check'], diagrams: ['check', 'Continue to Quick check'], interactive: ['check', 'Continue to Quick check'] }[tabName];
         document.getElementById('sectionOutline').hidden = tabName !== (UnitEngine.current ? 'reference' : 'learn') || !this.parseSections(this.currentModule).length;
         const nextStep = document.getElementById('nextLessonStep');
-        nextStep.hidden = !advance || (Boolean(UnitEngine.current) && tabName === 'learn');
+        nextStep.hidden = this.fullModules || !advance || (Boolean(UnitEngine.current) && tabName === 'learn');
         if (advance) {
             nextStep.dataset.tab = advance[0];
             nextStep.textContent = advance[1];
         }
         document.getElementById('content').scrollTop = 0;
         if (document.activeElement?.closest('.tab-content') || document.activeElement === nextStep) {
-            document.querySelector(`.lesson-steps [data-tab="${primaryStep}"]`)?.focus({ preventScroll: true });
+            document.querySelector(this.fullModules ? `.module-tabs [data-tab="${tabName}"]` : `.lesson-steps [data-tab="${primaryStep}"]`)?.focus({ preventScroll: true });
         }
         if (this.currentModule) this.setRoute(this.moduleRoute());
     },
@@ -819,6 +840,7 @@ const app = {
 
     completeModule() {
         if (!this.currentModule) return;
+        if (this.fullModules) { ModuleAcademy.finishReading(this.currentModule); return; }
         if (UnitEngine.current) { UnitEngine.finishReading(this.currentModule); return; }
         BeginnerEngine.finishReading(this.currentModule);
     },
@@ -838,8 +860,10 @@ const app = {
         const overallPct = Math.round((practicedModules.length / realModules.length) * 100);
 
         // Overall progress bar
-        document.getElementById('overallProgress').style.width = `${overallPct}%`;
-        document.getElementById('overallProgressText').textContent = `${overallPct}% Complete`;
+        document.getElementById('overallProgress').style.width = `${this.fullModules ? Math.round(realModules.filter(module => progress.moduleMastery?.[module.id]?.contentReviewed).length / realModules.length * 100) : overallPct}%`;
+        document.getElementById('overallProgressText').textContent = this.fullModules
+            ? `${realModules.filter(module => progress.moduleMastery?.[module.id]?.contentReviewed).length} of ${realModules.length} module readings saved`
+            : `${overallPct}% Complete`;
 
         // Level progress
         [100, 200, 300].forEach(level => {

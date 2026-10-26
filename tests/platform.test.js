@@ -85,7 +85,7 @@ test('lesson shell exposes three steps, optional evidence, and an inline core vi
 });
 
 test('runtime assets and offline cache share the learning release', () => {
-    const release = '2026-10-course-4';
+    const release = '2026-10-modules-2';
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const serviceWorker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
     const browser = fs.readFileSync(path.join(root, 'tests/browser_smoke.py'), 'utf8');
@@ -214,12 +214,13 @@ test('worker offline navigation uses its own installed index', async () => {
     assert.equal(await result.response.text(), 'own offline index');
 });
 
-test('worker keeps main course, pilot alias and reference shell distinct offline', async () => {
+test('worker keeps full modules, short practice, pilot alias and reference distinct offline', async () => {
     const worker = createWorkerHarness({ offline: true });
     await worker.seed(worker.cacheName, 'index.html', 'course');
     await worker.seed(worker.cacheName, 'reference.html', 'reference');
     await worker.seed(worker.cacheName, 'course.html', 'pilot alias');
-    for (const [path, body] of [['index.html', 'course'], ['reference.html', 'reference'], ['course.html', 'pilot alias']]) {
+    await worker.seed(worker.cacheName, 'guided.html', 'short practice');
+    for (const [path, body] of [['index.html', 'course'], ['reference.html', 'reference'], ['course.html', 'pilot alias'], ['guided.html', 'short practice']]) {
         const result = await worker.request(path, { mode: 'navigate' });
         assert.equal(await result.response.text(), body);
     }

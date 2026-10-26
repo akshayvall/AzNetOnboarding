@@ -14,10 +14,11 @@ from urllib.parse import unquote, urlsplit
 from playwright.sync_api import expect, sync_playwright
 from browser_diagrams import DiagramBrowserTests
 from browser_course import GuidedCourseBrowserTests
+from browser_modules import FullModuleBrowserTests
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE = "2026-10-course-4"
+RELEASE = "2026-10-modules-2"
 MOUNT = "/academy/"
 VIEWPORTS = ((320, 900), (390, 844), (768, 1024), (1440, 1000))
 TIMEOUT = 10000
@@ -96,7 +97,7 @@ def local_server():
         thread.join(timeout=5)
 
 
-class AcademyBrowserTests(DiagramBrowserTests, GuidedCourseBrowserTests, unittest.TestCase):
+class AcademyBrowserTests(DiagramBrowserTests, GuidedCourseBrowserTests, FullModuleBrowserTests, unittest.TestCase):
     def setUp(self):
         self.errors = []
         self.external_requests = []

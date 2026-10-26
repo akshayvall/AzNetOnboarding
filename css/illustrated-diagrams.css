@@ -1,0 +1,121 @@
+/* Light reading panels with the original navy / Azure-blue architecture language.
+   Scoped throughout: retained course diagrams keep their existing appearance. */
+.module-academy .illustrated-diagram {
+    --ill-ink: #172b46;
+    --ill-muted: #475569;
+    --ill-blue: #0078d4;
+    --ill-green: #166534;
+    --ill-line: #cbd5e1;
+    margin: 1.5rem 0;
+    border: 1px solid var(--ill-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ill-ink);
+    overflow: hidden;
+    font-family: "Segoe UI", sans-serif;
+}
+.module-academy .illustrated-diagram > header { padding: 1.25rem 1.5rem .75rem; }
+.module-academy .illustrated-diagram h3 { color: var(--ill-ink); margin: .25rem 0 .5rem; font-size: 1.25rem; }
+.module-academy .illustrated-diagram p { color: inherit; line-height: 1.6; }
+.module-academy .illustrated-kicker { color: var(--ill-muted); margin: 0; font-size: .85rem; font-weight: 600; }
+.module-academy .illustrated-map {
+    overflow: auto;
+    overscroll-behavior-x: contain;
+    background: #fff;
+    border-block: 1px solid var(--ill-line);
+}
+.module-academy .illustrated-svg { display: block; width: 100%; min-width: var(--illustrated-natural-width, 980px); height: auto; background: #fff; }
+.module-academy .illustrated-pan-hint { margin: .75rem 1.5rem; padding: .75rem 1rem; border: 1px solid #b6cce1; background: #f1f6fc; font-size: .9rem; }
+.module-academy .illustrated-pan-hint[hidden] { display: none; }
+.module-academy .illustrated-boundary > rect { fill: #f1f6fc; stroke: #8aa8c7; stroke-width: 1.3; stroke-dasharray: 7 4; }
+.module-academy .illustrated-boundary.subnet > rect { fill: #fff; stroke: #537fa4; }
+.module-academy .illustrated-boundary.edge-boundary > rect { fill: #edf5fc; stroke: #0078d4; }
+.module-academy .illustrated-boundary-label { fill: #22476b; font-size: 13px; font-weight: 600; }
+.module-academy .illustrated-icon-card { fill: #fff; stroke: #0078d4; stroke-width: 1.7; }
+.module-academy .illustrated-glyph { fill: #0078d4; }
+.module-academy [data-icon="firewall"] .illustrated-glyph,
+.module-academy [data-icon="waf"] .illustrated-glyph,
+.module-academy [data-icon="nsg"] .illustrated-glyph { fill: #b93636; }
+.module-academy [data-icon="gateway"] .illustrated-glyph { fill: #7a3b93; }
+.module-academy .illustrated-glyph .icon-light { fill: #80d0f4; }
+.module-academy .illustrated-glyph .icon-white { fill: #fff; }
+.module-academy .illustrated-glyph .icon-line { fill: none; stroke: #fff; stroke-width: 1.8; }
+.module-academy .illustrated-glyph .icon-outline { fill: none; stroke: #0078d4; stroke-width: 2; }
+.module-academy .illustrated-glyph .icon-word { fill: #fff; font-size: 10px; font-weight: 700; }
+.module-academy .illustrated-node-label { fill: #172b46; font-size: 14px; font-weight: 600; }
+.module-academy .illustrated-node-detail { fill: #475569; font-size: 12px; }
+.module-academy .illustrated-node.is-context .illustrated-icon-card { stroke-dasharray: 4 3; stroke: #64748b; }
+.module-academy .illustrated-layer-name { fill: #fff; font-size: 16px; font-weight: 600; }
+.module-academy .illustrated-edge > path { fill: none; stroke: #0078d4; stroke-width: 1.8; }
+.module-academy .illustrated-edge.response > path { stroke: #166534; }
+.module-academy .illustrated-edge.config > path { stroke: #64748b; stroke-dasharray: 6 4; }
+.module-academy .illustrated-edge.blocked > path { stroke: #b91c1c; stroke-dasharray: 3 3; }
+.module-academy .illustrated-marker { fill: #0078d4; }
+.module-academy .illustrated-marker.response { fill: #166534; }
+.module-academy .illustrated-marker.config { fill: #64748b; }
+.module-academy .illustrated-marker.blocked { fill: #b91c1c; }
+.module-academy .illustrated-edge-number circle { fill: #fff; stroke: #64748b; stroke-width: 1; }
+.module-academy .illustrated-edge-number text { fill: #172b46; font-size: 11px; font-weight: 600; }
+.module-academy .illustrated-lifeline { stroke: #537fa4; stroke-width: 1.5; stroke-dasharray: 5 5; }
+.module-academy .illustrated-node.is-focused .illustrated-icon-card { stroke: #172b46; stroke-width: 4; fill: #e0efff; }
+.module-academy .illustrated-edge.is-focused > path { stroke-width: 4; }
+.module-academy .illustrated-edge.is-focused .illustrated-edge-number circle { fill: #dbeafe; stroke-width: 2; }
+.module-academy .illustrated-layer.is-focused > rect { stroke: #172b46; stroke-width: 4; }
+.module-academy .illustrated-legend { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; padding: 0 1.5rem; font-size: .8rem; }
+.module-academy .illustrated-controls { display: flex; flex-wrap: wrap; gap: .6rem; padding: .5rem 1.5rem; }
+.module-academy .illustrated-controls button {
+    min-height: 44px;
+    padding: .55rem 1rem;
+    border: 1px solid #51677e;
+    border-radius: 5px;
+    background: #fff;
+    color: #172b46;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.module-academy .illustrated-controls button[data-illustrated-action="step"] { background: #174a78; color: #fff; border-color: #174a78; }
+.module-academy .illustrated-controls button:hover:not(:disabled) { background: #dbeafe; color: #172b46; }
+.module-academy .illustrated-controls button:disabled { background: #edf1f5; color: #617184; border-color: #cbd5e1; cursor: default; }
+.module-academy .illustrated-diagram :focus-visible { outline: 3px solid #0078d4; outline-offset: 3px; }
+.module-academy .illustrated-status { border: 1px solid #b6cce1; margin: .75rem 1.5rem; padding: .75rem 1rem; background: #edf5fc; }
+.module-academy .illustrated-note,
+.module-academy .illustrated-limit,
+.module-academy .illustrated-packet { margin: 1rem 1.5rem; font-size: .9rem; }
+.module-academy .illustrated-limit { color: #475569; border-top: 1px solid #cbd5e1; padding-top: 1rem; }
+.module-academy .illustrated-connections { margin: 1rem 1.5rem; }
+.module-academy .illustrated-connections summary { padding: .65rem 0; cursor: pointer; font-weight: 600; }
+.module-academy .illustrated-connections ol { padding-left: 1.5rem; }
+.module-academy .illustrated-connections li { margin: .55rem 0; line-height: 1.6; }
+.module-academy .illustrated-connections li span { font-size: .8rem; color: #475569; }
+.module-academy .illustrated-explanation { padding: .25rem 1.5rem 1rem; }
+.module-academy .illustrated-explanation h4 { margin: .75rem 0; color: #172b46; }
+.module-academy .illustrated-explanation ol { margin: 0; padding-left: 1.5rem; }
+.module-academy .illustrated-explanation li { padding: .75rem .5rem; border-bottom: 1px solid #e2e8f0; }
+.module-academy .illustrated-explanation li p { margin: .3rem 0 0; }
+.module-academy .illustrated-explanation li.is-current { background: #edf5fc; outline: 2px solid #0078d4; outline-offset: -2px; }
+.module-academy .illustrated-table-scroll { margin: 1rem 1.5rem; overflow: auto; }
+.module-academy .illustrated-table-scroll table { border-collapse: collapse; width: 100%; min-width: 550px; font-size: .85rem; color: #172b46; }
+.module-academy .illustrated-table-scroll caption { text-align: left; font-weight: 600; padding-bottom: .6rem; }
+.module-academy .illustrated-table-scroll th,
+.module-academy .illustrated-table-scroll td { padding: .7rem; text-align: left; border: 1px solid #cbd5e1; background: #fff; }
+.module-academy .illustrated-table-scroll th { background: #edf1f5; }
+@media (max-width: 600px) {
+    .module-academy .illustrated-diagram > header { padding: 1rem; }
+    .module-academy .illustrated-controls { padding-inline: 1rem; }
+    .module-academy .illustrated-explanation { padding-inline: 1rem; }
+    .module-academy .illustrated-map { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .module-academy .illustrated-diagram *,
+    .module-academy .illustrated-diagram *::before,
+    .module-academy .illustrated-diagram *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media print {
+    .module-academy .illustrated-controls,
+    .module-academy .illustrated-pan-hint { display: none; }
+    .module-academy .illustrated-svg { min-width: 0; }
+    .module-academy .illustrated-map,
+    .module-academy .illustrated-table-scroll { overflow: visible; }
+    .module-academy .illustrated-diagram { break-inside: auto; }
+}

@@ -12,15 +12,16 @@ Akshay is a technical TPM learning networking from first principles so he can re
 
 ## Confirmed direction
 
-The October 26 whole-course approval supersedes the field-guide tabs and isolated pilot. One continuous course starts with request/reply, then integrates all 21 modules across L100, L200, and L300. The learner should never need to assemble a path from separate tools.
+The latest October 26 feedback supersedes the short-course redesign. Akshay reviewed the exact pre-session site at commit `09b3f09` and explicitly chose it as the rebuilding foundation. Restore its substantial L100/L200/L300 modules, service-specific diagrams, exercises, full quizzes, and labs as the main course. Simplify navigation and sequencing, not the learning material.
 
 ## Capabilities and constraints
 
-- Make Course and Progress the main destinations. Continue follows the first unfinished lesson, independent of browsing.
-- Keep course navigation visible across destinations: a persistent desktop sidebar and an obvious Contents disclosure on smaller screens. Label only the recommended lesson Start here/Continue here and mark passed checks; do not imply other lessons are unavailable.
-- Teach within one scrollable lesson: concrete question, explanation, relevant complete visual, worked example, activity, check, and next lesson. No Learn/Try/Check tabs or required standalone lab.
-- Include applied configuration and operations inside the course. End each technical level with an evidence-based scenario.
-- Keep existing technical references, optional quizzes, Azure labs, progress backups and deep links accessible.
+- Full chapters are the primary Learn view. Never replace them with a few paragraphs or hide the complete teaching as optional reference.
+- Keep the complete level/module sidebar visible on desktop and an explicit Contents control on mobile. A module has Learn, Diagrams, Exercises, Quiz, and Lab destinations when those activities exist.
+- Start each chapter with a brief orientation, then the full explanations, architecture, tables, configuration examples, and tradeoffs. Put worked cases after teaching.
+- Keep the original detailed visual identity and service-specific architecture diagrams, with corrected technical semantics, accessible arrows, and learner-controlled walkthroughs.
+- Beginner introductions are an optional on-ramp; they are not the full curriculum. Retain added operations explanations where they extend the full chapters.
+- Preserve saved short-course work and its exact old links in `guided.html`; do not silently grant full-module completion for short checks.
 - Preserve stored learner evidence. Reading and local checks do not prove mastery or execution in Azure.
 - Static HTML, CSS and JavaScript; self-hosted assets, offline support, no external trackers or required accounts.
 - Changes remain local until the user explicitly approves publication. No Azure resources are deployed by this work.
@@ -28,10 +29,10 @@ The October 26 whole-course approval supersedes the field-guide tabs and isolate
 ## Product principles
 
 - Teach a concrete request story before abstract classifications or configuration trivia.
-- Give each lesson one outcome, a meaningful check and an explanation prompt. Ordinary lessons have a relevant visual and guided action; level checkpoints combine evidence.
-- Allow stopping and returning to the first unfinished lesson with its answers, draft, comparison and reading section preserved.
+- Preserve depth while introducing concepts in a useful order. Functional passing tests cannot compensate for cutting the material the learner came to study.
+- Allow stopping and resuming the last full module and activity, with existing reading, quiz, lab, and draft records preserved.
 - Match the visual to the concept: actual arrows for traffic, stacks for layers, containers for hierarchy, and tables for rules and configuration. Do not hide the essential diagram behind a viewer.
-- Introduce complexity when useful rather than displaying every available tool.
+- Make module activities visible and understandable rather than treating diagrams, full quizzes, and labs as hidden extras.
 - Treat suggested study times and learning-outcome targets as hypotheses to test with learners.
 
 ## Evidence and open gates

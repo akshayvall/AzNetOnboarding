@@ -8,29 +8,25 @@
 
 ## 📖 What is this?
 
-A pure-HTML / CSS / JavaScript study site (no build step, no frameworks) for people starting networking from zero, with a structured path into Azure networking and Azure Front Door. The required course runs without an Azure account. Full quizzes and Azure Cloud Shell labs are optional.
+A pure-HTML / CSS / JavaScript study site (no build step, no frameworks) for people starting networking from zero, with a structured path into Azure networking and Azure Front Door. Full chapters, diagrams, exercises, and quizzes run without an Azure account. Azure lab steps can incur charges; review their prerequisites and cleanup guidance.
 
 Progress is saved in your browser's `localStorage` — you can export/import it as JSON.
 
-## One integrated course
+## Full modules, from foundations to architecture
 
-**Status:** Active. Release `2026-10-course-4` was approved for publication on October 26, 2026. GitHub Pages publishes `main` after its automated validation gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
+**Status:** Active. Release `2026-10-modules-2` restores the user-confirmed full-module experience from before the short-course redesign. Publication was approved on October 26. GitHub Pages publishes changes to `main` only after its automated gates pass; the Actions deployment result determines which release is live.
 
-Release `2026-10-course-4` restores a consistent sidebar at desktop widths and an outlined Contents control on smaller screens. The recommended lesson is labelled Start here/Continue here; passed checks have a checkmark, and other lessons have no status label.
+Open `index.html` through a local HTTP server. The main course contains **21 full modules**, ordered through **L100 -> L200 -> L300**, with three optional introductory lessons for learners who need the vocabulary first.
 
-Open `index.html` through a local HTTP server. There is now one recommended sequence: **Start here -> L100 -> L200 -> L300**. All **21 modules** are integrated into **79 lessons**, including three starters and a checkpoint after each technical level. `course.html` is a compatibility redirect, not a separate pilot.
+Each module exposes **Learn, Diagrams, Exercises, Quiz, and Lab** when those activities exist. Learn contains the full authored chapter, technical tables, configuration examples, and diagrams; it is not a condensed replacement. Worked cases follow the explanations. Additional operations material is integrated into relevant chapters.
 
-Each ordinary lesson teaches a concrete question through explanation, a complete relevant visual, a worked example, an activity, checks, and a next lesson on one page. There are no Learn/Try/Check tabs. Eight additional configuration/operations lessons and explicit OSI/CIDR lessons put useful depth inside the course rather than requiring reference browsing. Module-end evidence cases and level checkpoints ask for interpretation, not just definitions.
+The desktop sidebar keeps the curriculum visible. Mobile has a labelled Contents control. Course overview resumes the last full module and activity; reading, quiz results, lab records, and backups remain separate.
 
-**Course** provides the syllabus and one Start/Continue action. **Progress** holds learning records and backups. Continue follows the first unfinished lesson even after previewing a later module. Answers, explanation drafts, comparison choice, and reading section persist. Failed saves expose retry/backup and do not claim saved completion.
+The detailed diagram engine restores the original service-specific illustrations while retaining corrected technical explanations. Diagrams have complete initial views, explicit connections, step controls, and text equivalents. They do not autoplay.
 
-Diagrams match their subject: labelled request/reply arrows, a seven-layer stack, nested Azure management containers, address partitions, TCP sequences, and decision/configuration tables. Essential relationships remain visible without a separate viewer, autoplay, or inner scrolling. Mobile diagrams reflow rather than shrinking their text.
+The previous 79 short lessons remain at `guided.html`, including their saved answers and explanations. Existing `#lesson=` links redirect there, and `course.html` remains a compatibility redirect. `reference.html` preserves the earlier tools entry. These documents have distinct offline cache entries; none replaces the main full-module course.
 
-Full references open inside the course with a return link. The earlier app lives at `reference.html` for optional full quizzes, Azure labs, exercises, and legacy records. The Front Door sandbox is supplementary; completing the required course never depends on visiting it.
-
-Progress uses `course-v2:` keys inside the existing version-2 backup schema. Stable module/unit IDs remain unchanged. Earlier reading, quizzes, labs, drafts, and evidence are preserved without being promoted to new checks; matching pilot checks, answers, and reading sections remain usable. The offline worker caches the main course, compatibility redirect, and optional tools as distinct documents.
-
-The design principle is **teach one idea, apply it, then connect it to the next**. Checks and self-explanations are practice evidence, not certification, independent mastery, or proof of Azure execution. Beginner start/continue acceptance and delayed recall still need a human trial.
+Stable module IDs and the existing version-2 backup schema are unchanged. Reading or short checks do not award full quiz or lab completion. The design principle is **simplify the route through the material, not the material itself**. Functional tests do not establish learning quality; user acceptance and delayed recall remain review gates.
 
 Historical releases and validation counts are recorded in `CHANGELOG.md` and the [October diagram audit](docs/diagram-audit-2026-10.md).
 
@@ -123,13 +119,13 @@ Embedded request scenarios connect these modules. The standalone sandbox and Clo
 
 ## ✨ Features
 
-- **One course** — 79 lessons across starters, all 21 modules, and three level checkpoints
-- **One next action** — uninterrupted learning with a collapsible syllabus
-- **Relevant visuals** — labelled traffic paths, concept stacks, address partitions, and responsive tables
-- **Applied reasoning** — embedded predictions, 21 fictional module cases, checks, and self-explanations
+- **Full course** — 21 substantial L100-L300 modules, with optional beginner introductions
+- **Clear navigation** — permanent desktop syllabus, mobile Contents, and module/activity resume
+- **Detailed visuals** — illustrated architectures, labelled directional connections, and keyboard-operated steps
+- **Applied reasoning** — full quizzes, exercises, labs, and worked cases after the teaching
 - **Preserved evidence** — browser-local records and validated JSON export/import
 - **Offline support** — separate cached course and optional-tool shells, self-hosted assets, strict script CSP
-- **Optional tools** — full quizzes, subnet exercises, flashcards, legacy evidence, and Azure labs under reference links
+- **Preserved short practice** — all 79 short lessons and earlier answers remain available at `guided.html`
 
 ---
 
@@ -158,26 +154,31 @@ Then open http://127.0.0.1:8080. Loopback binding keeps the preview off the loca
 ## 📁 Project structure
 
 ```
-index.html              # Integrated course shell
+index.html              # Full-module course shell
+guided.html             # Preserved short-course practice and answers
 reference.html          # Preserved optional quizzes, labs, exercises, and legacy records
 course.html             # Old pilot link compatibility redirect
 launch.bat              # Windows local-server launcher
 css/
+  module-academy.css    # Full-module reading and syllabus layout
+  illustrated-diagrams.css # Detailed architecture presentation
   guided-course.css     # Course typography, native controls, starter diagrams
   course.css            # Integrated syllabus, lessons, responsive visuals and evidence
   styles.css            # Shared shell and learning tools
   learning.css          # Guided lessons and beginner presentation
   diagrams.css          # Diagrams, mobile alternatives, and printing
 js/
-  course-app.js         # Main course router, lessons, reference and progress
+  module-academy.js     # Full-module order, orientation, resume and progress
+  illustrated-diagrams.js # Detailed catalog-backed architecture renderer
+  course-app.js         # Preserved short-course router and progress
   course-curriculum.js  # Prerequisite order, extra foundations, checkpoints, course record adapter
   course-depth.js       # Eight in-course configuration/operations lessons
   course-cases.js       # Fictional evidence case for every module
   course-visuals.js     # Concept-specific complete visual renderer
   guided-course.js     # Starter content and pilot record compatibility
-  course-entry.js       # Redirect old pilot links into the main course
+  course-entry.js       # Redirect old pilot links into preserved short practice
   unit-content.js       # Existing 63 authored units, reused without changing their IDs
-  app.js                # Optional legacy-tool router
+  app.js                # Full-module and legacy-tool router
   beginner.js           # Level 0 lessons and beginner-first presentation
   progress.js           # localStorage-backed progress tracking
   ui-state.js           # separate versioned navigation and resume state
@@ -207,6 +208,7 @@ tests/                  # Node contracts and self-contained Chromium regressions
 ```powershell
 node --test tests\*.test.js
 python tests\browser_smoke.py
+python tests\browser_illustrated_diagrams.py
 $files = @((Get-ChildItem js\*.js).FullName) + (Join-Path (Get-Location) 'sw.js')
 foreach ($file in $files) {
     node --check $file
@@ -214,7 +216,7 @@ foreach ($file in $files) {
 }
 ```
 
-The main-course browser gate completes every lesson from start to finish, exercises resume, draft and backup recovery, old bookmarks, reading order, responsive visuals, keyboard controls, and offline shell separation. The legacy browser gates still run against `reference.html`. Node contracts cover the curriculum, record preservation, all authored visual conditions, and retained tools.
+The full-module browser gate checks all 21 chapters against their authored content, available activities, resume, reading order, mobile navigation, and offline use. The preserved short-course gate still completes every lesson and checks draft/backup recovery and old bookmarks. Illustrated browser checks cover model rendering, readable mobile scale, keyboard panning, and control placement. Legacy gates run against `reference.html`. Node contracts cover the curriculum, record preservation, diagram models, and retained tools.
 
 Install `tests\requirements.txt` and Playwright Chromium only if missing. The browser runner manages a local server and disposable progress; it never executes Azure labs. Functional and screenshot checks do not replace human screen-reader testing, real Azure execution, or a retention study.
 

@@ -1,47 +1,52 @@
 const CACHE_PREFIX = 'azure-networking-academy-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-10-course-4`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-10-modules-2`;
 const APP_BASE = new URL(self.registration.scope);
 const INDEX_URL = new URL('index.html', APP_BASE).href;
 const APP_SHELL = [
     './',
     'index.html',
+    'guided.html',
     'reference.html',
     'course.html',
     'manifest.webmanifest',
     'icons/app-icon.svg',
-    'css/styles.css?v=2026-10-course-4',
-    'css/learning.css?v=2026-10-course-4',
-    'css/diagrams.css?v=2026-10-course-4',
-    'js/progress.js?v=2026-10-course-4',
-    'js/ui-state.js?v=2026-10-course-4',
-    'js/today-engine.js?v=2026-10-course-4',
-    'js/modules-100.js?v=2026-10-course-4',
-    'js/modules-200.js?v=2026-10-course-4',
-    'js/modules-300.js?v=2026-10-course-4',
-    'js/modules-extras.js?v=2026-10-course-4',
-    'js/mastery-content.js?v=2026-10-course-4',
-    'js/learning-content.js?v=2026-10-course-4',
-    'js/quiz-engine.js?v=2026-10-course-4',
-    'js/interactive.js?v=2026-10-course-4',
-    'js/lab-engine.js?v=2026-10-course-4',
-    'js/diagram-models.js?v=2026-10-course-4',
-    'js/diagram-afd.js?v=2026-10-course-4',
-    'js/diagrams.js?v=2026-10-course-4',
-    'js/mastery-engine.js?v=2026-10-course-4',
-    'js/learning-engine.js?v=2026-10-course-4',
-    'js/beginner.js?v=2026-10-course-4',
-    'js/unit-content.js?v=2026-10-course-4',
-    'js/unit-engine.js?v=2026-10-course-4',
-    'js/app.js?v=2026-10-course-4',
-    'css/guided-course.css?v=2026-10-course-4',
-    'css/course.css?v=2026-10-course-4',
-    'js/guided-course.js?v=2026-10-course-4',
-    'js/course-entry.js?v=2026-10-course-4',
-    'js/course-cases.js?v=2026-10-course-4',
-    'js/course-depth.js?v=2026-10-course-4',
-    'js/course-curriculum.js?v=2026-10-course-4',
-    'js/course-visuals.js?v=2026-10-course-4',
-    'js/course-app.js?v=2026-10-course-4'
+    'css/styles.css?v=2026-10-modules-2',
+    'css/learning.css?v=2026-10-modules-2',
+    'css/diagrams.css?v=2026-10-modules-2',
+    'css/module-academy.css?v=2026-10-modules-2',
+    'css/illustrated-diagrams.css?v=2026-10-modules-2',
+    'js/progress.js?v=2026-10-modules-2',
+    'js/ui-state.js?v=2026-10-modules-2',
+    'js/today-engine.js?v=2026-10-modules-2',
+    'js/modules-100.js?v=2026-10-modules-2',
+    'js/modules-200.js?v=2026-10-modules-2',
+    'js/modules-300.js?v=2026-10-modules-2',
+    'js/modules-extras.js?v=2026-10-modules-2',
+    'js/mastery-content.js?v=2026-10-modules-2',
+    'js/learning-content.js?v=2026-10-modules-2',
+    'js/quiz-engine.js?v=2026-10-modules-2',
+    'js/interactive.js?v=2026-10-modules-2',
+    'js/lab-engine.js?v=2026-10-modules-2',
+    'js/diagram-models.js?v=2026-10-modules-2',
+    'js/diagram-afd.js?v=2026-10-modules-2',
+    'js/diagrams.js?v=2026-10-modules-2',
+    'js/illustrated-diagrams.js?v=2026-10-modules-2',
+    'js/module-academy.js?v=2026-10-modules-2',
+    'js/mastery-engine.js?v=2026-10-modules-2',
+    'js/learning-engine.js?v=2026-10-modules-2',
+    'js/beginner.js?v=2026-10-modules-2',
+    'js/unit-content.js?v=2026-10-modules-2',
+    'js/unit-engine.js?v=2026-10-modules-2',
+    'js/app.js?v=2026-10-modules-2',
+    'css/guided-course.css?v=2026-10-modules-2',
+    'css/course.css?v=2026-10-modules-2',
+    'js/guided-course.js?v=2026-10-modules-2',
+    'js/course-entry.js?v=2026-10-modules-2',
+    'js/course-cases.js?v=2026-10-modules-2',
+    'js/course-depth.js?v=2026-10-modules-2',
+    'js/course-curriculum.js?v=2026-10-modules-2',
+    'js/course-visuals.js?v=2026-10-modules-2',
+    'js/course-app.js?v=2026-10-modules-2'
 ].map(path => new URL(path, APP_BASE).href);
 
 self.addEventListener('install', event => {
@@ -71,7 +76,7 @@ self.addEventListener('fetch', event => {
 
     if (request.mode === 'navigate') {
         const pathname = requestUrl.pathname.slice(APP_BASE.pathname.length);
-        const shell = ['reference.html', 'course.html'].includes(pathname)
+        const shell = ['reference.html', 'course.html', 'guided.html'].includes(pathname)
             ? new URL(pathname, APP_BASE).href : INDEX_URL;
         event.respondWith(
             caches.open(CACHE_NAME)

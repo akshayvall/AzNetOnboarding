@@ -187,7 +187,9 @@ const LearningEngine = {
 
     renderCoaching(module) {
         this.currentModuleId = module.id;
-        const container = document.getElementById('coachingHost') || document.getElementById('tab-learn');
+        const container = typeof ModuleAcademy !== 'undefined' && ModuleAcademy.enabled()
+            ? document.getElementById('tab-learn')
+            : document.getElementById('coachingHost') || document.getElementById('tab-learn');
         const content = this.getContent().modules[module.id];
         if (!container || !content) return false;
         const existing = document.getElementById('moduleCoaching');
@@ -694,7 +696,7 @@ const LearningEngine = {
         const counts = Object.fromEntries(Object.keys(this.STATE_LABELS).map(state => [state, modules.filter(module => (statuses[module.id]?.state || 'not_started') === state).length]));
         const sources = [...new Set(modules.map(module => content.modules?.[module.id]?.lab?.status || 'Not recorded'))];
         const readings = modules.filter(module => progress.moduleMastery?.[module.id]?.contentReviewed).length;
-        return `${typeof UnitEngine !== 'undefined' ? UnitEngine.progressHtml(modules, progress) : `<section class="learning-group"><h2>Your learning so far</h2><p>${readings} of ${modules.length} module readings done. Reading, practice, and applied skill are tracked separately.</p><a href="#today">Continue learning</a></section>`}
+        return `${typeof ModuleAcademy !== 'undefined' && ModuleAcademy.enabled() ? ModuleAcademy.progressHtml(modules, progress) : typeof UnitEngine !== 'undefined' ? UnitEngine.progressHtml(modules, progress) : `<section class="learning-group"><h2>Your learning so far</h2><p>${readings} of ${modules.length} module readings done. Reading, practice, and applied skill are tracked separately.</p><a href="#today">Continue learning</a></section>`}
             <details class="learning-group"><summary>Catalog preferences</summary><section id="learningPreferences"></section></details>
             <details class="learning-group"><summary>Optional practice and skill records</summary>
             <div class="learning-actions"><a href="#practice">Review and extra practice</a><a href="#build">Case practice</a><a href="#learn">Search the lesson catalog</a></div>

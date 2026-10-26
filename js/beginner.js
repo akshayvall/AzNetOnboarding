@@ -69,6 +69,7 @@ const BeginnerEngine = {
     },
 
     isBeginner() {
+        if (typeof ModuleAcademy !== 'undefined' && ModuleAcademy.enabled()) return false;
         return UIStateManager.get().experience !== 'full';
     },
 

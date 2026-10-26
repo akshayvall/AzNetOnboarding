@@ -2,17 +2,17 @@
 version: 1
 slug: "index-html"
 primary_target: "index.html"
-related_targets: ["js/course-app.js","js/course-curriculum.js","js/course-visuals.js","css/course.css"]
+related_targets: ["js/app.js","js/module-academy.js","js/illustrated-diagrams.js","css/module-academy.css","css/illustrated-diagrams.css"]
 ---
 
-# Integrated networking course
+# Full-module networking academy
 
-- Scope and mode: `index.html`, Read with supporting course-navigation tasks. Replaces the former tabs and isolated pilot across all levels.
+- Scope and mode: `index.html`, Read with supporting module activity navigation. Restore the original module workspace, not the rejected micro-lesson shell.
 - Audience and job: a networking beginner needs to start confidently, continue without choosing tools, and develop applied Azure/Front Door reasoning.
-- Direction: one syllabus, one first-unfinished Start/Continue, one continuous lesson. Course and Progress are the primary destinations; optional tools never interrupt required learning.
-- Navigation refinement: show the same desktop sidebar on all course destinations from 900px, and an obvious Contents disclosure below that. Only the recommended lesson needs Start here/Continue here; use an accessible checkmark for passed checks and no label for other lessons.
-- Reading order: concrete question and outcome, explanation, complete relevant visual, worked example, activity, check, self-explanation and next. Level checkpoints combine fictional evidence.
-- Memorable mechanism: follow both directions of a request, change one condition, and explain what the evidence does and does not prove. Use stacks, address partitions, hierarchies and tables when arrows would teach the wrong model.
-- Persistence: preserve old evidence and backup schema; browsing does not move Continue. Recover failed saves explicitly. Keep matching pilot records and old bookmarks usable.
-- Boundaries: 21 modules, 79 lessons, subscription-free required course. Full quizzes, Azure labs, legacy records and sandbox are optional. Publication approved October 26, 2026, through the gated Pages workflow.
+- Direction confirmed by the user after inspecting original commit `09b3f09`: full modules, illustrated architecture, exercises, full quizzes, and labs are the primary experience. Keep the original navy curriculum rail and light technical reading panels.
+- Navigation: permanent desktop level/module sidebar, mobile Contents, a five-activity module navigation, and one last-module/activity resume action.
+- Reading order: short orientation, full chapter and technical diagrams, added configuration/operations detail, then worked case. Do not move advanced case analysis ahead of its explanations.
+- Memorable mechanism: detailed service-specific architectures with clear connections, step highlighting, and corrected semantics. Never substitute a generic chain of boxes for every subject.
+- Persistence: retain the current backup schema, old module evidence, drafts, and all short-course records. `guided.html` preserves short lessons and their links without becoming the main course again.
+- Boundaries: 21 full modules. Azure labs disclose costs and prerequisites; local study does not execute Azure operations. This rebuild remains local pending user review and explicit publication approval.
 - Review gates: technical completion and screenshot review do not establish beginner acceptance, independent skill, or delayed recall.

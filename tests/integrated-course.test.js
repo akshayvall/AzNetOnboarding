@@ -20,10 +20,14 @@ const load = () => {
     })`, context);
 };
 
-test('the main entry is the entire course rather than a separate pilot', () => {
+test('full modules are primary and the previous short course remains accessible', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-    assert.match(html, /js\/course-app\.js/);
-    assert.doesNotMatch(html, /class="lesson-steps"|data-destination="visual-lab"/);
+    const archive = fs.readFileSync(path.join(root, 'guided.html'), 'utf8');
+    assert.match(html, /class="module-academy"/);
+    assert.match(html, /js\/module-academy\.js/);
+    assert.match(html, /class="module-tabs"/);
+    assert.match(archive, /js\/course-app\.js/);
+    assert.doesNotMatch(html, /class="lesson-steps"/);
 });
 
 test('every existing module and durable unit appears exactly once in prerequisite order', () => {

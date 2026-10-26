@@ -1,6 +1,6 @@
 ---
 name: Azure Networking Academy
-description: A calm, continuous networking course from first principles to applied depth.
+description: Full Azure networking modules with a permanent syllabus, detailed illustrations, and integrated activities.
 colors:
   ink: "#172f42"
   muted: "#4f6372"
@@ -103,6 +103,22 @@ components:
 ---
 
 # Design System: Azure Networking Academy
+
+## Current main workspace (October 26 restoration)
+
+The user rejected the short-course direction and selected the original `09b3f09` module experience as the restoration foundation. This section is the main-page authority; the older short-course specifications below now describe `guided.html`, not `index.html`.
+
+`index.html` uses `css/styles.css`, `css/learning.css`, then the scoped `css/module-academy.css` and `css/illustrated-diagrams.css`. Behavior comes from `js/app.js` with the full-module adapter `js/module-academy.js`. The original full chapter data and corrected technical content remain primary.
+
+- **Identity:** navy `#122638` curriculum rail, light `#f6f8fa` page ground, white reading panels, `#172f42` text, Azure-blue actions. System Segoe UI type supports long technical reading.
+- **Layout:** 276px desktop syllabus (232px at 769–1000px), complete level/module navigation, readable chapter panels up to 1140px, and an in-module contents disclosure. Below 769px, a labelled Contents button opens the existing focus-managed drawer.
+- **Typography:** 16px base; long prose uses 1.75 line height and a 75–76ch measure. Module headings scale from 25px to 34px; chapter section headings use 25px. Configuration and data tables retain horizontal overflow instead of clipping or disappearing.
+- **Activities:** Learn, Diagrams, Exercises, Quiz, Lab. Hide a destination only when that module genuinely has no activity there. Never hide the full chapter behind an optional-reference disclosure.
+- **Pedagogy:** orientation first, complete teaching and architecture next, worked case afterward. The three beginner introductions are an on-ramp. The last module/activity resumes; reading, quiz, and lab evidence stay distinct.
+- **Visuals:** restore service-specific original illustrations with scoped SVG identifiers, clear connections, a complete initial view, learner-controlled steps, and text explanations. Corrected networking semantics remain authoritative over historical labels.
+- **Archive:** `guided.html` retains the previous short-course UI and saved work. `reference.html` remains a compatibility tools entry. Their styles must not override the main module workspace.
+
+## Archived short-course design
 
 ## Overview
 

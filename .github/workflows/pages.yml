@@ -50,6 +50,9 @@ jobs:
       - name: Run standalone browser gate
         run: python tests/browser_smoke.py
 
+      - name: Run illustrated architecture browser gate
+        run: python tests/browser_illustrated_diagrams.py
+
   deploy:
     needs: validate
     environment:

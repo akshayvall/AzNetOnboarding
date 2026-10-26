@@ -4,6 +4,16 @@ Running log of AI-assisted work sessions. Newest first.
 
 ---
 
+## 2026-10-26 - Full-module publication approved
+- Akshay requested "push it" and supplied failure notifications for `948c991` and `a677d90`. Checked the actual Actions history: those validation failures were followed by successful corrective deployments `99759a7` and `f3aa2f3`, respectively. The former involved navigation-state test timing; the latter involved deferred focus interfering with keyboard interaction.
+- Approved release `2026-10-modules-2` restores the complete module experience. Fresh prepublication checks passed 253 Node tests, all 70 main browser tests, four illustrated browser tests, JavaScript syntax, and whitespace checks. The Pages workflow now includes the illustrated browser gate as well.
+- Publish only the academy's nested `main` to `akshayvall/AzNetOnboarding`, then verify the exact commit's successful validation/deployment and the live module entry before reporting it live. No Azure execution or learner-storage reset; the prior local-only restriction is superseded by this explicit publication request.
+
+## 2026-10-26 - Full module restoration for local review
+- Akshay rejected the reduced-depth main course and explicitly approved rebuilding from the original full-module experience at `09b3f09`. Restored all 21 substantial L100-L300 chapters as the primary course, with a permanent desktop syllabus, mobile Contents, detailed illustrated architectures, exercises, full quizzes, labs, and module/activity resume. Explanations precede worked cases; the introductory lessons remain optional preparation, not a substitute for the course.
+- Retained corrected networking semantics and existing progress/storage engines. The 79 short lessons and their answers remain at `guided.html`; old lesson links redirect there. Reading, quiz, and lab evidence remain separate. Added full-chapter preservation, mobile navigation, offline module coverage, and illustrated browser checks to the publication gate. Visual review corrected inherited double sidebar spacing, narrow mobile headings, and undersized diagram labels; wide maps have explicit keyboard/pan guidance and controls above the drawing.
+- Final validation passed 253 Node tests, all 70 main browser tests, four illustrated browser tests, JavaScript syntax, JSON parsing, and whitespace checks. Candidate `2026-10-modules-2` remains local and uncommitted for review at `http://127.0.0.1:8894/index.html#frontdoor-basics`. The published site remains `99759a7` / `2026-10-course-4`; no new publication authorization. Automated checks do not establish beginner usability or retention. Simplify navigation, not teaching depth.
+
 ## 2026-10-26 - Navigation refinement publication
 - Akshay requested "push live", authorizing publication of `2026-10-course-4` on `main`.
 - Local verification passed 245 Node tests and 16 course/offline/worker browser checks. The local preview loads the new release with saved progress intact; GitHub Pages must pass its complete validation job before deployment.
