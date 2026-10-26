@@ -1,104 +1,75 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-24T13:36:59.788+11:00",
+  "generatedAt": "2026-10-26T13:53:40.541+11:00",
   "title": "Design System: Azure Networking Academy",
   "extensions": {
     "colorMeta": {
-      "azure-blue": {
-        "role": "primary",
-        "displayName": "Azure blue",
-        "tonalRamp": ["oklch(15% 0.15 250)", "oklch(26% 0.15 250)", "oklch(38% 0.15 250)", "oklch(49% 0.15 250)", "oklch(61% 0.15 250)", "oklch(72% 0.15 250)", "oklch(84% 0.15 250)", "oklch(95% 0.15 250)"]
-      },
-      "azure-dark": {
-        "role": "primary",
-        "displayName": "Deep Azure",
-        "tonalRamp": ["oklch(15% 0.1 248)", "oklch(26% 0.1 248)", "oklch(38% 0.1 248)", "oklch(49% 0.1 248)", "oklch(61% 0.1 248)", "oklch(72% 0.1 248)", "oklch(84% 0.1 248)", "oklch(95% 0.1 248)"]
-      },
-      "azure-light": {
-        "role": "primary",
-        "displayName": "Pale Azure",
-        "tonalRamp": ["oklch(15% 0.025 248)", "oklch(26% 0.025 248)", "oklch(38% 0.025 248)", "oklch(49% 0.025 248)", "oklch(61% 0.025 248)", "oklch(72% 0.025 248)", "oklch(84% 0.025 248)", "oklch(95% 0.025 248)"]
-      },
-      "bg-primary": {
-        "role": "neutral",
-        "displayName": "Cool paper",
-        "tonalRamp": ["oklch(15% 0.004 248)", "oklch(26% 0.004 248)", "oklch(38% 0.004 248)", "oklch(49% 0.004 248)", "oklch(61% 0.004 248)", "oklch(72% 0.004 248)", "oklch(84% 0.004 248)", "oklch(95% 0.004 248)"]
-      },
-      "bg-secondary": {
-        "role": "neutral",
-        "displayName": "White page",
-        "tonalRamp": ["oklch(15% 0 0)", "oklch(26% 0 0)", "oklch(38% 0 0)", "oklch(49% 0 0)", "oklch(61% 0 0)", "oklch(72% 0 0)", "oklch(84% 0 0)", "oklch(95% 0 0)"]
-      },
-      "bg-sidebar": {
-        "role": "neutral",
-        "displayName": "Navigation navy",
-        "tonalRamp": ["oklch(15% 0.042 247)", "oklch(26% 0.042 247)", "oklch(38% 0.042 247)", "oklch(49% 0.042 247)", "oklch(61% 0.042 247)", "oklch(72% 0.042 247)", "oklch(84% 0.042 247)", "oklch(95% 0.042 247)"]
-      },
-      "text-primary": {
+      "ink": {
         "role": "neutral",
         "displayName": "Reading ink",
         "tonalRamp": ["oklch(15% 0.045 243)", "oklch(26% 0.045 243)", "oklch(38% 0.045 243)", "oklch(49% 0.045 243)", "oklch(61% 0.045 243)", "oklch(72% 0.045 243)", "oklch(84% 0.045 243)", "oklch(95% 0.045 243)"]
       },
-      "text-secondary": {
+      "muted": {
         "role": "neutral",
         "displayName": "Supporting slate",
         "tonalRamp": ["oklch(15% 0.035 240)", "oklch(26% 0.035 240)", "oklch(38% 0.035 240)", "oklch(49% 0.035 240)", "oklch(61% 0.035 240)", "oklch(72% 0.035 240)", "oklch(84% 0.035 240)", "oklch(95% 0.035 240)"]
       },
-      "text-sidebar": {
+      "paper": {
         "role": "neutral",
-        "displayName": "Navigation text",
-        "tonalRamp": ["oklch(15% 0.004 67)", "oklch(26% 0.004 67)", "oklch(38% 0.004 67)", "oklch(49% 0.004 67)", "oklch(61% 0.004 67)", "oklch(72% 0.004 67)", "oklch(84% 0.004 67)", "oklch(95% 0.004 67)"]
+        "displayName": "White page",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(26% 0 0)", "oklch(38% 0 0)", "oklch(49% 0 0)", "oklch(61% 0 0)", "oklch(72% 0 0)", "oklch(84% 0 0)", "oklch(95% 0 0)"]
       },
-      "border-color": {
+      "ground": {
+        "role": "neutral",
+        "displayName": "Cool ground",
+        "tonalRamp": ["oklch(15% 0.004 248)", "oklch(26% 0.004 248)", "oklch(38% 0.004 248)", "oklch(49% 0.004 248)", "oklch(61% 0.004 248)", "oklch(72% 0.004 248)", "oklch(84% 0.004 248)", "oklch(95% 0.004 248)"]
+      },
+      "blue": {
+        "role": "primary",
+        "displayName": "Azure blue",
+        "tonalRamp": ["oklch(15% 0.15 250)", "oklch(26% 0.15 250)", "oklch(38% 0.15 250)", "oklch(49% 0.15 250)", "oklch(61% 0.15 250)", "oklch(72% 0.15 250)", "oklch(84% 0.15 250)", "oklch(95% 0.15 250)"]
+      },
+      "deep-blue": {
+        "role": "primary",
+        "displayName": "Deep Azure",
+        "tonalRamp": ["oklch(15% 0.1 248)", "oklch(26% 0.1 248)", "oklch(38% 0.1 248)", "oklch(49% 0.1 248)", "oklch(61% 0.1 248)", "oklch(72% 0.1 248)", "oklch(84% 0.1 248)", "oklch(95% 0.1 248)"]
+      },
+      "light-blue": {
+        "role": "primary",
+        "displayName": "Pale Azure",
+        "tonalRamp": ["oklch(15% 0.025 248)", "oklch(26% 0.025 248)", "oklch(38% 0.025 248)", "oklch(49% 0.025 248)", "oklch(61% 0.025 248)", "oklch(72% 0.025 248)", "oklch(84% 0.025 248)", "oklch(95% 0.025 248)"]
+      },
+      "line": {
         "role": "neutral",
         "displayName": "Quiet rule",
-        "tonalRamp": ["oklch(15% 0.004 67)", "oklch(26% 0.004 67)", "oklch(38% 0.004 67)", "oklch(49% 0.004 67)", "oklch(61% 0.004 67)", "oklch(72% 0.004 67)", "oklch(84% 0.004 67)", "oklch(95% 0.004 67)"]
+        "tonalRamp": ["oklch(15% 0.018 243)", "oklch(26% 0.018 243)", "oklch(38% 0.018 243)", "oklch(49% 0.018 243)", "oklch(61% 0.018 243)", "oklch(72% 0.018 243)", "oklch(84% 0.018 243)", "oklch(95% 0.018 243)"]
       },
-      "success": {
+      "reply": {
         "role": "secondary",
-        "displayName": "Success green",
-        "tonalRamp": ["oklch(15% 0.16 143)", "oklch(26% 0.16 143)", "oklch(38% 0.16 143)", "oklch(49% 0.16 143)", "oklch(61% 0.16 143)", "oklch(72% 0.16 143)", "oklch(84% 0.16 143)", "oklch(95% 0.16 143)"]
+        "displayName": "Response teal",
+        "tonalRamp": ["oklch(15% 0.09 208)", "oklch(26% 0.09 208)", "oklch(38% 0.09 208)", "oklch(49% 0.09 208)", "oklch(61% 0.09 208)", "oklch(72% 0.09 208)", "oklch(84% 0.09 208)", "oklch(95% 0.09 208)"]
       },
       "error": {
         "role": "secondary",
         "displayName": "Error red",
-        "tonalRamp": ["oklch(15% 0.195 25)", "oklch(26% 0.195 25)", "oklch(38% 0.195 25)", "oklch(49% 0.195 25)", "oklch(61% 0.195 25)", "oklch(72% 0.195 25)", "oklch(84% 0.195 25)", "oklch(95% 0.195 25)"]
-      },
-      "trace-response": {
-        "role": "secondary",
-        "displayName": "Response teal",
-        "tonalRamp": ["oklch(15% 0.09 208)", "oklch(26% 0.09 208)", "oklch(38% 0.09 208)", "oklch(49% 0.09 208)", "oklch(61% 0.09 208)", "oklch(72% 0.09 208)", "oklch(84% 0.09 208)", "oklch(95% 0.09 208)"]
+        "tonalRamp": ["oklch(15% 0.18 25)", "oklch(26% 0.18 25)", "oklch(38% 0.18 25)", "oklch(49% 0.18 25)", "oklch(61% 0.18 25)", "oklch(72% 0.18 25)", "oklch(84% 0.18 25)", "oklch(95% 0.18 25)"]
       }
     },
     "typographyMeta": {
-      "display": { "displayName": "Academy identity", "purpose": "Opening identity; mobile uses 28px. Not a marketing hero scale." },
-      "headline": { "displayName": "Unit headline", "purpose": "One small idea, with a 32ch maximum title measure." },
-      "title": { "displayName": "Learning section", "purpose": "Section headings on learning destinations; module and example headings retain local sizes." },
-      "body": { "displayName": "Reading text", "purpose": "Unit prose. Local learning destinations and activities retain their observed line-height variants." },
-      "label": { "displayName": "Supporting metadata", "purpose": "Supporting status and context, not primary instruction." },
-      "diagram-label": { "displayName": "Diagram metadata", "purpose": "Local technical eyebrows, not a global uppercase-label rule." }
+      "headline": { "displayName": "Course headline", "purpose": "Page or lesson title, with a 26ch maximum measure." },
+      "title": { "displayName": "Section heading", "purpose": "Ordinary section headings; examples and syllabus summaries retain local sizes." },
+      "body": { "displayName": "Reading text", "purpose": "Main course reading; paragraphs are bounded to 70ch." },
+      "intro": { "displayName": "Lesson outcome", "purpose": "The larger introduction or lesson outcome." },
+      "metadata": { "displayName": "Supporting guidance", "purpose": "Course position and answer detail, not primary teaching text." },
+      "diagram-detail": { "displayName": "Endpoint detail", "purpose": "Endpoint descriptions; relationship labels retain their local 1.4 line height." }
     },
-    "shadows": [
-      { "name": "reading-surfaces", "value": "none", "purpose": "Field-guide learning groups, progress sections and diagram frames are flat." },
-      { "name": "shadow", "value": "0 2px 8px rgba(0,0,0,0.1)", "purpose": "Retained global CSS token for secondary surfaces; not the default for new reading sections." },
-      { "name": "shadow-hover", "value": "0 4px 16px rgba(0,0,0,0.15)", "purpose": "Retained global hover token, not a requirement to lift field-guide content." },
-      { "name": "mobile-drawer", "value": "3px 0 12px rgba(0,0,0,0.15)", "purpose": "Separates the off-canvas navigation from content." },
-      { "name": "mobile-bottom-navigation", "value": "0 -8px 24px rgba(0,64,112,0.08)", "purpose": "Separates fixed navigation from the scrolling page." },
-      { "name": "global-focus-separation", "value": "0 0 0 2px #fff", "purpose": "White separation behind the global focus outline, not surface elevation." }
-    ],
+    "shadows": [],
     "motion": [
-      { "name": "transition", "value": "all 0.2s ease", "purpose": "Observed global button transition; records existing behavior rather than prescribing animation of every property." },
-      { "name": "mobile-drawer", "value": "transform 0.2s ease", "purpose": "Moves the navigation drawer in and out." },
-      { "name": "reduced-motion-global", "value": "0.01ms", "purpose": "Under prefers-reduced-motion: reduce, global animations and transitions are shortened, animation iteration count is 1, delay is 0ms, and scrolling is automatic." },
-      { "name": "reduced-motion-diagram", "value": "none", "purpose": "Diagram animations and transitions are disabled under prefers-reduced-motion: reduce; scrolling is automatic." }
+      { "name": "answer-and-starter-node-state", "value": "background-color 160ms ease-out, border-color 160ms ease-out", "purpose": "Only enabled under prefers-reduced-motion: no-preference, on journey nodes and answer rows." }
     ],
     "breakpoints": [
-      { "name": "learning-filters-two-columns-max", "value": "1000px" },
-      { "name": "compact-desktop-sidebar-min", "value": "900px" },
-      { "name": "mobile-shell-and-reading-max", "value": "768px" },
-      { "name": "starter-path-single-column-max", "value": "480px" },
-      { "name": "learning-filters-single-column-max", "value": "420px" },
-      { "name": "diagram-view-switch-full-width-max", "value": "390px" }
+      { "name": "lesson-syllabus-column-min", "value": "1100px" },
+      { "name": "narrow-reading-and-diagrams-max", "value": "650px" }
     ]
   },
   "components": [
@@ -106,108 +77,94 @@
       "name": "Primary action",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The unit's forward action, from styles.css and UnitEngine. The specimen retains the native button font fallback; that incidental fallback is not a typography token.",
-      "html": "<button class=\"ds-primary\" type=\"button\">Got the idea · Try it</button>",
-      "css": ".ds-primary{background:var(--azure-blue,#0067b8);color:var(--bg-secondary,#fff);border:none;padding:10px 20px;border-radius:var(--radius,8px);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition,all .2s ease)}.ds-primary:hover{background:var(--azure-dark,#004578)}.ds-primary:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}@media(prefers-reduced-motion:reduce){.ds-primary{transition-duration:.01ms;transition-delay:0ms}}"
+      "description": "Source-derived course check button. This specimen does not check answers or save progress.",
+      "html": "<button class=\"ds-primary\" type=\"button\">Check my understanding</button>",
+      "css": ".ds-primary{min-height:46px;padding:10px 20px;border:1px solid var(--blue,#0067b8);border-radius:6px;color:var(--paper,#ffffff);background:var(--blue,#0067b8);font:600 17px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer}.ds-primary:hover{background:var(--deep-blue,#004578);color:var(--paper,#ffffff)}.ds-primary:disabled{cursor:not-allowed;color:var(--muted,#4f6372);background:var(--ground,#f6f8fa)}.ds-primary:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}@media(max-width:650px){.ds-primary{max-width:100%;text-wrap:balance}}"
     },
     {
-      "name": "Secondary action",
+      "name": "Neutral action",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Prediction comparison and saving an explanation, from styles.css and UnitEngine. The visible label explains the action.",
-      "html": "<button class=\"ds-secondary\" type=\"button\">Compare my prediction</button>",
-      "css": ".ds-secondary{background:transparent;color:var(--azure-blue,#0067b8);border:2px solid var(--azure-blue,#0067b8);padding:8px 18px;border-radius:var(--radius,8px);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition,all .2s ease)}.ds-secondary:hover{background:var(--azure-light,#deecf9)}.ds-secondary:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}@media(prefers-reduced-motion:reduce){.ds-secondary{transition-duration:.01ms;transition-delay:0ms}}"
+      "description": "The ordinary comparison or recovery button; it is not the legacy blue-outline secondary variant.",
+      "html": "<button class=\"ds-secondary\" type=\"button\">Compare my reasoning</button>",
+      "css": ".ds-secondary{min-height:46px;padding:10px 20px;border:1px solid var(--line,#c7d3dc);border-radius:6px;color:var(--ink,#172f42);background:var(--paper,#ffffff);font:400 17px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer}.ds-secondary:hover{background:var(--ground,#f6f8fa);border-color:var(--blue,#0067b8)}.ds-secondary:disabled{cursor:not-allowed;color:var(--muted,#4f6372);background:var(--ground,#f6f8fa)}.ds-secondary:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}"
     },
     {
-      "name": "Learning action",
-      "kind": "button",
-      "refersTo": "learning-action",
-      "description": "The compact, wrapping learning-surface action from learning.css. Its minimum target differs from the legacy general buttons.",
-      "html": "<a class=\"ds-learning-action\" href=\"#today\">Continue learning</a>",
-      "css": ".ds-learning-action{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;max-width:100%;padding:10px 14px;border:1px solid var(--learning-accent,var(--azure-blue,#0067b8));border-radius:4px;background:var(--bg-secondary,#fff);color:var(--learning-accent,var(--azure-blue,#0067b8));font:600 16px/1.35 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;text-align:center;text-decoration:none;white-space:normal;cursor:pointer}.ds-learning-action:hover{background:var(--bg-primary,#f6f8fa);text-decoration:underline}.ds-learning-action:focus-visible{outline:3px solid var(--learning-accent,var(--azure-blue,#0067b8));outline-offset:3px;box-shadow:none}"
-    },
-    {
-      "name": "Workspace destinations",
+      "name": "Course and Progress navigation",
       "kind": "nav",
-      "refersTo": "workspace-navigation",
-      "description": "The three real destinations from index.html. This isolated specimen shows the desktop rail; responsive shell behavior remains in the application.",
-      "html": "<nav class=\"ds-workspace\" aria-label=\"Learning destinations\"><a class=\"ds-destination\" href=\"#today\" aria-current=\"page\">Your path</a><a class=\"ds-destination\" href=\"#visual-lab\">AFD request lab</a><a class=\"ds-destination\" href=\"#more\">Progress</a></nav>",
-      "css": ".ds-workspace{display:grid;gap:4px;padding:12px 16px;background:var(--bg-sidebar,#122638);color:var(--text-sidebar,#d2d0ce);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-destination{display:flex;align-items:center;min-height:44px;padding:10px 12px;border-left:3px solid transparent;border-radius:4px;color:var(--text-sidebar,#d2d0ce);font-size:15px;font-weight:600;text-decoration:none;overflow-wrap:anywhere}.ds-destination:hover{text-decoration:underline;color:var(--bg-secondary,#fff)}.ds-destination[aria-current=page]{border-left-color:var(--learning-accent,var(--azure-blue,#0067b8));background:var(--bg-secondary,#fff);color:var(--text-primary,#172f42)}.ds-destination:focus-visible{outline:2px solid var(--text-sidebar,#d2d0ce);outline-offset:2px;box-shadow:none}"
+      "refersTo": "course-navigation",
+      "description": "The main's white top navigation; no selected-tab treatment or legacy shell is embedded.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><a class=\"ds-nav-link\" href=\"#\">Course</a><a class=\"ds-nav-link\" href=\"#progress\">Progress</a></nav>",
+      "css": ".ds-nav{display:flex;gap:24px;flex-shrink:0;background:var(--paper,#ffffff);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-nav-link{display:block;padding:8px 0;min-height:44px;font-size:16px;line-height:1.65;font-weight:500;color:var(--blue,#0067b8);text-decoration:none}.ds-nav-link:hover{color:var(--blue,#0067b8)}.ds-nav-link:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}@media(max-width:650px){.ds-nav{gap:14px}.ds-nav-link{font-size:14px}}"
     },
     {
-      "name": "Lesson steps",
-      "kind": "nav",
-      "refersTo": "lesson-step",
-      "description": "The Learn / Try it / Quick check controls from index.html and the final field-guide cascade. Current state is a bottom rule, not a filled tab. Buttons are visual specimens; routing is not embedded.",
-      "html": "<nav class=\"ds-steps\" aria-label=\"Lesson steps\"><button class=\"ds-step\" type=\"button\" aria-current=\"step\" aria-pressed=\"true\">1 Learn</button><button class=\"ds-step\" type=\"button\" aria-pressed=\"false\">2 Try it</button><button class=\"ds-step\" type=\"button\" aria-pressed=\"false\">3 Quick check</button></nav>",
-      "css": ".ds-steps{display:flex;justify-content:center;padding:0 36px;border-bottom:1px solid var(--border-color,#e1dfdd);background:var(--bg-secondary,#fff);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-step{flex:0 1 200px;min-width:0;min-height:48px;padding:12px 6px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--text-secondary,#4f6372);font:600 16px 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer}.ds-step:hover{background:var(--azure-light,#deecf9)}.ds-step[aria-current=step]{background:transparent;color:var(--azure-dark,#004578);border-bottom-color:var(--azure-blue,#0067b8)}.ds-step:focus-visible{outline:3px solid var(--azure-blue,#0067b8);outline-offset:2px}@media(max-width:768px){.ds-steps{padding-inline:12px}.ds-step{flex:1;font-size:14px}}"
-    },
-    {
-      "name": "Self-explanation field",
+      "name": "Teach-back field",
       "kind": "input",
       "refersTo": "explanation-field",
-      "description": "UnitEngine's labeled, resizable explanation area. The static specimen accepts text but does not claim to save or assess it. Replace the specimen label with the unit's actual teach-back prompt.",
-      "html": "<div class=\"ds-explanation\"><label class=\"ds-explanation-label\" for=\"ds-explanation-input\">Say it in your own words</label><textarea class=\"ds-explanation-input\" id=\"ds-explanation-input\" rows=\"3\" maxlength=\"4000\" placeholder=\"A few plain-language sentences are enough.\"></textarea><details class=\"ds-example\"><summary class=\"ds-example-summary\">Compare with an example explanation</summary><p class=\"ds-example-note\">This is an illustration, not an automatic grade of your answer.</p></details></div>",
-      "css": ".ds-explanation{font:16px/1.7 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--text-primary,#172f42)}.ds-explanation-label{line-height:1.7}.ds-explanation-input{display:block;width:100%;font:16px/1.7 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;padding:14px;border:1px solid #8a9eae;border-radius:4px;margin-block:16px;resize:vertical}.ds-explanation-input:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}.ds-example{line-height:1.7;margin-bottom:18px}.ds-example-summary{cursor:pointer;min-height:44px;padding-block:10px}.ds-example-summary:focus-visible{outline:3px solid var(--azure-blue,#0067b8);outline-offset:2px}.ds-example-note{margin:0 0 18px;line-height:1.7}"
+      "description": "A native resizable draft field. The specimen accepts text but deliberately does not claim persistence or grading.",
+      "html": "<div class=\"ds-writing\"><label for=\"ds-draft\">Put it in your own words</label><textarea class=\"ds-draft\" id=\"ds-draft\" rows=\"3\" maxlength=\"4000\"></textarea></div>",
+      "css": ".ds-writing{font:400 17px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink,#172f42)}.ds-draft{display:block;resize:vertical;width:100%;margin:14px 0 8px;padding:12px;font:inherit;color:var(--ink,#172f42);border:1px solid var(--line,#c7d3dc);border-radius:4px;background:var(--paper,#ffffff)}.ds-draft:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}"
     },
     {
-      "name": "Diagram node chip",
-      "kind": "chip",
-      "refersTo": "diagram-node-chip",
-      "description": "Noninteractive node labels from DiagramEngine.connections when a step focuses on a node rather than an edge. Example label only; no synthetic hover or pressed state.",
-      "html": "<span class=\"ds-node-chip\">Client</span>",
-      "css": ".ds-node-chip{padding:5px 8px;background:var(--bg-primary,#f6f8fa);color:var(--text-primary,#172f42);border:1px solid var(--border-color,#e1dfdd);border-radius:4px;font:13px 'Segoe UI',Aptos,Calibri,sans-serif}"
-    },
-    {
-      "name": "Compact relationship frame",
-      "kind": "card",
-      "refersTo": "diagram-frame",
-      "description": "The compact model-owned relationship inside the unshadowed diagram frame, translated from diagrams.css and DiagramEngine. DNS specimen content illustrates the existing ask step. The full engine-rendered map is intentionally not fabricated in this style specimen.",
-      "html": "<section class=\"ds-diagram\" aria-label=\"The idea at a glance\"><div class=\"ds-compact\"><div class=\"ds-connection\"><span class=\"ds-connection-kind\">Request</span><span class=\"ds-connection-path\">Client <span aria-hidden=\"true\">→</span><span class=\"ds-visually-hidden\">to</span> Recursive resolver</span><small class=\"ds-connection-detail\">shop.example.com</small></div></div></section>",
-      "css": ".ds-diagram{margin-block:20px;border:1px solid var(--border-color,#e1dfdd);border-radius:16px;overflow:hidden;max-width:100%;min-width:0;box-shadow:none;background:var(--bg-secondary,#fff);color:var(--text-primary,#172f42);text-align:left;font-family:'Segoe UI',Aptos,Calibri,sans-serif}.ds-compact{padding:12px 16px}.ds-connection{display:grid;gap:3px;width:100%;border:0;padding:0;font-size:16px;line-height:1.5}.ds-connection-kind,.ds-connection-detail{font-size:12px;color:var(--text-secondary,#4f6372)}.ds-connection-kind{font-weight:650}.ds-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}"
-    },
-    {
-      "name": "Prediction choices",
+      "name": "Answer choices",
       "kind": "custom",
       "refersTo": "answer-choice",
-      "description": "Native radio rows from UnitEngine.questionHtml. Example wording comes from the TCP model. Selection works without JavaScript; feedback and persistence remain application responsibilities.",
-      "html": "<fieldset class=\"ds-question\"><legend class=\"ds-question-legend\">Who sends SYN-ACK?</legend><label class=\"ds-choice\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-syn-ack\" value=\"0\"><span class=\"ds-choice-text\">The client again</span></label><label class=\"ds-choice\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-syn-ack\" value=\"1\" checked><span class=\"ds-choice-text\">The server</span></label><label class=\"ds-choice\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-syn-ack\" value=\"2\"><span class=\"ds-choice-text\">A DNS resolver</span></label><p class=\"ds-choice-feedback\" role=\"status\" aria-live=\"polite\"></p></fieldset>",
-      "css": ".ds-question{border:0;border-top:1px solid #ccd9e2;margin-block:26px;padding:20px 0 0;min-width:0;color:var(--text-primary,#172f42);font:16px/1.6 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-question-legend{float:left;width:100%;margin-bottom:16px;font-weight:600;line-height:1.6}.ds-question-legend+.ds-choice{clear:both}.ds-choice{display:flex;align-items:flex-start;gap:12px;border:1px solid #c4d2dd;border-radius:4px;padding:12px 14px;min-height:48px;margin-block:8px;background:#fff;line-height:1.55;cursor:pointer}.ds-choice:has(.ds-radio:checked){background:#eaf3fa;border-color:var(--azure-blue,#0067b8)}.ds-radio{accent-color:var(--azure-blue,#0067b8);width:18px;height:18px;flex:0 0 18px;margin-top:3px}.ds-radio:focus-visible{outline:3px solid #005a9e;outline-offset:3px;box-shadow:0 0 0 2px #fff}.ds-choice-feedback{line-height:1.7;margin-top:14px;color:var(--azure-dark,#004578)}.ds-choice-feedback:empty{margin:0}"
+      "description": "Native fieldset, legend and radio rows with the main's actual hover, selected and reduced-motion behavior. Example content is illustrative.",
+      "html": "<fieldset class=\"ds-check\"><legend class=\"ds-legend\">Which direction is the response?</legend><label class=\"ds-answer\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-direction\" value=\"reply\">Server to client</label><label class=\"ds-answer\"><input class=\"ds-radio\" type=\"radio\" name=\"ds-direction\" value=\"request\">Client to server</label></fieldset>",
+      "css": ".ds-check{border:0;padding:0;margin:24px 0;min-width:0;font:400 17px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink,#172f42)}.ds-legend{font-size:18px;font-weight:600;line-height:1.5;margin-bottom:15px}.ds-answer{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;margin-bottom:10px;border:1px solid var(--line,#c7d3dc);border-radius:6px;cursor:pointer}.ds-answer:hover,.ds-answer:has(input:checked){background:var(--light-blue,#deecf9);border-color:var(--blue,#0067b8)}.ds-radio{flex-shrink:0;width:20px;height:20px;margin-top:4px;accent-color:var(--blue,#0067b8)}.ds-radio:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}@media(prefers-reduced-motion:no-preference){.ds-answer{transition:background-color 160ms ease-out,border-color 160ms ease-out}}"
     },
     {
-      "name": "Learning activity counts",
+      "name": "Complete relationship figure",
+      "kind": "card",
+      "refersTo": "diagram-frame",
+      "description": "One complete request/reply relationship, derived from CourseVisuals and course.css, with exact SVG paths from GuidedCourse.arrow. Endpoint text is illustrative; the application still owns the semantic model. Mobile preserves both directions.",
+      "html": "<figure class=\"ds-figure\"><div class=\"ds-row\"><div class=\"ds-end\"><strong class=\"ds-end-title\">Client</strong><span class=\"ds-end-detail\">Sends the request</span></div><div class=\"ds-lines\"><div class=\"ds-line\"><span>Request</span><svg class=\"ds-horizontal\" viewBox=\"0 0 120 16\" aria-hidden=\"true\"><path d=\"M 3 8 H 117 M 109 2 L 117 8 L 109 14\"/></svg><svg class=\"ds-vertical\" viewBox=\"0 0 14 44\" aria-hidden=\"true\"><path d=\"M 7 2 V 42 M 1 34 L 7 42 L 13 34\"/></svg></div><div class=\"ds-line ds-response\"><span>Response</span><svg class=\"ds-horizontal\" viewBox=\"0 0 120 16\" aria-hidden=\"true\"><path d=\"M 117 8 H 3 M 11 2 L 3 8 L 11 14\"/></svg><svg class=\"ds-vertical\" viewBox=\"0 0 14 44\" aria-hidden=\"true\"><path d=\"M 7 42 V 2 M 1 10 L 7 2 L 13 10\"/></svg></div></div><div class=\"ds-end\"><strong class=\"ds-end-title\">Server</strong><span class=\"ds-end-detail\">Returns the response</span></div></div><figcaption class=\"ds-caption\">Request: client to server. Response: server to client. This pair shows one conversation, not the timing of a larger request.</figcaption></figure>",
+      "css": ".ds-figure{margin:26px 0;padding:22px;background:var(--ground,#f6f8fa);border:1px solid var(--line,#c7d3dc);border-radius:8px;overflow:visible;font:400 17px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink,#172f42)}.ds-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,1fr) minmax(0,1fr);align-items:center;margin-block:18px}.ds-end{padding:15px 12px;border:1px solid var(--line,#c7d3dc);border-radius:5px;background:var(--paper,#ffffff)}.ds-end-title{display:block;font-size:16px;line-height:1.4}.ds-end-detail{display:block;font-size:14px;line-height:1.5;color:var(--muted,#4f6372);margin-top:8px}.ds-lines{min-width:0;padding-inline:7px}.ds-line{color:var(--blue,#0067b8);text-align:center;line-height:1.4}.ds-line+.ds-line{margin-top:10px}.ds-line>span{display:block;font-size:14px}.ds-line svg{display:block;width:100%;height:16px}.ds-line svg.ds-vertical{display:none}.ds-line path{stroke:currentColor;stroke-width:2;fill:none;vector-effect:non-scaling-stroke}.ds-response{color:var(--reply,#087f8c)}.ds-response path{stroke-dasharray:7 3}.ds-caption{font-size:15px;margin-top:20px;line-height:1.6}@media(max-width:650px){.ds-figure{padding:16px 12px;margin-inline:0}.ds-row{grid-template-columns:minmax(0,1fr);margin-block:24px}.ds-end{padding:12px}.ds-lines{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:10px 4px}.ds-line{display:flex;align-items:center;flex:1 1 95px;justify-content:center;gap:10px}.ds-line+.ds-line{margin-top:0}.ds-line>span{text-align:left}.ds-line svg.ds-horizontal{display:none}.ds-line svg.ds-vertical{display:block;flex-shrink:0;width:14px;height:44px}}"
+    },
+    {
+      "name": "Syllabus disclosure",
       "kind": "custom",
-      "refersTo": "progress-counts",
-      "description": "UnitEngine.progressHtml's four separate evidence categories and disclaimer. Zero counts are specimen data, not a report of the learner's stored progress.",
-      "html": "<section class=\"ds-progress\"><h2 class=\"ds-progress-title\">Your learning so far</h2><dl class=\"ds-counts\"><div class=\"ds-count\"><dt class=\"ds-count-label\">Read</dt><dd class=\"ds-count-value\">0</dd></div><div class=\"ds-count\"><dt class=\"ds-count-label\">Prediction correct</dt><dd class=\"ds-count-value\">0</dd></div><div class=\"ds-count\"><dt class=\"ds-count-label\">Checks passed</dt><dd class=\"ds-count-value\">0</dd></div><div class=\"ds-count\"><dt class=\"ds-count-label\">Self-explained</dt><dd class=\"ds-count-value\">0</dd></div></dl><p class=\"ds-progress-note\">These are learning activities, not proof of mastery. Try explaining a familiar request tomorrow without opening the example.</p></section>",
-      "css": ".ds-progress{max-width:70ch;line-height:1.7;margin-block:26px 36px;color:var(--text-primary,#172f42);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;font-size:16px}.ds-progress-title{margin:0 0 14px;font-size:20px;line-height:1.35}.ds-counts{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--border-color,#e1dfdd);padding-block:20px;gap:16px;margin-block:24px}.ds-count-label{font-size:13px;color:var(--text-secondary,#4f6372)}.ds-count-value{font-size:30px;font-weight:600;margin:0;line-height:1.65}.ds-progress-note{margin-block:18px;line-height:1.65}@media(max-width:768px){.ds-counts{grid-template-columns:repeat(2,1fr)}}"
+      "refersTo": "syllabus-current",
+      "description": "The native in-flow course-contents disclosure and current lesson. This specimen opens by default for inspection; the app initially opens it only at the desktop threshold.",
+      "html": "<details class=\"ds-drawer\" open><summary class=\"ds-drawer-summary\">Course contents</summary><nav class=\"ds-syllabus\" aria-label=\"Course syllabus\"><a class=\"ds-syllabus-link\" href=\"#\" aria-current=\"page\">Current lesson</a><a class=\"ds-syllabus-link\" href=\"#\">Another lesson</a></nav></details>",
+      "css": ".ds-drawer{padding:18px 24px;border-bottom:1px solid var(--line,#c7d3dc);font:400 15px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink,#172f42)}.ds-drawer-summary{padding:12px 0;cursor:pointer;min-height:44px;color:var(--blue,#0067b8);font-weight:600}.ds-syllabus-link{display:block;min-height:44px;padding:9px 4px;line-height:1.5;text-decoration:none;color:var(--blue,#0067b8)}.ds-syllabus-link:hover{color:var(--deep-blue,#004578)}.ds-syllabus-link[aria-current]{color:var(--ink,#172f42);font-weight:650;background:var(--light-blue,#deecf9);padding-inline:10px;border-radius:4px}.ds-syllabus-link:focus-visible,.ds-drawer-summary:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}@media(min-width:1100px){.ds-drawer{border-right:1px solid var(--line,#c7d3dc);border-bottom:0;margin-top:34px;padding:0 20px 30px}}@media(max-width:650px){.ds-drawer{padding:8px 20px}}"
+    },
+    {
+      "name": "Four-stage course map",
+      "kind": "nav",
+      "description": "The early orientation map; four columns become two at the source's narrow breakpoint. Example anchors are specimens, not lesson routing.",
+      "html": "<nav class=\"ds-stage-map\" aria-label=\"Explore the four course stages\"><a class=\"ds-stage\" href=\"#\">Start here<span class=\"ds-stage-note\">First principles</span></a><a class=\"ds-stage\" href=\"#\">L100<span class=\"ds-stage-note\">Foundations</span></a><a class=\"ds-stage\" href=\"#\">L200<span class=\"ds-stage-note\">Core services</span></a><a class=\"ds-stage\" href=\"#\">L300<span class=\"ds-stage-note\">Applied depth</span></a></nav>",
+      "css": ".ds-stage-map{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;border-block:1px solid var(--line,#c7d3dc);padding-block:12px;margin-bottom:22px;font:400 17px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}.ds-stage{min-height:44px;font-weight:600;text-decoration:none;color:var(--blue,#0067b8);text-underline-offset:4px}.ds-stage:hover{text-decoration:underline;color:var(--deep-blue,#004578)}.ds-stage:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}.ds-stage-note{display:block;color:var(--muted,#4f6372);font-size:14px;font-weight:400}@media(max-width:650px){.ds-stage-map{grid-template-columns:repeat(2,minmax(0,1fr))}}"
     }
   ],
   "narrative": {
     "northStar": "The Calm Networking Field Guide",
-    "overview": "The academy feels like a readable field guide, not a decorative dashboard. A light page, navy navigation and Azure-blue actions give the learner a steady place to read. Headings, generous line spacing and restrained rules establish hierarchy without turning every idea into a card.\n\nThe visual language makes complexity available without making it compulsory. Concrete examples and compact, model-owned relationships introduce an idea; full graphs, evidence and references remain separately disclosed. This is a reusable treatment for learning content, not a requirement that every utility screen use a lesson composition.",
+    "overview": "The academy retains its calm instructional identity: white reading pages, navy text and Azure-blue actions. Familiar system typography, generous line spacing and restrained rules make room for explanation instead of turning the course into a dashboard.\n\nThe built main is a continuous course, not a collection of learning tools. Essential visuals sit with the explanation; disclosures hold supplementary sources, references and self-review examples. The visual system supports beginner-to-depth reading without requiring a separate simulator or lab.",
     "keyCharacteristics": [
-      "Light reading surfaces with navy structure and Azure-blue actions.",
-      "System typography, comfortable measures and restrained section rules.",
-      "Compact relationships before optional full visual detail.",
-      "Explicit current states, native controls and visible keyboard focus.",
-      "Progress described as learning activity, not proof of mastery."
+      "White reading surfaces, navy ink and Azure-blue actions.",
+      "Readable system typography and restrained section rules.",
+      "Complete, relevant visuals beside the teaching they support.",
+      "Native disclosures, explicit states and visible keyboard focus.",
+      "Honest learning records and visible save failures."
     ],
-    "rules": [],
+    "rules": [
+      { "name": "The Semantic Color Rule", "body": "Pair diagram color with endpoint names, relationship labels and the applicable line pattern; color alone does not explain a connection.", "section": "colors" },
+      { "name": "The Reading First Rule", "body": "Keep explanation at the body scale and supporting detail subordinate; do not compress the lesson into diagram metadata.", "section": "typography" },
+      { "name": "The Flat Reading Rule", "body": "Use spacing, fine borders and pale supporting surfaces for hierarchy; do not import raised legacy-shell treatments into the main.", "section": "elevation" }
+    ],
     "dos": [
-      "**Do** keep reading surfaces light, navigation navy and actions Azure blue.",
-      "**Do** use readable measures, whitespace and section rules before adding containers.",
-      "**Do** preserve native controls, explicit current states and visible keyboard focus.",
-      "**Do** pair diagram color with labels and line patterns.",
-      "**Do** keep compact relationships model-owned and full detail separately accessible.",
-      "**Do** distinguish reading, practice, checks and self-explanation from mastery."
+      "**Do** keep white reading surfaces, navy text and Azure-blue actions.",
+      "**Do** preserve the readable body scale, bounded measures and visible keyboard focus.",
+      "**Do** show the complete relevant visual with its explanation, labels and evidence.",
+      "**Do** use native disclosures for optional syllabus detail, references and self-review.",
+      "**Do** distinguish practice records from mastery and expose save failures with recovery actions."
     ],
     "donts": [
-      "**Don't** turn the field guide back into a decorative dashboard of raised cards.",
-      "**Don't** make full graphs, references or optional assessments compete with the core reading.",
-      "**Don't** use small technical metadata as the main teaching text.",
-      "**Don't** treat legacy CSS, incidental browser defaults or one-off values as new brand rules.",
-      "**Don't** present these documentation specimens as proof of accessibility or learning effectiveness."
+      "**Don't** import the legacy navy sidebar, bottom navigation or Learn/Try/Check tabs into the main.",
+      "**Don't** hide the essential lesson visual behind a viewer or require a standalone Front Door lab.",
+      "**Don't** imply that repeated endpoints are extra appliances or relationship rows are global timing steps.",
+      "**Don't** invent tokens, shadows or controls to make the documentation look more systematic.",
+      "**Don't** claim that source inspection or finish review establishes learning retention."
     ]
   }
 }

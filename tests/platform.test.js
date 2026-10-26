@@ -10,8 +10,8 @@ const runtimeFiles = [
     'js/lab-engine.js', 'js/diagrams.js', 'js/modules-300.js'
 ];
 
-test('learner workspace loads coaching and exposes real destinations', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+test('optional reference workspace retains coaching and tools', () => {
+    const html = fs.readFileSync(path.join(root, 'reference.html'), 'utf8');
     const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
     ['destinationView', 'quickCheckHost', 'storageNotice'].forEach(id => assert.ok(html.includes(`id="${id}"`), id));
     assert.ok(html.includes('css/learning.css'));
@@ -46,7 +46,7 @@ test('runtime files contain no executable inline event attributes', () => {
 });
 
 test('mobile shell provides an accessible zero-width drawer and three destinations', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = fs.readFileSync(path.join(root, 'reference.html'), 'utf8');
     const css = fs.readFileSync(path.join(root, 'css/styles.css'), 'utf8');
     const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 
@@ -68,7 +68,7 @@ test('mobile shell provides an accessible zero-width drawer and three destinatio
 });
 
 test('lesson shell exposes three steps, optional evidence, and an inline core visual', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = fs.readFileSync(path.join(root, 'reference.html'), 'utf8');
     const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
     const mastery = fs.readFileSync(path.join(root, 'js/mastery-engine.js'), 'utf8');
     const diagrams = fs.readFileSync(path.join(root, 'js/diagrams.js'), 'utf8');
@@ -85,7 +85,7 @@ test('lesson shell exposes three steps, optional evidence, and an inline core vi
 });
 
 test('runtime assets and offline cache share the learning release', () => {
-    const release = '2026-10-fieldguide-3';
+    const release = '2026-10-course-2';
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     const serviceWorker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
     const browser = fs.readFileSync(path.join(root, 'tests/browser_smoke.py'), 'utf8');
@@ -212,6 +212,17 @@ test('worker offline navigation uses its own installed index', async () => {
     await worker.seed(worker.cacheName, 'index.html', 'own offline index');
     const result = await worker.request('./', { mode: 'navigate' });
     assert.equal(await result.response.text(), 'own offline index');
+});
+
+test('worker keeps main course, pilot alias and reference shell distinct offline', async () => {
+    const worker = createWorkerHarness({ offline: true });
+    await worker.seed(worker.cacheName, 'index.html', 'course');
+    await worker.seed(worker.cacheName, 'reference.html', 'reference');
+    await worker.seed(worker.cacheName, 'course.html', 'pilot alias');
+    for (const [path, body] of [['index.html', 'course'], ['reference.html', 'reference'], ['course.html', 'pilot alias']]) {
+        const result = await worker.request(path, { mode: 'navigate' });
+        assert.equal(await result.response.text(), body);
+    }
 });
 
 test('worker leaves requests outside its path scope unintercepted', async () => {

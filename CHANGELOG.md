@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### October 26 integrated course (release `2026-10-course-2`)
+- Replaced the main entry with one continuous Start -> L100 -> L200 -> L300 course: all 21 modules, 79 lessons, 21 fictional module evidence cases, and three level checkpoints. Added in-course CIDR/OSI foundations and eight configuration/operations lessons; full references are supplementary, not the only route to depth.
+- Removed required lesson-mode tabs and standalone-lab navigation. Added one first-unfinished Start/Continue, a compact four-stage map, collapsible syllabus, explanation-before-example reading order, and next-lesson transitions across every level.
+- Rebuilt essential visuals as complete labelled conversations, stacks, hierarchy, address partitions, sequences, and responsive tables. Clarified repeated endpoints and added a concrete Front Door domain/route/group/origin association example. No autoplay or inner diagram scrolling.
+- Preserved earlier records, matching pilot answers/completion/reading position, JSON backups, and old links. `course.html` redirects into the main course; optional legacy tools remain at `reference.html`. The worker caches those documents separately and upgrades atomically without reloading open drafts.
+- Passed all 245 Node tests, 61 Chromium browser tests, syntax checks for 29 JavaScript files, and diff whitespace checks. The complete browser journey finishes all 79 lessons. A separate finish reviewer resolved all three material UI findings after one correction batch; refreshed desktop/mobile captures confirm the final verdict.
+- Publication approved October 26 with "push and publish"; targets `main` through the gated GitHub Pages workflow. Local preview remains `http://127.0.0.1:8894/index.html`. No Azure execution. Beginner acceptance, manual screen-reader testing, physical touch, and delayed recall are not established by these gates.
+
+### October 26 guided-course pilot (local only)
+- Added a separate `course.html` journey: request/reply, DNS lookup, and Front Door caching. Replaced the pilot's simulator-style controls with one labelled, connected diagram and one changed condition per lesson.
+- Added a real three-lesson itinerary, first-unfinished continuation independent of browsing, remembered reading sections and answers, matching checks and a clear pilot finish.
+- Reused existing progress storage with isolated pilot keys; preserved legacy evidence and provided visible failed-save retry/backup. No changes to the main academy, advanced lab or published offline release.
+- Scope approved as a three-lesson user trial before broader redesign. Previous functional/visual acceptance did not establish beginner usability. No commit, push or deployment requested for this pilot.
+- Passed 235 Node and 57 browser tests after correcting reading-position recovery. A bounded independent finish review found no material fixes; beginner acceptance and learning retention still require a human trial.
+
 ### October full field-guide redesign (release `2026-10-fieldguide-3`)
 - Applied the approved small-unit learning model across all 21 modules: 63 authored outcomes, explanations, examples, visuals, predictions, paired checks and teach-back prompts. Preserved full technical references and optional advanced exercises.
 - Added stable unit URLs, exact unit/step resume, recoverable explanation drafts and separate read/prediction/check/self-explanation records. Reading does not skip unfinished practice or grant skill mastery.

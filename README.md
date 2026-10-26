@@ -8,73 +8,29 @@
 
 ## 📖 What is this?
 
-A pure-HTML / CSS / JavaScript study site (no build step, no frameworks) designed for people who are **brand new to networking** and want a structured path into **Azure networking**, with a special focus on **Azure Front Door**. Every module combines short lessons, diagrams, quizzes, and hands-on Azure Cloud Shell labs.
+A pure-HTML / CSS / JavaScript study site (no build step, no frameworks) for people starting networking from zero, with a structured path into Azure networking and Azure Front Door. The required course runs without an Azure account. Full quizzes and Azure Cloud Shell labs are optional.
 
 Progress is saved in your browser's `localStorage` — you can export/import it as JSON.
 
-## Networking field guide (local, unpublished)
+## One integrated course
 
-**Status:** Active. Field-guide release `2026-10-fieldguide-3`, approved for publication on October 24, 2026. GitHub Pages deployment runs after the automated validation gates pass.
+**Status:** Active. Release `2026-10-course-2` was approved for publication on October 26, 2026. GitHub Pages publishes `main` after its automated validation gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
 
-The primary curriculum is now **63 short units across all 21 modules**, after three Level 0 starter lessons. Each unit has one outcome, a short explanation, a concrete example, a shared-model visual, a changed-condition prediction, two relevant checks, and a self-explanation prompt. The suggested 8-12 minutes includes exploration and practice; it is an estimate, not a measured completion target.
+Open `index.html` through a local HTTP server. There is now one recommended sequence: **Start here -> L100 -> L200 -> L300**. All **21 modules** are integrated into **79 lessons**, including three starters and a checkpoint after each technical level. `course.html` is a compatibility redirect, not a separate pilot.
 
-Use **Your path -> Learn -> Try it -> Quick check**. Continue learning returns to the saved unit and step, including unfinished practice after reading. The full technical lesson, extra exercises, full quiz and optional Azure lab remain under **Reference and extra practice**. Old section bookmarks open the matching full reference instead of silently moving a beginner into it.
+Each ordinary lesson teaches a concrete question through explanation, a complete relevant visual, a worked example, an activity, checks, and a next lesson on one page. There are no Learn/Try/Check tabs. Eight additional configuration/operations lessons and explicit OSI/CIDR lessons put useful depth inside the course rather than requiring reference browsing. Module-end evidence cases and level checkpoints ask for interpretation, not just definitions.
 
-**Progress** distinguishes units read, correct predictions, checks passed and self-explanations. Level 0 reading counts are visible too. These records are local practice, not certification or demonstrated mastery. Existing quiz results, applied evidence, lab records, drafts and backups remain separate and compatible.
+**Course** provides the syllabus and one Start/Continue action. **Progress** holds learning records and backups. Continue follows the first unfinished lesson even after previewing a later module. Answers, explanation drafts, comparison choice, and reading section persist. Failed saves expose retry/backup and do not claim saved completion.
 
-Diagram configuration is secondary to the explanation. Redundant depth/scenario choices are omitted; AFD scenarios keep stable positions and show when an origin is not contacted. TCP uses lifelines, NSG/UDR use decision tables, and NAT includes the before/after mapping. Level 0 offers small condition-changing sketches. Movement is learner-controlled, with readable mobile alternatives.
+Diagrams match their subject: labelled request/reply arrows, a seven-layer stack, nested Azure management containers, address partitions, TCP sequences, and decision/configuration tables. Essential relationships remain visible without a separate viewer, autoplay, or inner scrolling. Mobile diagrams reflow rather than shrinking their text.
 
-For the content/runtime boundary, see `js\unit-content.js` and `js\unit-engine.js`. Unit IDs are durable navigation and storage keys: renaming them requires a migration. Navigation adds `?unit=<id>&tab=<step>`; progress uses namespaced entries in the existing version-2 backup schema, not a replacement data store. Explanation drafts use the existing recoverable progress storage.
+Full references open inside the course with a return link. The earlier app lives at `reference.html` for optional full quizzes, Azure labs, exercises, and legacy records. The Front Door sandbox is supplementary; completing the required course never depends on visiting it.
 
-The design principle is **one complete idea before the next layer of complexity**. Functional browser checks cannot establish learning retention. A real learner should still complete a unit, explain its changed-condition example without the page, and repeat that explanation later before this is called an effective course.
+Progress uses `course-v2:` keys inside the existing version-2 backup schema. Stable module/unit IDs remain unchanged. Earlier reading, quizzes, labs, drafts, and evidence are preserved without being promoted to new checks; matching pilot checks, answers, and reading sections remain usable. The offline worker caches the main course, compatibility redirect, and optional tools as distinct documents.
 
-## Earlier navigation simplification (superseded locally)
+The design principle is **teach one idea, apply it, then connect it to the next**. Checks and self-explanations are practice evidence, not certification, independent mastery, or proof of Azure execution. Beginner start/continue acceptance and delayed recall still need a human trial.
 
-Release candidate `2026-10-simple-1` replaces the competing navigation systems with **Your path**, **AFD request lab**, and **Progress** on desktop and mobile. These changes are local; the live site still serves the previously published diagram upgrade until a new publication is approved.
-
-Each technical module follows **1 Learn -> 2 Try it -> 3 Quick check**. Read the plain-language opening and lesson, explore the diagrams and activities, then answer three low-pressure practice questions. Worked cases are collapsed after the quick check; full quizzes, Azure labs, and skill evidence remain under **Go deeper (optional)**. Reading and practice do not award demonstrated mastery.
-
-The three Level 0 lessons finish with a completion screen and an explicit choice to continue into foundations. Saved sections are offered as optional resume links, never automatic jumps into advanced content. Existing progress, drafts, evidence, bookmarks, and offline support are retained. The optional catalog still supports path filtering; its preferences no longer advertise a session length that the beginner sequence does not use.
-
-The learning principle is **teach first, explore second, check third**: the interface should reveal depth as it becomes useful, rather than ask a beginner to organize the entire course. This release simplifies the flow; it does not rewrite the technical L100-L300 lesson bodies or establish measured learning outcomes.
-
-## Published October diagram upgrade
-
-Release `2026-10-diagrams-1` combines the beginner-first entrance with rebuilt diagrams and an AFD request lab. Publication was approved on October 23; GitHub Pages serves it only after the deployment workflow's validation gates pass.
-
-| Stage | What to do | What to understand before moving on |
-|---|---|---|
-| Start from zero | Complete the three short Level 0 lessons; placement is optional | Names, addresses, requests, replies, edge vs origin |
-| Build foundations | Read the plain-language opening, then trace the simple diagram | Explain the path in your own words |
-| Follow one AFD request | Open the AFD request lab and select **Start tracing** | Predict whether a request stops at WAF, a redirect, a cache, or an origin |
-| Add depth | Switch to detailed views, change failure scenarios, then attempt the capstone | Explain the decision, the return path, and the evidence needed to diagnose a failure |
-
-All 22 diagram entries and 11 formerly static lesson visuals now use a shared catalog of 26 models. Maps, numbered steps, predictions, narration, and print transcripts come from the same model rather than separately maintained drawings. Simple views hide advanced configuration; detailed views expose tier, private-origin, routing, and failure distinctions where relevant.
-
-The walkthroughs have Previous, Next, Show all, and Reset controls, with no autoplay or looping motion. Mobile defaults to a readable step list; the optional map scrolls locally without shrinking its labels. Each model includes sources and limitations, and printing produces a complete explanation of the selected scenario.
-
-The AFD lab includes a five-question practice check with a four-correct target. Reading and practice remain separate from quiz, Azure-lab, and demonstrated-mastery evidence. Existing progress is preserved; failed saves expose recovery rather than claiming that work was saved.
-
-See the [October audit and implementation record](docs/diagram-audit-2026-10.md) for the corrected findings, evidence, and remaining human-learning checks. The upgrade does not claim that every advanced lesson has been rewritten or that completing a visual lab proves production skills.
-
-## September learning release (historical)
-
-Release `2026-09-learning-1` includes the changes below. GitHub Pages publishes `main` only after the Node and browser gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
-
-- Today, Learn, Practice, Build, and More have distinct task views. The AFD diagnosis and broad networking paths support 10/25/60-minute sessions with prerequisite-aware recommendations and open reference access.
-- All 21 modules support guided/browse mode, worked request-path cases, prediction checks, changed tasks, fictional example evidence, downloadable worksheets, and subscription-free case analysis.
-- Quiz choices keep keyboard focus, explicit critical-question policy replaces the hidden first-question rule, and failed due reviews are recorded and rescheduled.
-- Progress backups identify their academy and format. Failed saves retain recoverable work, corrupt storage is protected, invalid imports preserve previous progress, and evidence drafts survive navigation.
-- Case analysis is self-attested practice. Existing Azure labs remain available, with separate optional-execution, data, cost, verification, and cleanup guidance. No Azure deployment is claimed by completing the local route.
-
-Run the local release gates:
-
-```powershell
-node --test tests\*.test.js
-python tests\browser_smoke.py
-```
-
-For a first browser-test setup, install the requirements from `tests\requirements.txt` and the Playwright Chromium browser if they are missing. The browser runner manages its own local server and disposable progress. It never runs Azure lab commands. Cloud-lab execution, manual screen-reader review, and measured learning outcomes remain separate checks.
+Historical releases and validation counts are recorded in `CHANGELOG.md` and the [October diagram audit](docs/diagram-audit-2026-10.md).
 
 ---
 
@@ -100,8 +56,8 @@ Start here if terms like *subnet*, *DNS*, or *TCP handshake* are new to you.
 |---|---|---|
 | 1 | Networking Fundamentals | OSI model, TCP/IP, DNS, HTTP |
 | 2 | The Azure Environment | Subscriptions, resource groups, regions, availability zones |
-| 3 | Azure Virtual Networks (VNets) | Creating and configuring VNets and subnets |
-| 4 | IP Addressing in Azure | Public/private IPs, static vs dynamic, NAT |
+| 3 | IP Addressing in Azure | Prefixes, subnet sizing, public/private IPs, address lifetime |
+| 4 | Azure Virtual Networks (VNets) | Address spaces, subnets, policy, connectivity |
 
 ### ⬡ Level 200 — Intermediate (9 modules)
 Core Azure networking services — the day-to-day building blocks of any deployment.
@@ -112,11 +68,11 @@ Core Azure networking services — the day-to-day building blocks of any deploym
 | 2 | Azure DNS & Private DNS Zones | Public zones, private zones, record management |
 | 3 | Azure Load Balancing Options | Load Balancer, App Gateway, Traffic Manager, Front Door |
 | 4 | **Azure Front Door Fundamentals** | Architecture, origins, routing, caching basics |
-| 5 | VPN Gateway & ExpressRoute | Site-to-Site, Point-to-Site, ExpressRoute fundamentals |
-| 6 | VNet Peering & Service Endpoints | Connecting VNets and securing Azure service access |
-| 7 | **Azure Bastion** | Secure RDP/SSH without public IPs, SKU tiers, shareable links |
-| 8 | **NAT Gateway** | Deterministic outbound SNAT, port exhaustion fixes |
-| 9 | **Route Tables & UDRs** | Custom routes, NVA forwarding, BGP route propagation |
+| 5 | VNet Peering & Service Endpoints | Peering, private access, service and private endpoints |
+| 6 | **Route Tables & UDRs** | Route selection, forwarding, return paths |
+| 7 | **NAT Gateway** | Outbound SNAT, reply mappings, finite ports |
+| 8 | VPN Gateway & ExpressRoute | Site-to-Site, Point-to-Site, private circuit fundamentals |
+| 9 | **Azure Bastion** | Secure management paths without VM public IPs |
 
 ### ⬡ Level 300 — Advanced (8 modules)
 Deep-dive on Front Door, security, and real-world architecture scenarios.
@@ -126,10 +82,10 @@ Deep-dive on Front Door, security, and real-world architecture scenarios.
 | 1 | **Azure Front Door — Advanced Configuration** | Rules Engine, custom domains, TLS, Private Link |
 | 2 | **Front Door Caching & Performance** | Cache behavior, compression, optimization strategies |
 | 3 | **Front Door WAF & Security** | WAF policies, managed rules, bot protection, DDoS |
-| 4 | Advanced Network Architecture | Hub-spoke, Azure Firewall, Network Virtual Appliances |
-| 5 | Real-World Networking Scenarios | Troubleshooting drills and production design scenarios |
-| 6 | **Azure Firewall** | Application/network/NAT rules, Firewall Policy, threat intel |
-| 7 | **Network Watcher** | Connection Monitor, VNet flow logs, IP Flow Verify, packet capture |
+| 4 | **Azure Firewall** | Inspection paths, policy, return routing |
+| 5 | Advanced Network Architecture | Hub-spoke, failure domains, Network Virtual Appliances |
+| 6 | **Network Watcher** | Connection Monitor, VNet flow logs, IP Flow Verify, packet capture |
+| 7 | Real-World Networking Scenarios | Troubleshooting drills and production design scenarios |
 | 8 | **Capstone: Hub-Spoke** | End-to-end design: Firewall + Bastion + VPN + peering + UDRs |
 
 ---
@@ -159,26 +115,19 @@ Front Door is Microsoft's global, Layer-7 edge platform. This academy dedicates 
 3. **L300 — WAF & Security:** managed rule sets, bot protection, DDoS integration
 4. **L300 — Caching & Performance:** cache keys, compression, purge strategies
 
-The subscription-free AFD request lab connects these modules through one reusable request story. Optional Cloud Shell labs inspect real Front Door response headers.
+Embedded request scenarios connect these modules. The standalone sandbox and Cloud Shell labs are optional, not another required learning track.
 
 ---
 
 ## ✨ Features
 
-- **Progressive diagrams** — 26 shared models with simple/detailed views, learner-controlled steps, predictions, and failure scenarios
-- **AFD request lab** — compare cache, WAF, redirect, origin-health, tier, and connection choices without an Azure subscription
-- **Readable alternatives** — mobile step lists, named SVG maps, complete text explanations, and print transcripts
-- **Quizzes** — multiple-choice, match-the-layer, subnet calculator, flashcards
-- **Hands-on labs** — runnable `az cli` / `nslookup` / `tcpping` / `traceroute` steps in Azure Cloud Shell
-- **Progress tracking** — per-module, per-level, overall %, day streak
-- **Export / Import** progress as JSON
-- **Installable and offline after first load** — service-worker-cached app shell, no external CDNs or trackers, strict script CSP
-- **Honest mastery states** — Learned → Practiced → Demonstrated → Durable, with 80% retrieval checks, lab evidence, transfer rubrics, and spaced review
-- **Diagnostic learning route** — ten questions recommend the earliest networking competency worth practicing
-- **Your path** — one clear starting action, three introductory lessons, and a readable path into deeper networking
-- **Mobile study shell** — three destinations matching desktop, plus an accessible, focus-managed module drawer
-- **Three-step lessons** — Learn, Try it, and Quick check; worked cases and deeper evidence tools are optional
-- **Explicit resume** — choose a saved reading section without being automatically dropped into advanced content
+- **One course** — 79 lessons across starters, all 21 modules, and three level checkpoints
+- **One next action** — uninterrupted learning with a collapsible syllabus
+- **Relevant visuals** — labelled traffic paths, concept stacks, address partitions, and responsive tables
+- **Applied reasoning** — embedded predictions, 21 fictional module cases, checks, and self-explanations
+- **Preserved evidence** — browser-local records and validated JSON export/import
+- **Offline support** — separate cached course and optional-tool shells, self-hosted assets, strict script CSP
+- **Optional tools** — full quizzes, subnet exercises, flashcards, legacy evidence, and Azure labs under reference links
 
 ---
 
@@ -207,14 +156,26 @@ Then open http://127.0.0.1:8080. Loopback binding keeps the preview off the loca
 ## 📁 Project structure
 
 ```
-index.html              # Single-page app shell
+index.html              # Integrated course shell
+reference.html          # Preserved optional quizzes, labs, exercises, and legacy records
+course.html             # Old pilot link compatibility redirect
 launch.bat              # Windows local-server launcher
 css/
+  guided-course.css     # Course typography, native controls, starter diagrams
+  course.css            # Integrated syllabus, lessons, responsive visuals and evidence
   styles.css            # Shared shell and learning tools
   learning.css          # Guided lessons and beginner presentation
   diagrams.css          # Diagrams, mobile alternatives, and printing
 js/
-  app.js                # Router, view management, progress wiring
+  course-app.js         # Main course router, lessons, reference and progress
+  course-curriculum.js  # Prerequisite order, extra foundations, checkpoints, course record adapter
+  course-depth.js       # Eight in-course configuration/operations lessons
+  course-cases.js       # Fictional evidence case for every module
+  course-visuals.js     # Concept-specific complete visual renderer
+  guided-course.js     # Starter content and pilot record compatibility
+  course-entry.js       # Redirect old pilot links into the main course
+  unit-content.js       # Existing 63 authored units, reused without changing their IDs
+  app.js                # Optional legacy-tool router
   beginner.js           # Level 0 lessons and beginner-first presentation
   progress.js           # localStorage-backed progress tracking
   ui-state.js           # separate versioned navigation and resume state
@@ -251,9 +212,9 @@ foreach ($file in $files) {
 }
 ```
 
-On October 23, the local upgrade passed **205 Node tests, 32 browser tests, and syntax checks for all 20 JavaScript files**. The browser matrix exercises all 26 models at 320/390/768/1440 pixels with normal and reduced-motion preferences, including explicit map inspection on mobile.
+The main-course browser gate completes every lesson from start to finish, exercises resume, draft and backup recovery, old bookmarks, reading order, responsive visuals, keyboard controls, and offline shell separation. The legacy browser gates still run against `reference.html`. Node contracts cover the curriculum, record preservation, all authored visual conditions, and retained tools.
 
-Diagram coverage includes semantic paths and branch omissions, scenario/tier changes, isolated SVG IDs, bounded stepping without wraparound, predictions, keyboard focus, label geometry, service boundaries, storage failure/retry, printing, and release-cache coherence. A separate 32-graph visual review reported no page errors or measured path collisions. These checks do not replace human screen-reader testing, real Azure execution, or a retention study. The [October audit](docs/diagram-audit-2026-10.md) supersedes the July clean-bill claims.
+Install `tests\requirements.txt` and Playwright Chromium only if missing. The browser runner manages a local server and disposable progress; it never executes Azure labs. Functional and screenshot checks do not replace human screen-reader testing, real Azure execution, or a retention study.
 
 ---
 

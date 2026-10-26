@@ -4,6 +4,26 @@ Running log of AI-assisted work sessions. Newest first.
 
 ---
 
+## 2026-10-26 - Integrated-course publication approved
+- Akshay requested "push and publish" for the complete course. Publication targets the nested `akshayvall/AzNetOnboarding` repository on `main`, not the outer workspace. Remote and local baseline both resolve to `341421deff7ec55ea322c78f77c6fd16670526e3`.
+- Release `2026-10-course-2` includes all 21 modules and 79 lessons. Fresh prepublication validation passed all 245 Node tests, 61 browser tests, syntax checks for 29 JavaScript files, and staged whitespace checks. Verify the exact commit's Pages workflow and the live main-course entry after pushing; a successful push alone is not publication.
+- No Azure execution or learner-storage reset. Human acceptance and retention remain unverified. Any rollback requires an approved revert and a new cache generation, not history rewriting.
+
+## 2026-10-26 - Whole-course integration implemented locally
+- Akshay approved integrating the entire academy, superseding the standalone pilot and tabbed field guide. Main `index.html` now runs 79 continuous lessons across all 21 modules and Start/L100/L200/L300, including deeper configuration lessons, module evidence cases, and level checkpoints. One Start/Continue follows unfinished learning; full references and old tools are optional. Preserved earlier evidence, matching pilot state, backups, and bookmarks.
+- Passed 245 Node tests, 61 browser tests (including all 79 lessons end-to-end), syntax checks for all 29 JavaScript files, and whitespace checks. Fixed the depth-table model shape, teaching order, pilot state migration, private-DNS/subnet visual relevance, and distinct offline navigation shells. Independent finish review closed all three findings: early stage orientation, repeated-endpoint meaning, and concrete Front Door configuration associations.
+- Final local candidate `2026-10-course-2` is visible at `http://127.0.0.1:8894/index.html` in the complete-course browser panel. Product, route, and source-derived design documentation supersede the rejected UX constraints. No commit, push, deployment, or Azure execution; last published commit remains `341421d` (`2026-10-fieldguide-3`). Human start/resume acceptance, screen-reader/physical-touch evaluation, and retention remain separate gates.
+
+## 2026-10-26 - Whole-course integration direction (proposal)
+- Akshay rejected the separate pilot as insufficiently integrated and requested a solution for every section, including L100. The target is one academy-wide learning journey, not another standalone beginner destination.
+- Recommended integrating the starter lessons into the main course, retaining all 21 L100-L300 modules, ordering lessons by prerequisites, using continuous lesson pages and embedded guided scenarios, and unifying course position, reference navigation, and progress. Preserve technical depth, legacy evidence, deep links, and optional Azure labs; do not treat old reading records as newly passed checks.
+- The current PRODUCT.md still mandates the rejected navigation and tabs; a full implementation must deliberately supersede those constraints. This turn records a proposed integration approach only, not an implemented rollout or publication approval.
+
+## 2026-10-26 - Three-lesson guided pilot (local only)
+- Akshay rejected the published diagram and lab experience as confusing and approved a bounded three-lesson trial before another academy-wide change. Added `course.html`: request/reply, DNS lookup, and Front Door caching, with continuous lessons, complete labelled connections, one changed condition, matching checks, and first-unfinished continuation.
+- Passed 235 Node tests and the final 57-test browser suite. Fixed a reading-position race found during validation and covered failed-save recovery, keyboard navigation, mobile diagram fit, preview/reload, and preservation of legacy progress. The bounded independent finish review identified no material fixes; product-document fidelity was not verified by that reviewer. Persisted the route-specific design brief without changing the academy-wide design contract.
+- Local preview: http://127.0.0.1:8894/course.html . No commit, push, deployment, or Azure execution. The live academy and advanced lab remain unchanged. Human acceptance still requires starting, finishing, leaving, and resuming without coaching; retention and manual assistive-technology testing remain unverified.
+
 ## 2026-10-24 - Field-guide publication approved
 - Akshay requested "implement and push" for the completed redesign. Publication targets the academy's separate `akshayvall/AzNetOnboarding` repository on `main`; no unrelated outer-workspace changes are included.
 - Repeated all 230 Node tests, 52 browser tests, JavaScript syntax and whitespace checks before publication. Confirmed the remote baseline is `681baf4`; final release is `2026-10-fieldguide-3`. The Pages workflow must pass its own validation before deployment.

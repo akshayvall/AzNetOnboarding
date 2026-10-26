@@ -13,10 +13,11 @@ from urllib.parse import unquote, urlsplit
 
 from playwright.sync_api import expect, sync_playwright
 from browser_diagrams import DiagramBrowserTests
+from browser_course import GuidedCourseBrowserTests
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE = "2026-10-fieldguide-3"
+RELEASE = "2026-10-course-2"
 MOUNT = "/academy/"
 VIEWPORTS = ((320, 900), (390, 844), (768, 1024), (1440, 1000))
 TIMEOUT = 10000
@@ -95,7 +96,7 @@ def local_server():
         thread.join(timeout=5)
 
 
-class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
+class AcademyBrowserTests(DiagramBrowserTests, GuidedCourseBrowserTests, unittest.TestCase):
     def setUp(self):
         self.errors = []
         self.external_requests = []
@@ -147,7 +148,9 @@ class AcademyBrowserTests(DiagramBrowserTests, unittest.TestCase):
             self.errors.append(message.text)
 
     def open_page(self, route="", base_url=None):
-        response = self.page.goto((base_url or self.base_url) + route, wait_until="domcontentloaded")
+        # Existing tool/legacy contracts remain exercised on their explicit optional entry.
+        entry = "reference.html"
+        response = self.page.goto((base_url or self.base_url) + entry + route, wait_until="domcontentloaded")
         self.assertTrue(response and response.ok, "The local academy document must load")
         self.assertTrue(self.page.evaluate("() => typeof app !== 'undefined' && typeof LearningEngine !== 'undefined' && LearningEngine.modules.length > 0"))
         expect(self.page.locator("main .view.active")).to_have_count(1)

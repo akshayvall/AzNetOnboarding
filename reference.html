@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="theme-color" content="#0078d4">
+    <title>Azure Networking Academy — From zero to Front Door</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="css/styles.css?v=2026-10-course-2">
+    <link rel="stylesheet" href="css/learning.css?v=2026-10-course-2">
+    <link rel="stylesheet" href="css/diagrams.css?v=2026-10-course-2">
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+</head>
+<!-- Direction contract: a calm networking field guide, not a dashboard. Read/Operate
+     mode: one concept, one causal visual, one action, then feedback. Light paper,
+     navy structure, Azure-blue actions, restrained rules, no decorative animation.
+     Technical references remain available without competing with the next step. -->
+<body class="field-guide">
+    <a href="#content" class="skip-link">Skip to main content</a>
+    <button id="mobileNavToggle" class="mobile-nav-toggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button>
+    <button id="navBackdrop" class="nav-backdrop" type="button" data-app-action="close-mobile-nav" aria-label="Close navigation" hidden></button>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar" aria-hidden="true" inert>
+            <button id="mobileNavClose" class="sidebar-close" type="button" data-app-action="close-mobile-nav" aria-label="Close navigation" title="Close navigation">×</button>
+            <div class="sidebar-header">
+                <a class="archive-return" href="index.html#continue">Return to the guided course</a>
+                <div class="logo">
+                    <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><path d="M6 23V9h20v14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="23" r="4" fill="currentColor"/><circle cx="26" cy="23" r="4" fill="currentColor"/><circle cx="16" cy="9" r="4" fill="currentColor"/></svg>
+                    <h1>Azure Networking<br>Academy</h1>
+                </div>
+                <p class="tagline">From zero to Azure Front Door</p>
+            </div>
+
+            <div class="progress-overview">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="overallProgress"></div>
+                </div>
+                <span class="progress-text" id="overallProgressText">0% Complete</span>
+            </div>
+
+            <div class="workspace-nav" aria-label="Learning destinations">
+                <a href="#today" data-destination="today">Your path</a>
+                <a href="#visual-lab" data-destination="visual-lab">AFD request lab</a>
+                <a href="#more" data-destination="more">Progress</a>
+            </div>
+
+            <details class="curriculum-nav">
+                <summary>Browse all lessons</summary>
+                <a class="starter-link" href="#start?lesson=0">Level 0: Start from zero</a>
+            <div class="nav-section">
+                <h2 class="nav-level level-100">Foundations</h2>
+                <ul id="nav-level-100"></ul>
+            </div>
+            <div class="nav-section">
+                <h2 class="nav-level level-200">Azure networking</h2>
+                <ul id="nav-level-200"></ul>
+            </div>
+            <div class="nav-section">
+                <h2 class="nav-level level-300">Deeper understanding</h2>
+                <ul id="nav-level-300"></ul>
+            </div>
+            </details>
+
+            <div class="sidebar-footer">
+                <details class="backup-controls"><summary>Backups and reset</summary>
+                <button id="resetProgress" class="btn-reset" title="Reset all progress" aria-label="Reset all progress">↺ Reset Progress</button>
+                <button id="exportProgress" class="btn-export" title="Export progress" aria-label="Export progress">⬇ Export</button>
+                <button id="importProgress" class="btn-import" title="Import progress" aria-label="Import progress">⬆ Import</button>
+                <input type="file" id="importFile" accept=".json" style="display:none">
+                </details>
+                <button id="openSearch" class="btn-search" title="Search (Ctrl+K)" aria-label="Search modules and topics">🔍 Search (Ctrl+K)</button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="content">
+            <section id="storageNotice" class="storage-notice" role="alert" hidden></section>
+            <div id="destinationView" class="view learning-surface"></div>
+            <!-- Dashboard (shown by default) -->
+            <div id="dashboard" class="view active">
+                <header class="academy-identity networking-identity">
+                    <div><h1>Your path</h1><p>Build an understanding of Azure networking, one idea at a time.</p></div>
+                </header>
+
+                <section id="masteryDashboard" class="mastery-dashboard" aria-label="Learning route and mastery progress"></section>
+            </div>
+
+            <!-- Module View (shown when a module is selected) -->
+            <div id="moduleView" class="view">
+                <div class="module-header">
+                    <button class="btn-back" data-app-action="show-dashboard">← Back</button>
+                    <div class="module-title-area">
+                        <span class="module-level-badge" id="moduleLevelBadge"></span>
+                        <h1 id="moduleTitle"></h1>
+                    </div>
+                    <div class="module-progress-indicator">
+                        <span id="moduleSectionProgress">Section 1 of 5</span>
+                    </div>
+                </div>
+
+                <section id="unitHeading" class="unit-heading" aria-label="Current learning unit"></section>
+                <nav class="lesson-steps" aria-label="Lesson steps">
+                    <button type="button" data-app-action="switch-tab" data-tab="learn">1 Learn</button>
+                    <button type="button" data-app-action="switch-tab" data-tab="try">2 Try it</button>
+                    <button type="button" data-app-action="switch-tab" data-tab="check">3 Quick check</button>
+                </nav>
+
+                <div class="module-workspace">
+                    <details id="sectionOutline" class="section-outline" hidden>
+                        <summary>In this lesson</summary>
+                        <ol id="sectionOutlineList"></ol>
+                    </details>
+                    <div class="module-content">
+                        <div id="tab-learn" class="tab-content active"></div>
+                        <div id="tab-diagrams" class="tab-content"></div>
+                        <div id="tab-try" class="tab-content"></div>
+                        <div id="tab-interactive" class="tab-content"></div>
+                        <div id="tab-check" class="tab-content">
+                            <div id="quickCheckHost"></div>
+                            <div id="coachingHost"></div>
+                            <details id="furtherStudy" class="further-study">
+                                <summary>Go deeper (optional)</summary>
+                                <p>These tools are for extra practice, not requirements for finishing the reading.</p>
+                                <div class="learning-actions">
+                                    <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="quiz">Full module quiz</button>
+                                    <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="lab">Case practice and optional Azure lab</button>
+                                    <button type="button" class="btn-secondary" data-app-action="open-evidence" data-evidence-target="transfer">Record an applied explanation</button>
+                                    <button type="button" class="btn-secondary" data-app-action="open-evidence" data-evidence-target="review">Review schedule</button>
+                                </div>
+                                <section id="masteryPanel" class="mastery-panel" aria-label="Optional skill evidence" hidden></section>
+                            </details>
+                        </div>
+                        <div id="tab-quiz" class="tab-content"></div>
+                        <div id="tab-lab" class="tab-content"></div>
+                        <div id="tab-reference" class="tab-content"></div>
+                        <button id="nextLessonStep" type="button" class="btn-primary" data-app-action="switch-tab" data-tab="try">Continue to Try it</button>
+                        <details class="unit-reference-access">
+                            <summary>Reference and extra practice</summary>
+                            <p>The full technical material is here when you need more depth. It is not required before your next unit.</p>
+                            <div class="learning-actions">
+                                <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="reference">Full module reference</button>
+                                <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="interactive">Extra exercises</button>
+                                <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="quiz">Full module quiz</button>
+                                <button type="button" class="btn-secondary" data-app-action="switch-tab" data-tab="lab">Optional case and Azure lab</button>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div class="module-navigation">
+                    <button class="btn-secondary" id="prevModule" data-app-action="prev-module">← Previous Module</button>
+                    <button class="btn-primary" id="completeModule" data-app-action="complete-module">Done reading</button>
+                    <button class="btn-secondary" id="nextModule" data-app-action="next-module">Next Module →</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+        <button type="button" class="bottom-nav-item active" data-app-action="navigate-destination" data-destination="today"><span>Your path</span></button>
+        <button type="button" class="bottom-nav-item" data-app-action="navigate-destination" data-destination="visual-lab"><span>AFD lab</span></button>
+        <button type="button" class="bottom-nav-item" data-app-action="navigate-destination" data-destination="more"><span>Progress</span></button>
+    </nav>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Search Palette (Ctrl+K) -->
+    <div id="searchPalette" class="search-palette" role="dialog" aria-modal="true" aria-label="Search modules" hidden>
+        <div class="search-palette-backdrop" data-app-action="close-search"></div>
+        <div class="search-palette-inner">
+            <input id="searchInput" type="search" autocomplete="off" placeholder="Search modules, topics, tags…" aria-label="Search">
+            <ul id="searchResults" class="search-results" role="listbox"></ul>
+            <div class="search-hint">↑↓ to navigate · Enter to open · Esc to close</div>
+        </div>
+    </div>
+
+    <dialog id="diagnosticDialog" class="diagnostic-dialog" aria-labelledby="diagnosticTitle">
+        <div class="diagnostic-dialog-head">
+            <div><p class="mastery-eyebrow">Starting point</p><h2 id="diagnosticTitle">Azure networking mastery diagnostic</h2></div>
+            <button type="button" class="icon-button" data-mastery-action="close-diagnostic" aria-label="Close diagnostic">×</button>
+        </div>
+        <p>Answer from memory. The result recommends where to begin; it does not block any module.</p>
+        <form id="diagnosticForm" class="diagnostic-form"></form>
+        <p id="diagnosticFeedback" role="status" aria-live="polite"></p>
+        <div class="diagnostic-actions">
+            <button type="button" class="btn-secondary" data-mastery-action="close-diagnostic">Cancel</button>
+            <button type="button" class="btn-primary" data-mastery-action="submit-diagnostic">Get recommendation</button>
+        </div>
+    </dialog>
+
+    <!-- Scripts -->
+    <script src="js/progress.js?v=2026-10-course-2"></script>
+    <script src="js/ui-state.js?v=2026-10-course-2"></script>
+    <script src="js/today-engine.js?v=2026-10-course-2"></script>
+    <script src="js/modules-100.js?v=2026-10-course-2"></script>
+    <script src="js/modules-200.js?v=2026-10-course-2"></script>
+    <script src="js/modules-300.js?v=2026-10-course-2"></script>
+    <script src="js/modules-extras.js?v=2026-10-course-2"></script>
+    <script src="js/mastery-content.js?v=2026-10-course-2"></script>
+    <script src="js/learning-content.js?v=2026-10-course-2"></script>
+    <script src="js/quiz-engine.js?v=2026-10-course-2"></script>
+    <script src="js/interactive.js?v=2026-10-course-2"></script>
+    <script src="js/lab-engine.js?v=2026-10-course-2"></script>
+    <script src="js/diagram-models.js?v=2026-10-course-2"></script>
+    <script src="js/diagram-afd.js?v=2026-10-course-2"></script>
+    <script src="js/diagrams.js?v=2026-10-course-2"></script>
+    <script src="js/mastery-engine.js?v=2026-10-course-2"></script>
+    <script src="js/learning-engine.js?v=2026-10-course-2"></script>
+    <script src="js/beginner.js?v=2026-10-course-2"></script>
+    <script src="js/unit-content.js?v=2026-10-course-2"></script>
+    <script src="js/unit-engine.js?v=2026-10-course-2"></script>
+    <script src="js/app.js?v=2026-10-course-2"></script>
+</body>
+</html>

@@ -339,8 +339,8 @@ test('lesson checks and flashcards do not contradict the qualified diagrams', ()
     ]) assert.equal(staleClaim.test(prose), false, `Stale teaching claim: ${staleClaim}`);
 });
 
-test('the AFD request lab is a routed, cached destination rather than an isolated demo', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+test('the optional AFD request lab remains a routed cached reference tool', () => {
+    const html = fs.readFileSync(path.join(root, 'reference.html'), 'utf8');
     const learning = fs.readFileSync(path.join(root, 'js', 'learning-engine.js'), 'utf8');
     const beginner = fs.readFileSync(path.join(root, 'js', 'beginner.js'), 'utf8');
     const worker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');

@@ -1988,3 +1988,5 @@ html, body {
     .workflow-prototype #nextModule::before { content: '→'; font-size: 20px; }
     .workflow-prototype #completeModule { min-width: 0; height: 44px; padding: 0 8px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 }
+/* Reference tools retain a visible exit without replacing their existing controls. */
+.archive-return { display: block; padding: 12px 16px; font-size: 14px; line-height: 1.5; color: var(--azure-blue); border-bottom: 1px solid var(--border-color); }
