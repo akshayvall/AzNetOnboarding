@@ -5,7 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### October 26 integrated course (release `2026-10-course-2`)
+### October 26 integrated course (release `2026-10-course-3`)
+- The first publication attempt was blocked by Linux CI: deferred lesson focus could steal a newly focused comparison control or skip link. Removed the unnecessary animation-frame delay and added a deterministic focus-race regression. All 10 guided-course browser checks and 245 Node tests passed locally after repair; the Pages workflow rechecks the complete suite before publishing.
 - Replaced the main entry with one continuous Start -> L100 -> L200 -> L300 course: all 21 modules, 79 lessons, 21 fictional module evidence cases, and three level checkpoints. Added in-course CIDR/OSI foundations and eight configuration/operations lessons; full references are supplementary, not the only route to depth.
 - Removed required lesson-mode tabs and standalone-lab navigation. Added one first-unfinished Start/Continue, a compact four-stage map, collapsible syllabus, explanation-before-example reading order, and next-lesson transitions across every level.
 - Rebuilt essential visuals as complete labelled conversations, stacks, hierarchy, address partitions, sequences, and responsive tables. Clarified repeated endpoints and added a concrete Front Door domain/route/group/origin association example. No autoplay or inner diagram scrolling.

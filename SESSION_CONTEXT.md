@@ -4,6 +4,11 @@ Running log of AI-assisted work sessions. Newest first.
 
 ---
 
+## 2026-10-26 - Publication gate focus-race correction
+- Commit `a677d90` pushed successfully, but Pages run `40262467356` blocked deployment after Linux keyboard checks exposed delayed lesson focus stealing focus from controls. The live site was not replaced by the failed candidate.
+- Reproduced the race deterministically before fixing it. Restored the reading section and heading focus synchronously, before the learner's next interaction. Added a regression covering comparison-control and skip-link focus; all 10 guided-course browser checks and 245 Node tests pass locally.
+- Corrected release is `2026-10-course-3`, with coherent asset/cache tokens. Publication remains authorized; wait for the new commit's complete Pages gate and verify the live course before claiming deployment.
+
 ## 2026-10-26 - Integrated-course publication approved
 - Akshay requested "push and publish" for the complete course. Publication targets the nested `akshayvall/AzNetOnboarding` repository on `main`, not the outer workspace. Remote and local baseline both resolve to `341421deff7ec55ea322c78f77c6fd16670526e3`.
 - Release `2026-10-course-2` includes all 21 modules and 79 lessons. Fresh prepublication validation passed all 245 Node tests, 61 browser tests, syntax checks for 29 JavaScript files, and staged whitespace checks. Verify the exact commit's Pages workflow and the live main-course entry after pushing; a successful push alone is not publication.

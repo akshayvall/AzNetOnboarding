@@ -14,7 +14,7 @@ Progress is saved in your browser's `localStorage` — you can export/import it 
 
 ## One integrated course
 
-**Status:** Active. Release `2026-10-course-2` was approved for publication on October 26, 2026. GitHub Pages publishes `main` after its automated validation gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
+**Status:** Active. Release `2026-10-course-3` was approved for publication on October 26, 2026. GitHub Pages publishes `main` after its automated validation gates pass; see the [deployment runs](https://github.com/akshayvall/AzNetOnboarding/actions/workflows/pages.yml).
 
 Open `index.html` through a local HTTP server. There is now one recommended sequence: **Start here -> L100 -> L200 -> L300**. All **21 modules** are integrated into **79 lessons**, including three starters and a checkpoint after each technical level. `course.html` is a compatibility redirect, not a separate pilot.
 

@@ -80,6 +80,25 @@ class GuidedCourseBrowserTests:
             return before(prose, diagram) && before(diagram, example) && before(example, activity);
         }"""))
 
+    def test_guided_course_navigation_does_not_steal_keyboard_focus(self):
+        self.open_course("#lesson=request")
+        self.page.wait_for_function("() => !CourseApp.routing")
+        for target in ("condition", "skip"):
+            focused = self.page.evaluate("""target => {
+                const original = window.requestAnimationFrame;
+                const pending = [];
+                window.requestAnimationFrame = callback => { pending.push(callback); return pending.length; };
+                try {
+                    CourseApp.lesson('request', 'story');
+                    const expected = target === 'condition' ? document.getElementById('condition') : document.getElementById('course');
+                    if (target === 'condition') expected.focus();
+                    else document.querySelector('.course-skip').click();
+                    pending.forEach(callback => callback(performance.now()));
+                    return document.activeElement === expected;
+                } finally { window.requestAnimationFrame = original; }
+            }""", target)
+            self.assertTrue(focused, f"Navigation stole focus from {target}")
+
     def test_guided_course_reviewer_corrections(self):
         for width in (390, 1440):
             self.page.set_viewport_size({"width": width, "height": 1000})

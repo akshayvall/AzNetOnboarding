@@ -109,11 +109,9 @@ const CourseApp = {
     },
     restoreSection(section) {
         this.section = section;
-        requestAnimationFrame(() => {
-            if (section === 'story') { window.scrollTo(0, 0); document.getElementById('lesson-title')?.focus({ preventScroll: true }); }
-            else document.getElementById(section)?.scrollIntoView({ block: 'start' });
-            this.routing = false;
-        });
+        if (section === 'story') { window.scrollTo(0, 0); document.getElementById('lesson-title')?.focus({ preventScroll: true }); }
+        else document.getElementById(section)?.scrollIntoView({ block: 'start' });
+        this.routing = false;
     },
     reference(moduleId, returnId, section) {
         const module = this.modules.find(m => m.id === moduleId);
