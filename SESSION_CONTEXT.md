@@ -4,6 +4,15 @@ Running log of AI-assisted work sessions. Newest first.
 
 ---
 
+## 2026-10-26 - Navigation refinement publication
+- Akshay requested "push live", authorizing publication of `2026-10-course-4` on `main`.
+- Local verification passed 245 Node tests and 16 course/offline/worker browser checks. The local preview loads the new release with saved progress intact; GitHub Pages must pass its complete validation job before deployment.
+
+## 2026-10-26 - Sidebar and lesson-label refinement
+- Akshay found Up next/Upcoming ambiguous and missed the side menu. Approved restoring consistent desktop navigation, an obvious smaller-screen Contents control, and labels only for the recommended lesson and passed checks.
+- Implemented the sidebar on every main-course destination from 900px, responsive keyboard-operable Contents below that, Start here/Continue here based on saved work, and accessible completion checkmarks. All 13 targeted course browser checks pass, including the new regressions and end-to-end completion; desktop/mobile screenshots confirm the navigation layout.
+- Local candidate `2026-10-course-4`; no commit or push for this turn. Published release remains `2026-10-course-3` at `f3aa2f3`. Lessons, order, and learner storage are unchanged.
+
 ## 2026-10-26 - Publication gate focus-race correction
 - Commit `a677d90` pushed successfully, but Pages run `40262467356` blocked deployment after Linux keyboard checks exposed delayed lesson focus stealing focus from controls. The live site was not replaced by the failed candidate.
 - Reproduced the race deterministically before fixing it. Restored the reading section and heading focus synchronously, before the learner's next interaction. Added a regression covering comparison-control and skip-link focus; all 10 guided-course browser checks and 245 Node tests pass locally.

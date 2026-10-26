@@ -179,7 +179,9 @@ The overview presents one Start/Continue action, then the complete four-stage ma
 
 Lessons use one continuous reading sequence: explanation, complete relevant visual, worked example, activity, checks and teach-back, then next. Checkpoints use evidence and interpretation rather than forcing every lesson through a traffic diagram. This describes the implemented course surface, not a global composition rule for every optional utility.
 
-At a minimum width of 1100px, a lesson layout has a 270px syllabus column beside `minmax(0, 1fr)` reading content; main horizontal padding becomes 42px. The syllabus disclosure initially opens at that threshold but remains collapsible. Its rail is light, inherits the white page, and has a fine right border; the source does not assign it a separate tinted background.
+At a minimum width of 900px, every course destination has a 240px syllabus column beside `minmax(0, 1fr)` reading content, with 32px main horizontal padding. This includes the overview, Progress, references, and sandbox, not just lessons. The rail stays 20px from the viewport top while scrolling, with a viewport-bounded height and its own overflow when necessary. It inherits the white page and has a fine right border.
+
+Below 900px, an outlined native **Contents** disclosure stays visible above the page. It opens with keyboard or pointer input and closes after choosing a lesson. Crossing the breakpoint updates the existing disclosure without rerouting or resetting lesson progress.
 
 At a maximum width of 650px, the header and main use 20px horizontal padding; main block padding becomes 24px. The stage map becomes two columns. The syllabus stays a native in-flow disclosure, not an off-canvas drawer or fixed bottom bar. Connection endpoints stack vertically, arrows switch orientation, address partitions become one column, and evidence-table cells expose their `data-label` as row labels.
 
@@ -215,7 +217,9 @@ Disabled buttons use supporting text, cool ground and a not-allowed cursor. Pres
 
 Course and Progress are top-level text links on white, with a 24px desktop gap and a 14px narrow-screen gap. They are not filled destination tabs. The source does not apply a special current-page style to those top links.
 
-The course-stage map uses semibold links and smaller supporting stage descriptions. Links and summaries generally retain 44px minimum targets. Syllabus stage summaries show plus/minus markers; the optional lesson syllabus uses native nested disclosures. Its current lesson has a pale-blue fill, navy semibold text and small corners. Do not replace this with the legacy stepper.
+The course-stage map uses semibold links and smaller supporting stage descriptions. Links and summaries generally retain 44px minimum targets. Syllabus stage summaries show plus/minus markers; the persistent course syllabus uses native nested disclosures. Its current lesson has a pale-blue fill, navy semibold text and small corners. Do not replace this with the legacy stepper.
+
+Only the recommended lesson carries **Start here** or **Continue here**. Passed lesson checks use a checkmark with screen-reader text **Checks passed**; other lessons have no status label. Saved drafts, answers, reading and practice distinguish starting from continuing without granting completion.
 
 ### Inputs / Fields
 

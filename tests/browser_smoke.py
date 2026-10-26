@@ -17,7 +17,7 @@ from browser_course import GuidedCourseBrowserTests
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE = "2026-10-course-3"
+RELEASE = "2026-10-course-4"
 MOUNT = "/academy/"
 VIEWPORTS = ((320, 900), (390, 844), (768, 1024), (1440, 1000))
 TIMEOUT = 10000

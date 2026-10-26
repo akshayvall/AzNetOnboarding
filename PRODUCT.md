@@ -17,6 +17,7 @@ The October 26 whole-course approval supersedes the field-guide tabs and isolate
 ## Capabilities and constraints
 
 - Make Course and Progress the main destinations. Continue follows the first unfinished lesson, independent of browsing.
+- Keep course navigation visible across destinations: a persistent desktop sidebar and an obvious Contents disclosure on smaller screens. Label only the recommended lesson Start here/Continue here and mark passed checks; do not imply other lessons are unavailable.
 - Teach within one scrollable lesson: concrete question, explanation, relevant complete visual, worked example, activity, check, and next lesson. No Learn/Try/Check tabs or required standalone lab.
 - Include applied configuration and operations inside the course. End each technical level with an evidence-based scenario.
 - Keep existing technical references, optional quizzes, Azure labs, progress backups and deep links accessible.

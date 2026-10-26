@@ -68,7 +68,7 @@
       { "name": "answer-and-starter-node-state", "value": "background-color 160ms ease-out, border-color 160ms ease-out", "purpose": "Only enabled under prefers-reduced-motion: no-preference, on journey nodes and answer rows." }
     ],
     "breakpoints": [
-      { "name": "lesson-syllabus-column-min", "value": "1100px" },
+      { "name": "course-syllabus-column-min", "value": "900px" },
       { "name": "narrow-reading-and-diagrams-max", "value": "650px" }
     ]
   },
@@ -126,8 +126,8 @@
       "kind": "custom",
       "refersTo": "syllabus-current",
       "description": "The native in-flow course-contents disclosure and current lesson. This specimen opens by default for inspection; the app initially opens it only at the desktop threshold.",
-      "html": "<details class=\"ds-drawer\" open><summary class=\"ds-drawer-summary\">Course contents</summary><nav class=\"ds-syllabus\" aria-label=\"Course syllabus\"><a class=\"ds-syllabus-link\" href=\"#\" aria-current=\"page\">Current lesson</a><a class=\"ds-syllabus-link\" href=\"#\">Another lesson</a></nav></details>",
-      "css": ".ds-drawer{padding:18px 24px;border-bottom:1px solid var(--line,#c7d3dc);font:400 15px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink,#172f42)}.ds-drawer-summary{padding:12px 0;cursor:pointer;min-height:44px;color:var(--blue,#0067b8);font-weight:600}.ds-syllabus-link{display:block;min-height:44px;padding:9px 4px;line-height:1.5;text-decoration:none;color:var(--blue,#0067b8)}.ds-syllabus-link:hover{color:var(--deep-blue,#004578)}.ds-syllabus-link[aria-current]{color:var(--ink,#172f42);font-weight:650;background:var(--light-blue,#deecf9);padding-inline:10px;border-radius:4px}.ds-syllabus-link:focus-visible,.ds-drawer-summary:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}@media(min-width:1100px){.ds-drawer{border-right:1px solid var(--line,#c7d3dc);border-bottom:0;margin-top:34px;padding:0 20px 30px}}@media(max-width:650px){.ds-drawer{padding:8px 20px}}"
+      "html": "<details class=\"ds-drawer\" open><summary class=\"ds-drawer-summary\">Contents</summary><nav class=\"ds-syllabus\" aria-label=\"Course syllabus\"><a class=\"ds-syllabus-link\" href=\"#\" aria-current=\"page\">Current lesson</a><a class=\"ds-syllabus-link\" href=\"#\">Another lesson</a></nav></details>",
+      "css": ".ds-drawer{padding:18px 24px;border-bottom:1px solid var(--line,#c7d3dc);font:400 15px/1.65 'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink,#172f42)}.ds-drawer-summary{padding:12px 0;cursor:pointer;min-height:44px;color:var(--blue,#0067b8);font-weight:600}.ds-syllabus-link{display:block;min-height:44px;padding:9px 4px;line-height:1.5;text-decoration:none;color:var(--blue,#0067b8)}.ds-syllabus-link:hover{color:var(--deep-blue,#004578)}.ds-syllabus-link[aria-current]{color:var(--ink,#172f42);font-weight:650;background:var(--light-blue,#deecf9);padding-inline:10px;border-radius:4px}.ds-syllabus-link:focus-visible,.ds-drawer-summary:focus-visible{outline:3px solid var(--blue,#0067b8);outline-offset:4px}@media(min-width:900px){.ds-drawer{border-right:1px solid var(--line,#c7d3dc);border-bottom:0;margin-top:34px;padding:0 20px 30px}}@media(max-width:899px){.ds-drawer-summary{width:fit-content;min-width:120px;padding:10px 16px;border:1px solid var(--blue,#0067b8);border-radius:6px}.ds-drawer-summary:hover{background:var(--light-blue,#deecf9)}}@media(max-width:650px){.ds-drawer{padding:8px 20px}}"
     },
     {
       "name": "Four-stage course map",

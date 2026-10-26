@@ -2,6 +2,55 @@ from playwright.sync_api import expect
 
 
 class GuidedCourseBrowserTests:
+    def test_guided_course_sidebar_on_every_destination(self):
+        for width in (900, 1440):
+            self.page.set_viewport_size({"width": width, "height": 1000})
+            for route in ("", "#progress", "#lesson=request", "#reference=net-fundamentals", "#sandbox"):
+                self.open_course(route)
+                expect(self.page.locator("#course-navigation")).to_be_visible()
+                self.assertTrue(self.page.locator(".course-drawer").evaluate("(el) => el.open"))
+                self.assertTrue(self.page.evaluate("""() =>
+                    document.getElementById('course-navigation').getBoundingClientRect().right <=
+                    document.getElementById('course').getBoundingClientRect().left
+                """))
+
+    def test_guided_course_clear_recommendation_labels(self):
+        self.open_course()
+        expect(self.page.locator(".syllabus")).not_to_contain_text("Upcoming")
+        expect(self.page.locator(".syllabus")).not_to_contain_text("Up next")
+        expect(self.page.locator(".syllabus .lesson-state")).to_have_text(["Start here"])
+        self.open_course("#lesson=request")
+        self.page.locator("#explanation").fill("My saved explanation")
+        self.page.locator(".course-back").click()
+        expect(self.page.locator(".syllabus .lesson-state")).to_have_text(["Continue here"])
+        expect(self.page.locator(".course-start")).to_contain_text("Continue:")
+        self.page.locator(".course-start").click()
+        self.answer_course_lesson()
+        self.page.locator(".course-back").click()
+        expect(self.page.locator(".syllabus .lesson-complete .sr-only")).to_have_text(["Checks passed"])
+        expect(self.page.locator(".syllabus .lesson-state:not(.lesson-complete)")).to_have_text(["Continue here"])
+        expect(self.page.locator(".course-start")).to_contain_text("How does your browser find")
+
+    def test_guided_course_contents_toggle_and_resize(self):
+        self.page.set_viewport_size({"width": 390, "height": 900})
+        self.open_course()
+        drawer = self.page.locator(".course-drawer")
+        control = drawer.locator(":scope > summary")
+        expect(control).to_be_visible()
+        expect(control).to_have_text("Contents")
+        self.assertFalse(drawer.evaluate("(el) => el.open"))
+        control.focus()
+        self.page.keyboard.press("Enter")
+        expect(drawer.locator("nav")).to_be_visible()
+        drawer.get_by_role("link", name="What happens when you open a website?").click()
+        self.page.wait_for_function("() => CourseApp.current?.id === 'request'")
+        self.assertFalse(drawer.evaluate("(el) => el.open"))
+        self.page.set_viewport_size({"width": 1000, "height": 900})
+        self.page.wait_for_function("() => document.querySelector('.course-drawer').open")
+        self.page.set_viewport_size({"width": 390, "height": 900})
+        self.page.wait_for_function("() => !document.querySelector('.course-drawer').open")
+        expect(control).to_be_visible()
+
     def open_course(self, suffix=""):
         response = self.page.goto(self.base_url + "index.html" + suffix)
         if response is not None:

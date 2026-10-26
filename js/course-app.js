@@ -4,6 +4,17 @@ const CourseApp = {
     escape: value => DiagramEngine.escapeHtml(value),
     get progress() { return ProgressManager.getProgress(); },
     get next() { return CourseProgress.next(this.lessons, this.progress); },
+    get hasStarted() {
+        const progress = this.progress;
+        return this.lessons.some(lesson => {
+            const state = CourseProgress.status(progress, lesson);
+            return state.completed || state.read || state.practiced || state.draft.trim() || state.answers.some(Number.isInteger);
+        });
+    },
+    lessonMarker(lesson, next, started) {
+        if (CourseProgress.status(this.progress, lesson).completed) return '<span class="lesson-state lesson-complete"><span aria-hidden="true">✓</span><span class="sr-only">Checks passed</span></span>';
+        return next?.id === lesson.id ? `<span class="lesson-state">${started ? 'Continue here' : 'Start here'}</span>` : '';
+    },
     href(lesson) { return `#lesson=${encodeURIComponent(lesson.id)}`; },
     save(changes) {
         if (!this.current) return false;
@@ -21,27 +32,31 @@ const CourseApp = {
     },
     outline() {
         const host = document.getElementById('course-navigation');
-        host.hidden = !this.current;
-        document.querySelector('.course-layout').classList.toggle('with-outline', Boolean(this.current));
-        if (!this.current) return;
-        host.innerHTML = `<details class="course-drawer"${matchMedia('(min-width: 1100px)').matches ? ' open' : ''}>
-            <summary>Course contents</summary><nav aria-label="Course syllabus">${CourseCurriculum.stages.map(stage => {
+        const next = this.next;
+        const started = this.hasStarted;
+        const reference = new URLSearchParams(location.hash.slice(1)).get('reference');
+        const active = this.current || this.lessons.find(l => l.moduleId === reference) || next;
+        host.hidden = false;
+        document.querySelector('.course-layout').classList.add('with-outline');
+        host.innerHTML = `<details class="course-drawer"${this.navigationMedia.matches ? ' open' : ''}>
+            <summary>Contents</summary><nav aria-label="Course syllabus">${CourseCurriculum.stages.map(stage => {
                 const modules = stage.level ? stage.modules : ['start'];
-                return `<details${this.current.level === stage.level ? ' open' : ''}><summary>${this.escape(stage.title)}</summary>
+                return `<details${active?.level === stage.level ? ' open' : ''}><summary>${this.escape(stage.title)}</summary>
                 <ul>${modules.map(id => {
                     const lessons = this.lessons.filter(l => l.moduleId === id);
-                    return `<li><a href="${this.href(lessons[0])}">${this.escape(lessons[0].moduleTitle)}</a>${this.current.moduleId === id ? `<ol>${lessons.map(l =>
-                        `<li><a href="${this.href(l)}"${l.id === this.current.id ? ' aria-current="page"' : ''}>${this.escape(l.title)}${CourseProgress.status(this.progress, l).completed ? ' · Checked' : ''}</a></li>`).join('')}</ol>` : ''}</li>`;
-                }).join('')}${stage.level ? `<li><a href="#lesson=checkpoint-${stage.level}">Level checkpoint</a></li>` : ''}</ul></details>`;
+                    return `<li><a href="${this.href(lessons[0])}">${this.escape(lessons[0].moduleTitle)}</a>${active?.moduleId === id ? `<ol>${lessons.map(l =>
+                        `<li><a href="${this.href(l)}"${l.id === this.current?.id ? ' aria-current="page"' : ''}>${this.escape(l.title)}${this.lessonMarker(l, next, started)}</a></li>`).join('')}</ol>` : ''}</li>`;
+                }).join('')}${stage.level ? `<li><a href="#lesson=checkpoint-${stage.level}"${this.current?.id === `checkpoint-${stage.level}` ? ' aria-current="page"' : ''}>Level checkpoint</a></li>` : ''}</ul></details>`;
             }).join('')}</nav></details>`;
     },
     home(message = '') {
         const next = this.next;
         const done = this.lessons.filter(l => CourseProgress.status(this.progress, l).completed).length;
+        const started = this.hasStarted;
         this.main.innerHTML = `${message ? `<p role="alert">${this.escape(message)}</p>` : ''}
             <h1>${next ? 'Your course, from zero to depth' : 'You have checked the complete course'}</h1>
             <p class="course-intro">${next ? 'Start with one web request. Build your understanding through L100, L200, and L300, all the way to a Front Door architecture review.' : 'You have completed the lesson checks and level scenarios. Now explain the capstone without the page, and revisit your reasoning later. This is practice evidence, not independent proof of mastery.'}</p>
-            ${next ? `<a class="course-primary course-start" href="${this.href(next)}">${done ? 'Continue' : 'Start'}: ${this.escape(next.title)}</a>
+            ${next ? `<a class="course-primary course-start" href="${this.href(next)}">${started ? 'Continue' : 'Start'}: ${this.escape(next.title)}</a>
             <p class="course-position">${next.level ? 'L' + next.level + ' · ' + this.escape(next.moduleTitle) : 'Start here'} · ${done} of ${this.lessons.length} lessons checked</p>` : `<a class="course-primary" href="#progress">Review your learning record</a>`}
             <nav class="course-stage-map" aria-label="Explore the four course stages">${CourseCurriculum.stages.map(stage =>
                 `<a href="${this.href(this.lessons.find(l => l.level === stage.level))}">${stage.level ? 'L' + stage.level : 'Start here'}<span>${stage.level === 100 ? 'Foundations' : stage.level === 200 ? 'Core services' : stage.level === 300 ? 'Applied depth' : 'First principles'}</span></a>`).join('')}</nav>
@@ -54,7 +69,7 @@ const CourseApp = {
                 <p>${this.escape(stage.outcome)}</p><ol>${(stage.level ? stage.modules : ['start']).map(id => {
                     const group = lessons.filter(l => l.moduleId === id);
                     return `<li><details${next?.moduleId === id ? ' open' : ''}><summary>${this.escape(group[0].moduleTitle)} <span>${group.length} lessons</span></summary>
-                    <ol>${group.map(l => `<li><a href="${this.href(l)}">${this.escape(l.title)}</a><span class="lesson-state">${CourseProgress.status(this.progress, l).completed ? 'Checked' : next?.id === l.id ? 'Up next' : 'Upcoming'}</span></li>`).join('')}</ol></details></li>`;
+                    <ol>${group.map(l => `<li><a href="${this.href(l)}">${this.escape(l.title)}</a>${this.lessonMarker(l, next, started)}</li>`).join('')}</ol></details></li>`;
                 }).join('')}${stage.level ? `<li><a href="#lesson=checkpoint-${stage.level}">Put it together: L${stage.level} checkpoint</a></li>` : ''}</ol></details>`;
             }).join('')}</div>`;
     },
@@ -270,6 +285,10 @@ const CourseApp = {
         this.modules = [...MODULES_100, ...MODULES_200, ...MODULES_300, ...MODULES_EXTRAS];
         this.lessons = CourseCurriculum.build(this.modules, ACADEMY_UNITS, GuidedCourse);
         this.main = document.getElementById('course');
+        this.navigationMedia = matchMedia('(min-width: 900px)');
+        this.navigationMedia.addEventListener('change', event => {
+            document.querySelector('.course-drawer').open = event.matches;
+        });
         this.route();
         window.addEventListener('hashchange', () => this.route());
         document.addEventListener('click', e => this.click(e));

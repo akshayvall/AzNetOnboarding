@@ -22,6 +22,7 @@
 .syllabus li { padding-block: 4px; }
 .syllabus li a { display: inline-block; padding: 7px 0; min-height: 44px; }
 .lesson-state { display: block; color: var(--muted); font-size: 13px; }
+.lesson-complete { display: inline; margin-left: 8px; color: var(--blue); font-size: 16px; }
 .course-drawer { padding: 18px 24px; border-bottom: 1px solid var(--line); font-size: 15px; }
 .course-drawer > summary { color: var(--blue); font-weight: 600; }
 .course-drawer nav ul, .course-drawer nav ol { list-style: none; padding-left: 14px; }
@@ -100,10 +101,15 @@ select { display: block; width: 100%; min-height: 46px; margin-block: 10px 20px;
 .course-reference-body svg { max-width: 100%; height: auto; }
 .course-reference-body .learn-section { margin-bottom: 30px; }
 .course-footer { border-top: 1px solid var(--line); }
-@media (min-width: 1100px) {
-    .course-layout.with-outline { display: grid; grid-template-columns: 270px minmax(0, 1fr); }
+@media (min-width: 900px) {
+    .course-layout.with-outline { display: grid; grid-template-columns: 240px minmax(0, 1fr); }
+    #course-navigation { position: sticky; top: 20px; align-self: start; max-height: calc(100dvh - 40px); overflow-y: auto; }
     .course-drawer { border-right: 1px solid var(--line); border-bottom: 0; margin-top: 34px; padding: 0 20px 30px; }
-    .course-layout.with-outline main { padding-inline: 42px; }
+    .course-layout.with-outline main { padding-inline: 32px; }
+}
+@media (max-width: 899px) {
+    .course-drawer > summary { width: fit-content; min-width: 120px; padding: 10px 16px; border: 1px solid var(--blue); border-radius: 6px; }
+    .course-drawer > summary:hover { background: var(--light-blue); }
 }
 @media (max-width: 650px) {
     .course-stage-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }

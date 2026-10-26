@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### October 26 course navigation refinement (release `2026-10-course-4`)
+- Restored course contents across the overview, Progress, lessons, references, and sandbox. Desktop widths of 900px and above show a persistent sidebar; smaller screens have an outlined, keyboard-operable Contents disclosure.
+- Replaced Up next/Upcoming with Start here/Continue here only on the recommended lesson and an accessible checkmark for passed checks. Saved work changes the action to Continue without falsely awarding completion.
+- Added regression coverage for destination consistency, label states, keyboard menu access, and breakpoint changes. Preserved all lesson IDs, course order, and stored progress. Publication approved after 245 Node tests and 16 targeted browser checks passed locally; the Pages workflow gates deployment on the full suite.
+
 ### October 26 integrated course (release `2026-10-course-3`)
 - The first publication attempt was blocked by Linux CI: deferred lesson focus could steal a newly focused comparison control or skip link. Removed the unnecessary animation-frame delay and added a deterministic focus-race regression. All 10 guided-course browser checks and 245 Node tests passed locally after repair; the Pages workflow rechecks the complete suite before publishing.
 - Replaced the main entry with one continuous Start -> L100 -> L200 -> L300 course: all 21 modules, 79 lessons, 21 fictional module evidence cases, and three level checkpoints. Added in-course CIDR/OSI foundations and eight configuration/operations lessons; full references are supplementary, not the only route to depth.
