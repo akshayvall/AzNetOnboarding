@@ -25,6 +25,7 @@ class GuidedCourseBrowserTests:
         expect(self.page.locator(".syllabus .lesson-state")).to_have_text(["Continue here"])
         expect(self.page.locator(".course-start")).to_contain_text("Continue:")
         self.page.locator(".course-start").click()
+        self.page.wait_for_function("() => CourseApp.current?.id === 'request'")
         self.answer_course_lesson()
         self.page.locator(".course-back").click()
         expect(self.page.locator(".syllabus .lesson-complete .sr-only")).to_have_text(["Checks passed"])

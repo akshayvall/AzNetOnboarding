@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Restored course contents across the overview, Progress, lessons, references, and sandbox. Desktop widths of 900px and above show a persistent sidebar; smaller screens have an outlined, keyboard-operable Contents disclosure.
 - Replaced Up next/Upcoming with Start here/Continue here only on the recommended lesson and an accessible checkmark for passed checks. Saved work changes the action to Continue without falsely awarding completion.
 - Added regression coverage for destination consistency, label states, keyboard menu access, and breakpoint changes. Preserved all lesson IDs, course order, and stored progress. Publication approved after 245 Node tests and 16 targeted browser checks passed locally; the Pages workflow gates deployment on the full suite.
+- After the first deployment gate caught navigation timing failures, synchronized the lesson-state assertion and isolated catalog-filter setup from intermediate routes. All 65 browser tests pass locally; no application behavior or gate assertions were removed.
 
 ### October 26 integrated course (release `2026-10-course-3`)
 - The first publication attempt was blocked by Linux CI: deferred lesson focus could steal a newly focused comparison control or skip link. Removed the unnecessary animation-frame delay and added a deterministic focus-race regression. All 10 guided-course browser checks and 245 Node tests passed locally after repair; the Pages workflow rechecks the complete suite before publishing.

@@ -416,10 +416,10 @@ class AcademyBrowserTests(DiagramBrowserTests, GuidedCourseBrowserTests, unittes
         expect(self.page.locator("#unitExplanation")).to_have_value("Synthetic draft kept after storage failed.")
 
     def test_catalog_filters(self):
-        self.open_page()
+        self.open_page("#learn")
         modules = self.modules()
         selected = modules[0]
-        self.navigate("learn")
+        expect(self.page.locator("#destinationTitle")).to_have_text("Lesson catalog")
         self.page.locator("#catalogQuery").fill(selected["id"])
         self.page.locator("#catalogLevel").select_option(str(selected["level"]))
         self.page.locator("#catalogState").select_option("not_started")

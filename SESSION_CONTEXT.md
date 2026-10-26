@@ -7,6 +7,7 @@ Running log of AI-assisted work sessions. Newest first.
 ## 2026-10-26 - Navigation refinement publication
 - Akshay requested "push live", authorizing publication of `2026-10-course-4` on `main`.
 - Local verification passed 245 Node tests and 16 course/offline/worker browser checks. The local preview loads the new release with saved progress intact; GitHub Pages must pass its complete validation job before deployment.
+- The first push (`948c991`) was blocked by browser run `40265118419`. The label test read lesson state before fragment navigation completed; it now waits for the requested lesson. The catalog-filter test now opens its catalog route directly to isolate filtering from intermediate navigation events. All 65 browser tests pass locally after these test-only corrections; application assets remain `2026-10-course-4`.
 
 ## 2026-10-26 - Sidebar and lesson-label refinement
 - Akshay found Up next/Upcoming ambiguous and missed the side menu. Approved restoring consistent desktop navigation, an obvious smaller-screen Contents control, and labels only for the recommended lesson and passed checks.
